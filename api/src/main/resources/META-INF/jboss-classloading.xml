@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<classloading name="marshalling-api" version="@VERSION@" xmlns="urn:jboss:classloading:1.0">
+    <capabilities>
+        <package name="org.jboss.marshalling" version="@VERSION@"/>
+        <package name="org.jboss.marshalling.reflect" version="@VERSION@"/>
+    </capabilities>
+</classloading>

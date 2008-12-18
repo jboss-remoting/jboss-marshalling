@@ -1,0 +1,69 @@
+
+// Permissions for the tests
+
+grant codeBase "file:${build.home}/tests/target/main/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+};
+
+grant codeBase "file:${build.home}/serialization-java/target/test/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+};
+
+grant codeBase "file:${build.home}/river/target/test/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+};
+
+
+// Permissions for the core
+
+grant codeBase "file:${build.home}/api/target/main/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "enableSubclassImplementation";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.reflect";
+    permission java.lang.RuntimePermission "reflectionFactoryAccess";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+
+};
+
+grant codeBase "file:${build.home}/river/target/main/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "enableSubclassImplementation";
+    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+};
+
+grant codeBase "file:${build.home}/serialization-java/target/main/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "enableSubclassImplementation";
+    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+    permission java.io.SerializablePermission "enableSubstitution";
+};
+
+
+// Support classes
+
+grant codeBase "file:${build.home}/testing-support/target/main/classes/-"
+{
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:${idea.home}/-"
+{
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:${lib.junit.local}"
+{
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:${ant.library.dir}/-"
+{
+    permission java.security.AllPermission;
+};

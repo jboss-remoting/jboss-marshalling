@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<classloading name="marshalling-plugins-java-serialization" xmlns="urn:jboss:classloading:1.0">
+    <capabilities>
+        <package name="org.jboss.marshalling.serialization" version="@VERSION@"/>
+    </capabilities>
+    <requirements>
+        <module name="marshalling-api" version="@VERSION@" reExport="true"/>
+    </requirements>
+</classloading>

@@ -911,4 +911,44 @@ public final class RiverTestCase extends TestCase {
             }
         }.run();
     }
+
+    interface TestInterface extends Serializable {}
+
+    public static final class TestInterfaceFields implements Serializable {
+        TestInterface field;
+        private static final long serialVersionUID = 2169154160658483773L;
+    }
+
+    public void testInterfaceField() throws Throwable {
+        final TestInterfaceFields test1 = new TestInterfaceFields();
+        new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(test1);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                unmarshaller.readObject();
+            }
+        }.run();
+    }
+
+    interface TestExtInterface extends Externalizable {}
+
+    public static final class TestExtInterfaceFields implements Serializable {
+        TestExtInterface field;
+        private static final long serialVersionUID = 2169154160658483773L;
+    }
+
+    public void testExtInterfaceField() throws Throwable {
+        final TestExtInterfaceFields test1 = new TestExtInterfaceFields();
+        new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(test1);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                unmarshaller.readObject();
+            }
+        }.run();
+    }
 }

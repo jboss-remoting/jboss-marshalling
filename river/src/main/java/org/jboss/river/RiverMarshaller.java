@@ -651,7 +651,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeNewProxyClass(objClass);
         } else if (objClass.isArray()) {
             writeObjectArrayClass(objClass);
-        } else if (Serializable.class.isAssignableFrom(objClass)) {
+        } else if (! objClass.isInterface() && Serializable.class.isAssignableFrom(objClass)) {
             if (Externalizable.class.isAssignableFrom(objClass)) {
                 writeNewExternalizableClass(objClass);
             } else {

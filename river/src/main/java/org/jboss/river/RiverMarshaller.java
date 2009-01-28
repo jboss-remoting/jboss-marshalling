@@ -34,6 +34,7 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.Externalize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Externalizable;
@@ -53,6 +54,7 @@ import java.security.PrivilegedActionException;
 public class RiverMarshaller extends AbstractMarshaller {
     private final IdentityIntMap<Object> instanceCache;
     private final IdentityIntMap<Class<?>> classCache;
+    private final IdentityHashMap<Class<?>, Externalizer> externalizers;
     private final IdentityHashMap<Object, Object> replacementCache;
     private int instanceSeq;
     private int classSeq;
@@ -66,6 +68,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         final float loadFactor = 0x0.5p0f;
         instanceCache = new IdentityIntMap<Object>((int) ((double)configuration.getInstanceCount() / (double)loadFactor), loadFactor);
         classCache = new IdentityIntMap<Class<?>>((int) ((double)configuration.getClassCount() / (double)loadFactor), loadFactor);
+        externalizers = new IdentityHashMap<Class<?>, Externalizer>(configuration.getClassCount());
         replacementCache = new IdentityHashMap<Object, Object>(configuration.getInstanceCount());
     }
 
@@ -395,8 +398,33 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
         // it's a user type
         // user type #1: externalizer
-        final Externalizer classExternalizer = classExternalizerFactory.getExternalizer(objClass);
-        final Externalizer externalizer = classExternalizer != null ? classExternalizer : externalizerFactory.getExternalizer(obj);
+        Externalizer externalizer;
+        if (externalizers.containsKey(objClass)) {
+            externalizer = externalizers.get(objClass);
+        } else {
+            externalizer = classExternalizerFactory.getExternalizer(objClass);
+            if (externalizer == null) {
+                externalizer = externalizerFactory.getExternalizer(obj);
+                if (externalizer == null) {
+                    final Externalize annotation = objClass.getAnnotation(Externalize.class);
+                    if (annotation != null) {
+                        final Class<? extends Externalizer> clazz = annotation.value();
+                        try {
+                            externalizer = clazz.newInstance();
+                        } catch (InstantiationException e) {
+                            final InvalidClassException ice = new InvalidClassException(objClass.getName(), "Error instantiating externalizer \"" + clazz.getName() + "\"");
+                            ice.initCause(e);
+                            throw ice;
+                        } catch (IllegalAccessException e) {
+                            final InvalidClassException ice = new InvalidClassException(objClass.getName(), "Illegal access instantiating externalizer \"" + clazz.getName() + "\"");
+                            ice.initCause(e);
+                            throw ice;
+                        }
+                    }
+                }
+            }
+            externalizers.put(objClass, externalizer);
+        }
         if (externalizer != null) {
             write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
             writeExternalizerClass(objClass, externalizer);
@@ -780,6 +808,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     public void clearClassCache() throws IOException {
         classCache.clear();
+        externalizers.clear();
         classSeq = 0;
         clearInstanceCache();
     }

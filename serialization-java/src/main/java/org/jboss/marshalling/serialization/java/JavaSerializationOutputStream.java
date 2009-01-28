@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
+import java.io.InvalidClassException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,7 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.Externalize;
 
 import static org.jboss.marshalling.serialization.java.JavaSerializationConstants.*;
 
@@ -293,16 +295,33 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       }
 
       Externalizer externalizer = null;
+      Externalize annotation = null;
       if (classExternalizerFactory != null) {
          externalizer = classExternalizerFactory.getExternalizer(obj.getClass());
       }
       if (externalizer == null && externalizerFactory != null) {
          externalizer = externalizerFactory.getExternalizer(obj);
       }
-
-      if (externalizer != null) {
+      if (externalizer == null) {
+          annotation = obj.getClass().getAnnotation(Externalize.class);
+      }
+      if (externalizer != null || annotation != null) {
          ExternalizableWrapper wrapper = externalizedCache.get(obj);
          if (wrapper == null) {
+            if (annotation != null) {
+               final Class<? extends Externalizer> clazz = annotation.value();
+               try {
+                  externalizer = clazz.newInstance();
+               } catch (InstantiationException e) {
+                  final InvalidClassException ice = new InvalidClassException(obj.getClass().getName(), "Error instantiating externalizer \"" + clazz.getName() + "\"");
+                  ice.initCause(e);
+                  throw ice;
+               } catch (IllegalAccessException e) {
+                  final InvalidClassException ice = new InvalidClassException(obj.getClass().getName(), "Illegal access instantiating externalizer \"" + clazz.getName() + "\"");
+                  ice.initCause(e);
+                  throw ice;
+               }
+            }
             wrapper = new ExternalizableWrapper(externalizer, obj);
             externalizedCache.put(obj, wrapper);
          }

@@ -362,7 +362,7 @@ public final class Marshalling {
             constructor = AccessController.doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
                 public Constructor<OptionalDataException> run() {
                     try {
-                        final Constructor<OptionalDataException> constructor = OptionalDataException.class.getConstructor(boolean.class);
+                        final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
                         constructor.setAccessible(true);
                         return constructor;
                     } catch (NoSuchMethodException e) {

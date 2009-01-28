@@ -150,6 +150,7 @@ public final class MarshallingObjectInputStream extends ObjectInputStream {
         return unmarshaller.readDouble();
     }
 
+    @Deprecated
     public String readLine() throws IOException {
         return unmarshaller.readLine();
     }

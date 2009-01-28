@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.EOFException;
 import java.io.OptionalDataException;
+import java.io.StreamCorruptedException;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.nio.BufferOverflowException;
@@ -35,6 +36,7 @@ import java.security.PrivilegedAction;
 import java.security.AccessController;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 /**
  * Static utility methods for simplfying use of marshallers.
@@ -58,6 +60,36 @@ public final class Marshalling {
      */
     public static StreamHeader nullStreamHeader() {
         return DEFAULT_STREAM_HEADER;
+    }
+
+    /**
+     * Create a stream header that uses the given bytes.
+     *
+     * @param headerBytes the header bytes
+     * @return the stream header object
+     */
+    public static StreamHeader streamHeader(final byte[] headerBytes) {
+        return new StaticStreamHeader(headerBytes);
+    }
+
+    private static final class StaticStreamHeader implements StreamHeader {
+        private final byte[] headerBytes;
+
+        public StaticStreamHeader(final byte[] bytes) {
+            headerBytes = bytes;
+        }
+
+        public void readHeader(final Unmarshaller input) throws IOException {
+            final byte[] buf = new byte[headerBytes.length];
+            input.readFully(buf);
+            if (! Arrays.equals(buf, headerBytes)) {
+                throw new StreamCorruptedException("Header is incorrect");
+            }
+        }
+
+        public void writeHeader(final Marshaller output) throws IOException {
+            output.write(headerBytes);
+        }
     }
 
     /**

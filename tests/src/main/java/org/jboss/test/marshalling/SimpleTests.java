@@ -107,8 +107,6 @@ public final class SimpleTests extends TestBase {
         } catch (NotSerializableException e) {
             // ok
             return;
-        } catch (IOException e) {
-            fail("Wrong exception");
         }
         fail("Missing exception");
     }

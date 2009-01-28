@@ -93,7 +93,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         finish();
     }
 
-    public RiverObjectInput getObjectInput() {
+    private RiverObjectInput getObjectInput() {
         final RiverObjectInput objectInput = this.objectInput;
         return objectInput == null ? this.objectInput = new RiverObjectInput(this) : objectInput;
     }

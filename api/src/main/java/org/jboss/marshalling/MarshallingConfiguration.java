@@ -25,7 +25,7 @@ package org.jboss.marshalling;
 /**
  * A Marshaller configuration.
  */
-public final class MarshallingConfiguration {
+public final class MarshallingConfiguration implements Cloneable {
 
     private ExternalizerFactory externalizerFactory;
     private ClassExternalizerFactory classExternalizerFactory;
@@ -250,5 +250,19 @@ public final class MarshallingConfiguration {
      */
     public void setBufferSize(final int bufferSize) {
         this.bufferSize = bufferSize;
+    }
+
+    /**
+     * Create a shallow clone.
+     *
+     * @return a clone
+     */
+    public MarshallingConfiguration clone() {
+        try {
+            return (MarshallingConfiguration) super.clone();
+        } catch (CloneNotSupportedException e) {
+            // not possible
+            throw new IllegalStateException();
+        }
     }
 }

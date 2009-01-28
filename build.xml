@@ -509,7 +509,7 @@
                 <package name="org.jboss.marshalling"/>
                 <package name="org.jboss.marshalling.reflect"/>
             </group>
-            <group packages="org.jboss.river" title="River Marshalling Implementation"/>
+            <group packages="org.jboss.marshalling.river" title="River Marshalling Implementation"/>
             <group packages="org.jboss.marshalling.serialization.java" title="Java Serialization Marshalling Implementation"/>
             <packageset dir="api/src/main/java"/>
             <packageset dir="docs/target/tmp/java"/>

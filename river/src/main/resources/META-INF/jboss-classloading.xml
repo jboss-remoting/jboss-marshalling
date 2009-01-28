@@ -2,7 +2,7 @@
 
 <classloading name="marshalling-plugins-river" xmlns="urn:jboss:classloading:1.0">
     <capabilities>
-        <package name="org.jboss.river" version="@VERSION@"/>
+        <package name="org.jboss.marshalling.river" version="@VERSION@"/>
     </capabilities>
     <requirements>
         <module name="marshalling-api" version="@VERSION@" reExport="true"/>

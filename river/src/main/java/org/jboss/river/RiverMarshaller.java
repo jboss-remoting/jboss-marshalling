@@ -33,6 +33,7 @@ import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.ClassExternalizerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Externalizable;
@@ -69,6 +70,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void doWriteObject(final Object original, final boolean unshared) throws IOException {
+        final ClassExternalizerFactory classExternalizerFactory = this.classExternalizerFactory;
         final ExternalizerFactory externalizerFactory = this.externalizerFactory;
         final ObjectResolver objectResolver = this.objectResolver;
         boolean replacing = true;
@@ -393,7 +395,8 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
         // it's a user type
         // user type #1: externalizer
-        final Externalizer externalizer = externalizerFactory.getExternalizer(obj);
+        final Externalizer classExternalizer = classExternalizerFactory.getExternalizer(objClass);
+        final Externalizer externalizer = classExternalizer != null ? classExternalizer : externalizerFactory.getExternalizer(obj);
         if (externalizer != null) {
             write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
             writeExternalizerClass(objClass, externalizer);

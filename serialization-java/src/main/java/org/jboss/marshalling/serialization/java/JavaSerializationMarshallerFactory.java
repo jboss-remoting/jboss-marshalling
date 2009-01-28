@@ -12,7 +12,7 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
-
+import org.jboss.marshalling.ClassExternalizerFactory;
 
 /**
  * @author <a href="ron.sigal@jboss.com">Ron Sigal</a>
@@ -36,7 +36,11 @@ public final class JavaSerializationMarshallerFactory extends AbstractMarshaller
    
    protected ExternalizerFactory getDefaultExternalizerFactory() {
       return null;
-  }
+   }
+
+   protected ClassExternalizerFactory getDefaultClassExternalizerFactory() {
+      return null;
+   }
 
   protected StreamHeader getDefaultStreamHeader() {
       return null;

@@ -41,6 +41,7 @@ import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
+import org.jboss.marshalling.ClassExternalizerFactory;
 
 import static org.jboss.marshalling.serialization.java.JavaSerializationConstants.*;
 
@@ -125,6 +126,7 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
    private StreamHeader streamHeader;
    private ClassResolver classResolver;
    private ObjectResolver objectResolver;
+   private ClassExternalizerFactory classExternalizerFactory;
    private ExternalizerFactory externalizerFactory;
    private ClassTable classTable;
    private ObjectTable objectTable;
@@ -135,7 +137,8 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
                                        ClassTable classTable,
                                        ObjectResolver objectResolver,
                                        ObjectTable objectTable,
-                                       ExternalizerFactory externalizerFactory) throws IOException
+                                       ExternalizerFactory externalizerFactory,
+                                       ClassExternalizerFactory classExternalizerFactory) throws IOException
    {
       super();   
       
@@ -146,6 +149,7 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       this.objectResolver = objectResolver;
       this.objectTable = objectTable;
       this.externalizerFactory = externalizerFactory;
+      this.classExternalizerFactory = classExternalizerFactory;
       
       try {
          // Simulate single arg ObjectOutputStream constructor.
@@ -155,7 +159,7 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
          handlesField.set(this, handleTableConstructor.newInstance(new Object[]{10, (float) 3.00}));
          subsField.set(this, replaceTableConstructor.newInstance(new Object[]{10, (float) 3.00}));
          
-         if (objectTable == null && externalizerFactory == null) {
+         if (objectTable == null && externalizerFactory == null && classExternalizerFactory == null) {
             setPrivateFieldsAndMethodsForWriteOverride();
             enableOverride(false);
          }
@@ -169,7 +173,8 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
                                         ClassTable classTable,
                                         ObjectResolver objectResolver,
                                         ObjectTable objectTable,
-                                        ExternalizerFactory externalizerFactory) throws IOException
+                                        ExternalizerFactory externalizerFactory,
+                                        ClassExternalizerFactory classExternalizerFactory) throws IOException
    {
       super(marshaller.getOutputStream());   
 
@@ -179,8 +184,9 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       this.objectResolver = objectResolver;
       this.objectTable = objectTable;
       this.externalizerFactory = externalizerFactory;
+      this.classExternalizerFactory = classExternalizerFactory;
 
-      if (objectTable != null || externalizerFactory != null) {
+      if (objectTable != null || externalizerFactory != null || classExternalizerFactory != null) {
          try {
             setPrivateFieldsAndMethodsForWriteOverride();
             enableOverride(true);
@@ -285,19 +291,24 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
             obj = wrapper;
          }
       }
-      
-      if (externalizerFactory != null) {
-         Externalizer externalizer = externalizerFactory.getExternalizer(obj);
-         if (externalizer != null) {
-            ExternalizableWrapper wrapper = externalizedCache.get(obj);
-            if (wrapper == null) {
-               wrapper = new ExternalizableWrapper(externalizer, obj);
-               externalizedCache.put(obj, wrapper);
-            }
-            obj = wrapper;
-         }
+
+      Externalizer externalizer = null;
+      if (classExternalizerFactory != null) {
+         externalizer = classExternalizerFactory.getExternalizer(obj.getClass());
       }
-      
+      if (externalizer == null && externalizerFactory != null) {
+         externalizer = externalizerFactory.getExternalizer(obj);
+      }
+
+      if (externalizer != null) {
+         ExternalizableWrapper wrapper = externalizedCache.get(obj);
+         if (wrapper == null) {
+            wrapper = new ExternalizableWrapper(externalizer, obj);
+            externalizedCache.put(obj, wrapper);
+         }
+         obj = wrapper;
+      }
+
       try {
          writeObject0Method.invoke(this, new Object[]{obj, false});
       }

@@ -24,7 +24,10 @@ package org.jboss.marshalling;
 
 /**
  * A factory for locating custom externalizers.
+ *
+ * @deprecated Please see {@link org.jboss.marshalling.ClassExternalizerFactory ClassExternalizerFactory}.
  */
+@Deprecated
 public interface ExternalizerFactory {
     /**
      * Look up a custom externalizer for a given object instance.  If no such externalizer exists, returns {@code null}.

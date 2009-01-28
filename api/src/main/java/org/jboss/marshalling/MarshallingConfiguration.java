@@ -26,7 +26,9 @@ package org.jboss.marshalling;
  * A Marshaller configuration.
  */
 public final class MarshallingConfiguration {
+
     private ExternalizerFactory externalizerFactory;
+    private ClassExternalizerFactory classExternalizerFactory;
     private StreamHeader streamHeader;
     private ClassResolver classResolver;
     private ObjectResolver objectResolver;
@@ -47,7 +49,10 @@ public final class MarshallingConfiguration {
      * Get the externalizer factory, or {@code null} if none is specified.
      *
      * @return the externalizer factory
+     *
+     * @deprecated Use {@link #getClassExternalizerFactory()} instead.
      */
+    @Deprecated
     public ExternalizerFactory getExternalizerFactory() {
         return externalizerFactory;
     }
@@ -56,9 +61,30 @@ public final class MarshallingConfiguration {
      * Set the externalizer factory.  Specify {@code null} to use none.
      *
      * @param externalizerFactory the externalizer factory
+     *
+     * @deprecated Use {@link #setClassExternalizerFactory(ClassExternalizerFactory)} instead.
      */
+    @Deprecated
     public void setExternalizerFactory(final ExternalizerFactory externalizerFactory) {
         this.externalizerFactory = externalizerFactory;
+    }
+
+    /**
+     * Get the class externalizer factory, or {@code null} if none is specified.
+     *
+     * @return the class externalizer factory
+     */
+    public ClassExternalizerFactory getClassExternalizerFactory() {
+        return classExternalizerFactory;
+    }
+
+    /**
+     * Set the class externalizer factory.  Specify {@code null} to use none.
+     *
+     * @param classExternalizerFactory the class externalizer factory
+     */
+    public void setClassExternalizerFactory(final ClassExternalizerFactory classExternalizerFactory) {
+        this.classExternalizerFactory = classExternalizerFactory;
     }
 
     /**

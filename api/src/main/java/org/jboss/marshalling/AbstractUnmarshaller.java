@@ -32,6 +32,8 @@ import java.io.EOFException;
 public abstract class AbstractUnmarshaller implements Unmarshaller {
     /** The configured externalizer factory. */
     protected final ExternalizerFactory externalizerFactory;
+    /** The configured class externalizer factory. */
+    protected final ClassExternalizerFactory classExternalizerFactory;
     /** The configured stream header. */
     protected final StreamHeader streamHeader;
     /** The configured class resolver. */
@@ -56,6 +58,8 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
     protected AbstractUnmarshaller(final AbstractMarshallerFactory marshallerFactory, final MarshallingConfiguration configuration) {
         final ExternalizerFactory externalizerFactory = configuration.getExternalizerFactory();
         this.externalizerFactory = externalizerFactory == null ? marshallerFactory.getDefaultExternalizerFactory() : externalizerFactory;
+        final ClassExternalizerFactory classExternalizerFactory = configuration.getClassExternalizerFactory();
+        this.classExternalizerFactory = classExternalizerFactory == null ? marshallerFactory.getDefaultClassExternalizerFactory() : classExternalizerFactory;
         final StreamHeader streamHeader = configuration.getStreamHeader();
         this.streamHeader = streamHeader == null ? marshallerFactory.getDefaultStreamHeader() : streamHeader;
         final ClassResolver classResolver = configuration.getClassResolver();

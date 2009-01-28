@@ -70,6 +70,7 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
             // ok
             return;
         } catch (IOException e) {
+            e.printStackTrace();
             fail("Wrong exception");
         }
         fail("Missing exception");

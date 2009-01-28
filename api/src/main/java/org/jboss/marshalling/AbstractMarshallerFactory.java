@@ -48,6 +48,16 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
     }
 
     /**
+     * Get the default class externalizer factory, which is used if none was configured.  This base implementation returns a
+     * no-operation class externalizer factory.
+     *
+     * @return the class externalizer factory
+     */
+    protected ClassExternalizerFactory getDefaultClassExternalizerFactory() {
+        return Marshalling.nullClassExternalizerFactory();
+    }
+
+    /**
      * Get the default stream header, which is used if none was configured.  This base implementation returns a
      * no-operation stream header (writes and reads no bytes).
      *

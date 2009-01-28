@@ -30,6 +30,12 @@ import java.security.PrivilegedAction;
  */
 public class ContextClassResolver extends AbstractClassResolver {
 
+    private static final PrivilegedAction<ClassLoader> classLoaderAction = new PrivilegedAction<ClassLoader>() {
+        public ClassLoader run() {
+            return Thread.currentThread().getContextClassLoader();
+        }
+    };
+
     /**
      * Construct a new instance.
      */
@@ -38,10 +44,6 @@ public class ContextClassResolver extends AbstractClassResolver {
 
     /** {@inheritDoc} */
     protected ClassLoader getClassLoader() {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-            public ClassLoader run() {
-                return Thread.currentThread().getContextClassLoader();
-            }
-        });
+        return AccessController.doPrivileged(classLoaderAction);
     }
 }

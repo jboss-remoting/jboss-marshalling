@@ -363,6 +363,7 @@
             <compilerarg value="-Xlint:unchecked"/>
             <classpath>
                 <path refid="api.classpath"/>
+                <path refid="river.classpath"/>
                 <path refid="serialization-java.classpath"/>
                 <pathelement location="${lib.junit.local}"/>
             </classpath>
@@ -374,7 +375,7 @@
         <delete dir="tests/target"/>
     </target>
 
-    <target name="tests" description="Build the tests module" depends="lib.junit,api,serialization-java,tests.compile">
+    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serialization-java,tests.compile">
         <path id="tests.classpath">
             <pathelement location="tests/target/main/classes"/>
         </path>

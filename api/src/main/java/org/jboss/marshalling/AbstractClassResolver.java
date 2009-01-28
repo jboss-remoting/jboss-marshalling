@@ -81,6 +81,17 @@ public abstract class AbstractClassResolver implements ClassResolver {
      * loads the class by name.
      */
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String name, final long serialVersionUID) throws IOException, ClassNotFoundException {
+        return loadClass(name);
+    }
+
+    /**
+     * Load a class with the given name.  The base implementation uses the classloader returned from {@link #getClassLoader()}.
+     *
+     * @param name the name of the class
+     * @return the class
+     * @throws ClassNotFoundException if the class is not found, or if there is no classloader
+     */
+    protected Class<?> loadClass(final String name) throws ClassNotFoundException {
         return Class.forName(name, false, getClassLoaderChecked());
     }
 
@@ -93,7 +104,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
         final int length = interfaces.length;
         Class<?>[] classes = new Class<?>[length];
         for (int i = 0; i < length; i ++) {
-            classes[i] = Class.forName(interfaces[i], false, classLoader);
+            classes[i] = loadClass(interfaces[i]);
         }
         return Proxy.getProxyClass(classLoader, classes);
     }

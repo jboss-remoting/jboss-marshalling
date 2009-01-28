@@ -265,4 +265,37 @@ public final class MarshallingConfiguration implements Cloneable {
             throw new IllegalStateException();
         }
     }
+
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(super.toString()).append(": ");
+        if (externalizerFactory != null) {
+            builder.append("externalizerFactory=<").append(externalizerFactory.toString()).append("> ");
+        }
+        if (classExternalizerFactory != null) {
+            builder.append("classExternalizerFactory=<").append(classExternalizerFactory.toString()).append("> ");
+        }
+        if (streamHeader != null) {
+            builder.append("streamHeader=<").append(streamHeader).append("> ");
+        }
+        if (classResolver != null) {
+            builder.append("classResolver=<").append(classResolver).append("> ");
+        }
+        if (objectResolver != null) {
+            builder.append("objectResolver=<").append(objectResolver).append("> ");
+        }
+        if (creator != null) {
+            builder.append("creator=<").append(creator).append("> ");
+        }
+        if (classTable != null) {
+            builder.append("classTable=<").append(classTable).append("> ");
+        }
+        if (objectTable != null) {
+            builder.append("objectTable=<").append(objectTable).append("> ");
+        }
+        builder.append("instanceCount=").append(instanceCount);
+        builder.append(" classCount=").append(classCount);
+        builder.append(" bufferSize=").append(bufferSize);
+        return builder.toString();
+    }
 }

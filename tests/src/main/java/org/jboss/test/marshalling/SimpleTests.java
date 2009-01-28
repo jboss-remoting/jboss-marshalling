@@ -22,31 +22,39 @@
 
 package org.jboss.test.marshalling;
 
-import junit.framework.TestCase;
-import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.ClassTable;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.Creator;
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.Serializable;
-import java.io.Externalizable;
-import java.io.ObjectOutput;
-import java.io.ObjectInput;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamField;
-import java.io.ObjectInputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.marshalling.ExternalizerFactory;
+import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.reflect.ReflectiveCreator;
+import org.jboss.testsupport.TestSuiteHelper;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import static org.junit.runners.Parameterized.Parameters;
+import static junit.framework.Assert.*;
+import java.util.Collection;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.NotSerializableException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.ObjectOutputStream;
+import java.io.Externalizable;
+import java.io.ObjectOutput;
+import java.io.ObjectInput;
+import java.io.ObjectStreamField;
+import java.io.ObjectInputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -54,29 +62,88 @@ import java.lang.reflect.Proxy;
 /**
  *
  */
-public abstract class GeneralMarshallingTestParent1 extends TestCase {
+@RunWith(Parameterized.class)
+public final class SimpleTests extends TestBase {
+    public static junit.framework.Test suite() {
+        return TestSuiteHelper.testSuiteFor(SimpleTests.class);
+    }
 
+    @Parameters
+    public static Collection<Object[]> parameters() {
+        return TestBase.parameters();
+    }
+
+    public SimpleTests(MarshallerFactory marshallerFactory, MarshallingConfiguration configuration) {
+        super(marshallerFactory, configuration);
+    }
+
+    @Test
+    public void testNull() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(null);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertNull(unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    @Test
     public void testUnserializable() throws Throwable {
         try {
-            new ReadWriteTest(getMarshallerFactory()) {
+            runReadWriteTest(new ReadWriteTest() {
                 public void runWrite(final Marshaller marshaller) throws Throwable {
                     marshaller.writeObject(new Object());
                 }
 
                 public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 }
-            }.run();
+            });
         } catch (NotSerializableException e) {
             // ok
             return;
         } catch (IOException e) {
-            e.printStackTrace();
             fail("Wrong exception");
         }
         fail("Missing exception");
     }
 
-    private static final class TestSerializable implements Serializable {
+    public static final class SerializableWithFinalFields implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @SuppressWarnings({ "FieldMayBeStatic" })
+        private final String blah = "Blah blah!";
+
+        public String getBlah() {
+            return blah;
+        }
+    }
+
+    @Test
+    public void testSerializableWithFinalFields() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                final SerializableWithFinalFields obj = new SerializableWithFinalFields();
+                marshaller.writeObject(obj);
+                marshaller.writeObject(obj);
+                final SerializableWithFinalFields obj2 = new SerializableWithFinalFields();
+                marshaller.writeObjectUnshared(obj2);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final SerializableWithFinalFields obj = (SerializableWithFinalFields) unmarshaller.readObject();
+                assertSame(obj, unmarshaller.readObject());
+                final SerializableWithFinalFields obj2 = (SerializableWithFinalFields) unmarshaller.readObjectUnshared();
+                assertEquals("Blah blah!", obj2.blah);
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializable implements Serializable {
         private static final long serialVersionUID = -3834685845327229499L;
 
         private int first = 1234;
@@ -86,6 +153,7 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         private Object zap = Float.valueOf(5.5f);
         private Void foo = null;
 
+        @SuppressWarnings({ "NonFinalFieldReferenceInEquals" })
         public boolean equals(final Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -118,49 +186,49 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testSimple() throws Throwable {
         final Serializable serializable = new TestSerializable();
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(serializable);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(serializable, unmarshaller.readObject());
-                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testString() throws Throwable {
         final String s = "This is a test!";
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(s);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(s, unmarshaller.readObject());
-                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testInteger() throws Throwable {
         final Integer i = Integer.valueOf(12345);
-        final AtomicBoolean ran = new AtomicBoolean();
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(i);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(i, unmarshaller.readObject());
-                assertTrue("No EOF", unmarshaller.read() == -1);
-                ran.set(true);
+                assertEOF(unmarshaller);
             }
-        }.run();
-        assertTrue("runRead never ran", ran.get());
+        });
     }
 
     public static final class TestExternalizable implements Externalizable {
@@ -181,9 +249,10 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testExternalizable() throws Throwable {
         final TestExternalizable ext = new TestExternalizable();
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(ext);
             }
@@ -193,18 +262,21 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertTrue("No EOF", unmarshaller.read() == -1);
                 assertTrue("readExternal was not run", extn.ran);
             }
-        }.run();
+        });
         assertFalse("readExternal was run on the original", ext.ran);
     }
 
+    @Test
     public void testObjectTable() throws Throwable {
-        final AtomicBoolean ran = new AtomicBoolean();
+        final AtomicBoolean writeRan = new AtomicBoolean();
+        final AtomicBoolean readRan = new AtomicBoolean();
         final ObjectTable objectTable = new ObjectTable() {
             public Writer getObjectWriter(final Object object) {
                 return new Writer() {
                     public void writeObject(final Marshaller marshaller, final Object object) throws IOException {
                         marshaller.writeInt(51423);
                         marshaller.writeUTF("Unga bunga!");
+                        writeRan.set(true);
                     }
                 };
             }
@@ -212,12 +284,12 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
             public Object readObject(final Unmarshaller unmarshaller) throws IOException, ClassNotFoundException {
                 assertEquals(51423, unmarshaller.readInt());
                 assertEquals("Unga bunga!", unmarshaller.readUTF());
-                assertTrue("No EOF", unmarshaller.read() == -1);
-                ran.set(true);
+                assertEOF(unmarshaller);
+                readRan.set(true);
                 return new Object();
             }
         };
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setObjectTable(objectTable);
             }
@@ -227,13 +299,15 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                unmarshaller.readObject();
-                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertNotNull(unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
-        assertTrue("readObject never run", ran.get());
+        });
+        assertTrue("writeObject never run", writeRan.get());
+        assertTrue("readObject never run", readRan.get());
     }
 
+    @Test
     public void testClassTableSerializable() throws Throwable {
         final ClassTable classTable = new ClassTable() {
             public Writer getClassWriter(final Class<?> clazz) {
@@ -257,7 +331,7 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 return TestSerializable.class;
             }
         };
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setClassTable(classTable);
             }
@@ -268,10 +342,12 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertSame(TestSerializable.class, unmarshaller.readObject().getClass());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testClassTableExternalizable() throws Throwable {
         final ClassTable classTable = new ClassTable() {
             public Writer getClassWriter(final Class<?> clazz) {
@@ -296,7 +372,7 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
             }
         };
         final TestExternalizable ext = new TestExternalizable();
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setClassTable(classTable);
             }
@@ -307,15 +383,16 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final TestExternalizable extn = (TestExternalizable) unmarshaller.readObject();
-                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertEOF(unmarshaller);
                 assertTrue("readExternal was not run", extn.ran);
             }
-        }.run();
+        });
         assertFalse("readExternal was run on the original", ext.ran);
     }
 
+    @Test
     public void testMultiWrite() throws Throwable {
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 final TestSerializable obj = new TestSerializable();
                 marshaller.writeObject(obj);
@@ -324,12 +401,14 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertSame(unmarshaller.readObject(), unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testMultiWrite2() throws Throwable {
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 final TestSerializable obj = new TestSerializable();
                 marshaller.writeObjectUnshared(obj);
@@ -338,12 +417,14 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertNotSame(unmarshaller.readObjectUnshared(), unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testMultiWrite3() throws Throwable {
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 final TestSerializable obj1 = new TestSerializable();
                 final TestSerializable obj2 = new TestSerializable();
@@ -399,14 +480,16 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertSame(obj4, unmarshaller.readObject());
                 assertSame(obj3, unmarshaller.readObject());
                 assertSame(obj2, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testBooleanArray() throws Throwable {
         final boolean[] test = new boolean[50];
         test[0] = test[5] = test[6] = test[14] = test[24] = test[39] = test[49] = true;
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -416,14 +499,16 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 boolean[] result = (boolean[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testByteArray() throws Throwable {
         final byte[] test = new byte[50];
         new Random().nextBytes(test);
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -433,17 +518,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 byte[] result = (byte[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testShortArray() throws Throwable {
         final short[] test = new short[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = (short) rng.nextInt();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -453,17 +540,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 short[] result = (short[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testIntArray() throws Throwable {
         final int[] test = new int[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = rng.nextInt();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -473,17 +562,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 int[] result = (int[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testLongArray() throws Throwable {
         final long[] test = new long[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = rng.nextLong();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -493,17 +584,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 long[] result = (long[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testFloatArray() throws Throwable {
         final float[] test = new float[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = rng.nextFloat();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -513,17 +606,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 float[] result = (float[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testDoubleArray() throws Throwable {
         final double[] test = new double[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = rng.nextDouble();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -533,17 +628,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 double[] result = (double[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testCharArray() throws Throwable {
         final char[] test = new char[50];
         final Random rng = new Random();
         for (int i = 0; i < test.length; i++) {
             test[i] = (char) rng.nextInt();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -553,16 +650,18 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 char[] result = (char[]) unmarshaller.readObject();
                 assertSame(result, unmarshaller.readObject());
                 assertTrue(Arrays.equals(test, result));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testObjectArray() throws Throwable {
         final TestSerializable[] test = new TestSerializable[50];
         for (int i = 0; i < 50; i ++) {
             test[i] = new TestSerializable();
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -572,16 +671,18 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 final Object[] objArray = (Object[]) unmarshaller.readObject();
                 assertTrue(Arrays.equals(test, objArray));
                 assertSame(objArray, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testObjectArrayRecursion() throws Throwable {
         final Object[] test = new Object[5];
         for (int i = 0; i < 5; i ++) {
             test[i] = test;
         }
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(test);
                 marshaller.writeObject(test);
@@ -595,17 +696,19 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertNotNull(test2[3]);
                 assertNotNull(test2[4]);
                 assertSame(test2, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
+    @Test
     public void testHashMap() throws Throwable {
         final Map<String, String> map = new HashMap<String, String>();
         map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
         map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
         map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
         map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(map);
                 marshaller.writeObject(map);
@@ -616,8 +719,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 final Map<String, String> map2 = (Map<String, String>) unmarshaller.readObject();
                 assertEquals(map, map2);
                 assertSame(map2, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     private static final class HashMapExternalizer implements Externalizer {
@@ -648,13 +752,14 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
-    public void testExternalizer() throws Throwable {
+    @Test
+    public void testOldExternalizer() throws Throwable {
         final Map<String, String> map = new HashMap<String, String>();
         map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
         map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
         map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
         map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setExternalizerFactory(new ExternalizerFactory() {
                     @SuppressWarnings({"unchecked"})
@@ -677,8 +782,43 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(map, m1);
                 assertSame(m1, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
+    }
+
+    @Test
+    public void testExternalizer() throws Throwable {
+        final Map<String, String> map = new HashMap<String, String>();
+        map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
+        map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
+        map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
+        map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassExternalizerFactory(new ClassExternalizerFactory() {
+                    public Externalizer getExternalizer(final Class<?> type) {
+                        if (type == HashMap.class) {
+                            return new HashMapExternalizer();
+                        } else {
+                            return null;
+                        }
+                    }
+                });
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(map);
+                marshaller.writeObject(map);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object m1 = unmarshaller.readObject();
+                assertEquals(map, m1);
+                assertSame(m1, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
     }
 
     public static class TestA implements Serializable {
@@ -693,12 +833,13 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         TestA testa;
     }
 
+    @Test
     public void testCircularRefs() throws Throwable {
         final TestA testa = new TestA();
         final TestB testb = new TestB();
         testa.testb = testb;
         testb.testa = testa;
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(testa);
                 marshaller.writeObject(testb);
@@ -713,8 +854,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertSame(ntestb, unmarshaller.readObject());
                 assertSame(ntestb, ntesta.testb);
                 assertSame(ntesta, ntestb.testa);
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     public static class OuterClass implements Serializable {
@@ -727,11 +869,16 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testInnerClass() throws Throwable {
+        if (configuration.getCreator().getClass() == ReflectiveCreator.class) {
+            System.out.println("Skipping inner class test with reflective creator, which cannot create inner classes");
+            return;
+        }
         final OuterClass outerClass = new OuterClass();
         outerClass.inner = outerClass.new InnerClass();
         final OuterClass.InnerClass innerClass = new OuterClass().new InnerClass();
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(outerClass);
                 marshaller.writeObject(outerClass);
@@ -746,8 +893,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 final OuterClass.InnerClass newInnerClass = (OuterClass.InnerClass) unmarshaller.readObject();
                 final OuterClass.InnerClass newInnerClass2 = (OuterClass.InnerClass) unmarshaller.readObject();
                 assertSame(newInnerClass, newInnerClass2);
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     public static class TestC implements Externalizable {
@@ -778,12 +926,13 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testCircularRefsExt() throws Throwable {
         final TestC testc = new TestC();
         final TestD testd = new TestD();
         testc.testd = testd;
         testd.testc = testc;
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(testc);
                 marshaller.writeObject(testd);
@@ -798,8 +947,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertSame(ntestd, unmarshaller.readObject());
                 assertSame(ntestd, ntestc.testd);
                 assertSame(ntestc, ntestd.testc);
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     public enum Fruit {
@@ -809,8 +959,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         ORANGE;
     }
 
+    @Test
     public void testEnum1() throws Throwable {
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject("Blah");
                 marshaller.writeObject(Fruit.APPLE);
@@ -831,8 +982,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertSame(Fruit.APPLE, unmarshaller.readObject());
                 assertSame(Fruit.PEAR, unmarshaller.readObject());
                 assertSame(Fruit.APPLE, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     public interface Adder {
@@ -847,10 +999,11 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testProxy() throws Throwable {
         final TestInvocationHandler tih = new TestInvocationHandler();
-        final Adder adder = (Adder) Proxy.newProxyInstance(GeneralMarshallingTestParent1.class.getClassLoader(), new Class<?>[] { Adder.class }, tih);
-        new ReadWriteTest(getMarshallerFactory()) {
+        final Adder adder = (Adder) Proxy.newProxyInstance(SimpleTests.class.getClassLoader(), new Class<?>[] { Adder.class }, tih);
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 assertEquals(42, adder.add(41));
                 marshaller.writeObject(adder);
@@ -861,8 +1014,9 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 Adder adder = (Adder) unmarshaller.readObject();
                 assertSame(adder, unmarshaller.readObject());
                 assertEquals(42, adder.add(41));
+                assertEOF(unmarshaller);
             }
-        }.run();
+        });
     }
 
     public static final class TestSerializableWithFields implements Serializable {
@@ -890,11 +1044,12 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
         }
     }
 
+    @Test
     public void testSerializableWithFields() throws Throwable {
         final TestSerializableWithFields orig = new TestSerializableWithFields();
         orig.value = 123;
         orig.name = "Balahala";
-        new ReadWriteTest(getMarshallerFactory()) {
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(orig);
                 marshaller.writeObject(orig);
@@ -906,9 +1061,12 @@ public abstract class GeneralMarshallingTestParent1 extends TestCase {
                 assertEquals(orig.value, repl.value);
                 assertEquals(orig.name, repl.name);
             }
-        }.run();
+        });
     }
-    
-    protected abstract MarshallerFactory getMarshallerFactory();
+
+    @Test
+    public void testComplexObject() throws Throwable {
+        
+    }
 
 }

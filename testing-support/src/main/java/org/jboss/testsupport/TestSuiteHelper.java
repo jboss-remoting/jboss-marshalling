@@ -20,19 +20,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.test.marshalling;
+package org.jboss.testsupport;
 
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.MarshallingConfiguration;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import junit.framework.JUnit4TestAdapter;
+import junit.framework.Test;
 
 /**
  *
  */
-public abstract class ReadWriteTest {
-    public void configure(MarshallingConfiguration configuration) throws Throwable {}
+public final class TestSuiteHelper {
 
-    public void runWrite(Marshaller marshaller) throws Throwable {};
+    private TestSuiteHelper() {
+    }
 
-    public void runRead(Unmarshaller unmarshaller) throws Throwable {};
+    public static Test testSuiteFor(final Class<?> testClass) {
+        return AccessController.doPrivileged(new PrivilegedAction<junit.framework.Test>() {
+            public junit.framework.Test run() {
+                return new JUnit4TestAdapter(testClass);
+            }
+        });
+    }
+
 }

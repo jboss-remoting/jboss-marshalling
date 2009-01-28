@@ -6,17 +6,6 @@ grant codeBase "file:${build.home}/tests/target/main/classes/-"
     permission java.io.SerializablePermission "allowSerializationReflection";
 };
 
-grant codeBase "file:${build.home}/serialization-java/target/test/classes/-"
-{
-    permission java.io.SerializablePermission "allowSerializationReflection";
-};
-
-grant codeBase "file:${build.home}/river/target/test/classes/-"
-{
-    permission java.io.SerializablePermission "allowSerializationReflection";
-};
-
-
 // Permissions for the core
 
 grant codeBase "file:${build.home}/api/target/main/classes/-"

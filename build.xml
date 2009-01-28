@@ -106,80 +106,6 @@
         <touch file="river/target/main/.lastcompile" verbose="false"/>
     </target>
 
-    <target name="river.test.compile.depcheck">
-        <mkdir dir="river/target/test"/>
-        <uptodate property="river.compile.uptodate" targetfile="river/target/test/.lastcompile">
-            <srcfiles dir="river/src/test/java">
-                <include name="**/"/>
-                <include name="**/*.java"/>
-                <exclude name="**/.*"/>
-            </srcfiles>
-        </uptodate>
-    </target>
-
-    <target name="river.test.compile" depends="lib.junit,tests,river.compile,river.test.compile.depcheck" unless="river.test.compile.uptodate">
-        <mkdir dir="river/target/test/classes"/>
-        <javac
-                source="${javac.source}"
-                target="${javac.target}"
-                srcdir="river/src/test/java"
-                destdir="river/target/test/classes"
-                debug="true">
-            <compilerarg value="-Xlint:unchecked"/>
-            <classpath>
-                <path refid="api.classpath"/>
-                <path refid="river.classpath"/>
-                <path refid="testing-support.classpath"/>
-                <path refid="tests.classpath"/>
-                <pathelement location="${lib.junit.local}"/>
-            </classpath>
-        </javac>
-        <touch file="river/target/test/.lastcompile" verbose="false"/>
-    </target>
-
-    <target name="river.test.pseudotarget">
-        <echo message="============================================="/>
-        <echo message="${message}"/>
-        <echo message="============================================="/>
-        <mkdir dir="river/target/test-results"/>
-        <junit printsummary="true" fork="yes" includeantruntime="true">
-            <sysproperty key="build.home" value="${basedir}"/>
-            <sysproperty key="ant.library.dir" value="${ant.home}/lib"/>
-            <sysproperty key="lib.junit.local" value="${lib.junit.local}"/>
-            <jvmarg line="${test.jvmargs}"/>
-            <formatter type="plain" extension="${extension}"/>
-            <classpath>
-                <path refid="api.classpath"/>
-                <path refid="river.classpath"/>
-                <path refid="serialization-java.classpath"/>
-                <path refid="testing-support.classpath"/>
-                <path refid="tests.classpath"/>
-                <pathelement location="river/target/test/classes"/>
-                <pathelement location="${lib.junit.local}"/>
-            </classpath>
-            <batchtest fork="yes" todir="river/target/test-results"
-                       haltonfailure="no">
-               <fileset dir="river/target/test/classes">
-                   <include name="**/*TestCase.class"/>
-               </fileset>
-            </batchtest>
-        </junit>
-    </target>
-
-    <target name="river.test" depends="river,testing-support,serialization-java,river.test.compile">
-        <antcall inheritall="true" inheritrefs="true" target="river.test.pseudotarget">
-            <param name="extension" value=".txt"/>
-            <param name="message" value="Running with no security manager"/>
-            <param name="test.jvmargs" value="-Ddummy=dummy"/>
-        </antcall>
-        <antcall inheritall="true" inheritrefs="true" target="river.test.pseudotarget">
-            <param name="extension" value="-security.txt"/>
-            <param name="message" value="Running with security manager"/>
-            <param name="test.jvmargs" value="-Djava.security.manager=org.jboss.testsupport.LoggingSecurityManager -Djava.security.policy=${basedir}/testing-support/src/main/resources/testing.policy -Dsecurity.debug=policy"/>
-        </antcall>
-    </target>
-
-
     <target name="river.clean">
         <delete dir="river/target"/>
     </target>
@@ -219,80 +145,6 @@
         <touch file="serialization-java/target/main/.lastcompile" verbose="false"/>
     </target>
 
-    <target name="serialization-java.test.compile.depcheck">
-        <mkdir dir="serialization-java/target/test"/>
-        <uptodate property="serialization-java.compile.uptodate" targetfile="serialization-java/target/test/.lastcompile">
-            <srcfiles dir="serialization-java/src/test/java">
-                <include name="**/"/>
-                <include name="**/*.java"/>
-                <exclude name="**/.*"/>
-            </srcfiles>
-        </uptodate>
-    </target>
-
-    <target name="serialization-java.test.compile" depends="lib.jboss-serialization,lib.junit,tests,serialization-java.compile,serialization-java.test.compile.depcheck" unless="serialization-java.test.compile.uptodate">
-        <mkdir dir="serialization-java/target/test/classes"/>
-        <javac
-                source="${javac.source}"
-                target="${javac.target}"
-                srcdir="serialization-java/src/test/java"
-                destdir="serialization-java/target/test/classes"
-                debug="true">
-            <compilerarg value="-Xlint:unchecked"/>
-            <classpath>
-                <path refid="api.classpath"/>
-                <path refid="serialization-java.classpath"/>
-                <path refid="testing-support.classpath"/>
-                <path refid="tests.classpath"/>
-                <pathelement location="${lib.jboss-serialization.local}"/>
-                <pathelement location="${lib.junit.local}"/>
-            </classpath>
-        </javac>
-        <touch file="serialization-java/target/test/.lastcompile" verbose="false"/>
-    </target>
-
-    <target name="serialization-java.test.pseudotarget">
-        <echo message="============================================="/>
-        <echo message="${message}"/>
-        <echo message="============================================="/>
-        <mkdir dir="serialization-java/target/test-results"/>
-        <junit printsummary="true" fork="yes" includeantruntime="true">
-            <sysproperty key="build.home" value="${basedir}"/>
-            <sysproperty key="ant.library.dir" value="${ant.home}/lib"/>
-            <sysproperty key="lib.junit.local" value="${lib.junit.local}"/>
-            <jvmarg line="${test.jvmargs}"/>
-            <formatter type="plain" extension="${extension}"/>
-            <classpath>
-                <path refid="api.classpath"/>
-                <path refid="serialization-java.classpath"/>
-                <path refid="tests.classpath"/>
-                <path refid="testing-support.classpath"/>
-                <pathelement location="serialization-java/target/test/classes"/>
-                <pathelement location="${lib.jboss-serialization.local}"/>
-                <pathelement location="${lib.junit.local}"/>
-            </classpath>
-            <batchtest fork="yes" todir="serialization-java/target/test-results"
-                       haltonfailure="no">
-               <fileset dir="serialization-java/target/test/classes">
-                   <include name="**/*TestCase.class"/>
-               </fileset>
-            </batchtest>
-        </junit>
-    </target>
-
-    <target name="serialization-java.test" depends="serialization-java,testing-support,serialization-java.test.compile">
-        <antcall inheritall="true" inheritrefs="true" target="serialization-java.test.pseudotarget">
-            <param name="extension" value=".txt"/>
-            <param name="message" value="Running with no security manager"/>
-            <param name="test.jvmargs" value="-Ddummy=dummy"/>
-        </antcall>
-        <antcall inheritall="true" inheritrefs="true" target="serialization-java.test.pseudotarget">
-            <param name="extension" value="-security.txt"/>
-            <param name="message" value="Running with security manager"/>
-            <param name="test.jvmargs" value="-Djava.security.manager=org.jboss.testsupport.LoggingSecurityManager -Djava.security.policy=${basedir}/testing-support/src/main/resources/testing.policy -Dsecurity.debug=policy"/>
-        </antcall>
-    </target>
-
     <target name="serialization-java.clean">
         <delete dir="serialization-java/target"/>
     </target>
@@ -325,6 +177,9 @@
                 destdir="testing-support/target/main/classes"
                 debug="true">
             <compilerarg value="-Xlint:unchecked"/>
+            <classpath>
+                <pathelement location="${lib.junit.local}"/>
+            </classpath>
         </javac>
         <touch file="testing-support/target/main/.lastcompile" verbose="false"/>
     </target>
@@ -333,7 +188,7 @@
         <delete dir="testing-support/target"/>
     </target>
 
-    <target name="testing-support" description="Build the testing-support module" depends="testing-support.compile">
+    <target name="testing-support" description="Build the testing-support module" depends="lib.junit,testing-support.compile">
         <path id="testing-support.classpath">
             <pathelement location="testing-support/target/main/classes"/>
         </path>
@@ -365,6 +220,7 @@
                 <path refid="api.classpath"/>
                 <path refid="river.classpath"/>
                 <path refid="serialization-java.classpath"/>
+                <path refid="testing-support.classpath"/>
                 <pathelement location="${lib.junit.local}"/>
             </classpath>
         </javac>
@@ -375,7 +231,57 @@
         <delete dir="tests/target"/>
     </target>
 
-    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serialization-java,tests.compile">
+    <target name="tests.run.pseudotarget">
+        <echo message="============================================="/>
+        <echo message="${message}"/>
+        <echo message="============================================="/>
+        <mkdir dir="tests/target/test-results"/>
+        <echo message="JVM args = ${test.jvmargs}"/>
+        <echo message="build.home = ${basedir}"/>
+        <echo message="ant.library.dir = ${ant.home}/lib"/>
+        <echo message="lib.junit.local = ${lib.junit.local}"/>
+        <junit printsummary="true" fork="yes" includeantruntime="true">
+            <sysproperty key="build.home" value="${basedir}"/>
+            <sysproperty key="ant.library.dir" value="${ant.home}/lib"/>
+            <sysproperty key="lib.junit.local" value="${lib.junit.local}"/>
+            <jvmarg line="${test.jvmargs}"/>
+            <formatter type="plain" extension="${extension}"/>
+            <classpath>
+                <path refid="api.classpath"/>
+                <path refid="river.classpath"/>
+                <path refid="serialization-java.classpath"/>
+                <path refid="tests.classpath"/>
+                <path refid="testing-support.classpath"/>
+                <pathelement location="${lib.junit.local}"/>
+            </classpath>
+            <batchtest fork="yes" todir="tests/target/test-results"
+                       haltonfailure="no">
+               <fileset dir="tests/target/main/classes">
+                   <include name="**/*Tests.class"/>
+               </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="tests.run.plain" depends="tests,testing-support">
+        <antcall inheritall="true" inheritrefs="true" target="tests.run.pseudotarget">
+            <param name="extension" value=".txt"/>
+            <param name="message" value="Running with no security manager"/>
+            <param name="test.jvmargs" value="-Ddummy=dummy"/>
+        </antcall>
+    </target>
+
+    <target name="tests.run.security" depends="tests,testing-support">
+        <antcall inheritall="true" inheritrefs="true" target="tests.run.pseudotarget">
+            <param name="extension" value="-security.txt"/>
+            <param name="message" value="Running with security manager"/>
+            <param name="test.jvmargs" value="-Djava.security.manager=org.jboss.testsupport.LoggingSecurityManager -Djava.security.policy=${basedir}/testing-support/src/main/resources/testing.policy -Dsecurity.debug=policy"/>
+        </antcall>
+    </target>
+
+    <target name="tests.run" depends="tests.run.plain,tests.run.security"/>
+
+    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serialization-java,testing-support,tests.compile">
         <path id="tests.classpath">
             <pathelement location="tests/target/main/classes"/>
         </path>
@@ -537,7 +443,7 @@
 
     <target name="all" description="Build all targets" depends="api.jar,river.jar,serialization-java.jar"/>
 
-    <target name="test" description="Run all tests" depends="river.test,serialization-java.test"/>
+    <target name="test" description="Run the tests" depends="tests.run"/>
 
-    <target name="clean" description="Clean all targets" depends="api.clean,river.clean,serialization-java.clean,jars.clean"/>
+    <target name="clean" description="Clean all targets" depends="api.clean,river.clean,serialization-java.clean,tests.clean,jars.clean"/>
 </project>

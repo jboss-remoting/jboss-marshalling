@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.EOFException;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.nio.BufferOverflowException;
@@ -42,14 +43,19 @@ import java.util.Arrays;
  * Static utility methods for simplfying use of marshallers.
  */
 public final class Marshalling {
+
     private Marshalling() {
     }
 
-    private static final StreamHeader DEFAULT_STREAM_HEADER = new StreamHeader() {
+    private static final StreamHeader NULL_STREAM_HEADER = new StreamHeader() {
         public void readHeader(final Unmarshaller input) throws IOException {
         }
 
         public void writeHeader(final Marshaller output) throws IOException {
+        }
+
+        public String toString() {
+            return "null StreamHeader";
         }
     };
 
@@ -59,7 +65,7 @@ public final class Marshalling {
      * @return the default stream header producer
      */
     public static StreamHeader nullStreamHeader() {
-        return DEFAULT_STREAM_HEADER;
+        return NULL_STREAM_HEADER;
     }
 
     /**
@@ -72,8 +78,10 @@ public final class Marshalling {
         return new StaticStreamHeader(headerBytes);
     }
 
-    private static final class StaticStreamHeader implements StreamHeader {
+    private static final class StaticStreamHeader implements StreamHeader, Serializable {
         private final byte[] headerBytes;
+
+        private static final long serialVersionUID = 8465784729867667872L;
 
         public StaticStreamHeader(final byte[] bytes) {
             headerBytes = bytes;
@@ -89,6 +97,10 @@ public final class Marshalling {
 
         public void writeHeader(final Marshaller output) throws IOException {
             output.write(headerBytes);
+        }
+
+        public String toString() {
+            return "static StreamHeader@" + Integer.toHexString(hashCode()) + " (" + headerBytes.length + " bytes)";
         }
     }
 

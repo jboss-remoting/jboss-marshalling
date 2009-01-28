@@ -32,6 +32,7 @@ import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.testsupport.TestSuiteHelper;
 import org.junit.Test;
@@ -75,6 +76,7 @@ public final class SimpleTests extends TestBase {
 
     public SimpleTests(MarshallerFactory marshallerFactory, MarshallingConfiguration configuration) {
         super(marshallerFactory, configuration);
+        System.out.printf("Using %s, %s\n", marshallerFactory, configuration);
     }
 
     @Test
@@ -1065,8 +1067,58 @@ public final class SimpleTests extends TestBase {
     }
 
     @Test
-    public void testComplexObject() throws Throwable {
-        
+    public void testExternalizerAnnotation() throws Throwable {
+        final TestExternalizerWithAnnotation subject = new TestExternalizerWithAnnotation("Title", 1234);
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(subject);
+                marshaller.writeObject(subject);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final TestExternalizerWithAnnotation returnedSubject = (TestExternalizerWithAnnotation) unmarshaller.readObject();
+                assertSame(returnedSubject, unmarshaller.readObject());
+                assertEquals(subject.getString(), returnedSubject.getString());
+                assertEquals(subject.getV(), returnedSubject.getV());
+            }
+        });
     }
 
+    @Externalize(TestAnnotationExternalizer.class)
+    public static final class TestExternalizerWithAnnotation {
+        private final String string;
+        private final int v;
+
+        public TestExternalizerWithAnnotation(final String string, final int v) {
+            this.string = string;
+            this.v = v;
+        }
+
+        public String getString() {
+            return string;
+        }
+
+        public int getV() {
+            return v;
+        }
+    }
+
+    public static final class TestAnnotationExternalizer implements Serializable, Externalizer {
+
+        private static final long serialVersionUID = 1L;
+
+        public void writeExternal(final Object subject, final ObjectOutput output) throws IOException {
+            final TestExternalizerWithAnnotation testSubject = (TestExternalizerWithAnnotation) subject;
+            output.writeObject(testSubject.getString());
+            output.writeInt(testSubject.getV());
+        }
+
+        public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
+            return new TestExternalizerWithAnnotation((String) input.readObject(), input.readInt());
+        }
+
+        public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
+            // empty
+        }
+    }
 }

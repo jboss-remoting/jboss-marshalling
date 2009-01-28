@@ -57,6 +57,26 @@ public interface ClassResolver {
     void annotateProxyClass(Marshaller marshaller, Class<?> proxyClass) throws IOException;
 
     /**
+     * Get the class name to write for a given class.  The class name will be written as part of the
+     * class descriptor.
+     *
+     * @param clazz the class
+     * @return the class name
+     * @throws IOException if an error occurs
+     */
+    String getClassName(Class<?> clazz) throws IOException;
+
+    /**
+     * Get the interface names to write for a given proxy class.  The interface names will be written as part
+     * of the class descriptor.
+     *
+     * @param proxyClass the proxy class
+     * @return the proxy class interface names
+     * @throws IOException if an error occurs
+     */
+    String[] getProxyInterfaces(Class<?> proxyClass) throws IOException;
+
+    /**
      * Load the local class for a class descriptor.  The class descriptor has already been read,
      * but any data written by {@link #annotateClass(Marshaller, Class)} should be read by this method.
      *

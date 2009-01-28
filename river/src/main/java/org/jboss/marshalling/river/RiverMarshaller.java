@@ -583,10 +583,10 @@ public class RiverMarshaller extends AbstractMarshaller {
             classTableWriter.writeClass(this, objClass);
         } else {
             write(Protocol.ID_PROXY_CLASS);
-            final Class<?>[] interfaces = objClass.getInterfaces();
-            writeInt(interfaces.length);
-            for (Class<?> interf : interfaces) {
-                writeString(interf.getName());
+            final String[] names = classResolver.getProxyInterfaces(objClass);
+            writeInt(names.length);
+            for (String name : names) {
+                writeString(name);
             }
             classCache.put(objClass, classSeq++);
             classResolver.annotateProxyClass(this, objClass);
@@ -607,7 +607,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             classTableWriter.writeClass(this, objClass);
         } else {
             write(Protocol.ID_ENUM_TYPE_CLASS);
-            writeString(objClass.getName());
+            writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
         }
@@ -696,7 +696,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 classTableWriter.writeClass(this, objClass);
             } else {
                 write(Protocol.ID_PLAIN_CLASS);
-                writeString(objClass.getName());
+                writeString(classResolver.getClassName(objClass));
                 doAnnotateClass(objClass);
                 classCache.put(objClass, classSeq++);
             }
@@ -732,7 +732,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             classTableWriter.writeClass(this, objClass);
         } else {
             write(Protocol.ID_SERIALIZABLE_CLASS);
-            writeString(objClass.getName());
+            writeString(classResolver.getClassName(objClass));
             final SerializableClass info = registry.lookup(objClass);
             writeLong(info.getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
@@ -768,7 +768,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             classTableWriter.writeClass(this, objClass);
         } else {
             write(Protocol.ID_EXTERNALIZABLE_CLASS);
-            writeString(objClass.getName());
+            writeString(classResolver.getClassName(objClass));
             writeLong(registry.lookup(objClass).getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
@@ -789,7 +789,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             classTableWriter.writeClass(this, objClass);
         } else {
             write(Protocol.ID_EXTERNALIZER_CLASS);
-            writeString(objClass.getName());
+            writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
             writeObject(externalizer);

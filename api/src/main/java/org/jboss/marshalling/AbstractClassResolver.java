@@ -61,6 +61,21 @@ public abstract class AbstractClassResolver implements ClassResolver {
         return loader;
     }
 
+    /** {@inheritDoc}  The base implemenation returns the name of the class. */
+    public String getClassName(final Class<?> clazz) throws IOException {
+        return clazz.getName();
+    }
+
+    /** {@inheritDoc}  The base implementation returns the name of each interface (via {@link #getClassName(Class) getClassName()} implemented by the given class. */
+    public String[] getProxyInterfaces(final Class<?> proxyClass) throws IOException {
+        final Class<?>[] interfaces = proxyClass.getInterfaces();
+        final String[] names = new String[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            names[i] = getClassName(interfaces[i]);
+        }
+        return names;
+    }
+
     /**
      * {@inheritDoc}  The base implementation uses the class loader returned from {@code getClassLoader()} and
      * loads the class by name.

@@ -37,6 +37,7 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.AbstractClassResolver;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.testsupport.LoggingHelper;
 
@@ -278,14 +279,18 @@ public class JavaSerializationMarshallingTestCase extends TestCase implements Se
       }
    }
    
-   static class TestClassResolver implements ClassResolver {
+   static class TestClassResolver extends AbstractClassResolver {
       private String[] storedClassNames = new String[16];
       private int counter = -1;
       private boolean writing = true;
       private boolean annotateVisited;
       private boolean resolveVisited;
-      
-      public void annotateClass(Marshaller marshaller, Class<?> clazz) throws IOException {
+
+       protected ClassLoader getClassLoader() {
+           return null;
+       }
+
+       public void annotateClass(Marshaller marshaller, Class<?> clazz) throws IOException {
          annotateVisited = true;
          System.out.println("annotateClass() visited");
          storedClassNames[++counter] = "|" + clazz.getName() + "|";
@@ -319,14 +324,18 @@ public class JavaSerializationMarshallingTestCase extends TestCase implements Se
       }
    }
 
-   static class TestProxyClassResolver implements ClassResolver {
+   static class TestProxyClassResolver extends AbstractClassResolver {
       private String[] storedClassNames = new String[16];
       private int counter = -1;
       private boolean writing = true;
       private boolean annotateVisited;
       private boolean resolveVisited;
 
-      public void annotateClass(Marshaller marshaller, Class<?> clazz) throws IOException {
+       protected ClassLoader getClassLoader() {
+           return null;
+       }
+
+       public void annotateClass(Marshaller marshaller, Class<?> clazz) throws IOException {
          System.out.println("annotateClass() visited");
       }
 

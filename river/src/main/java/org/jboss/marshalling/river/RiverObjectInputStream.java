@@ -23,6 +23,16 @@
 package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectInputStream;
+import org.jboss.marshalling.util.ReadField;
+import org.jboss.marshalling.util.ShortReadField;
+import org.jboss.marshalling.util.ObjectReadField;
+import org.jboss.marshalling.util.LongReadField;
+import org.jboss.marshalling.util.IntReadField;
+import org.jboss.marshalling.util.FloatReadField;
+import org.jboss.marshalling.util.DoubleReadField;
+import org.jboss.marshalling.util.CharReadField;
+import org.jboss.marshalling.util.ByteReadField;
+import org.jboss.marshalling.util.BooleanReadField;
 import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 import java.io.ObjectInputValidation;
@@ -71,84 +81,39 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
             SerializableField field = streamFields[i];
             switch (field.getKind()) {
                 case BOOLEAN: {
-                    final boolean value = unmarshaller.readBoolean();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public boolean getBoolean() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new BooleanReadField(field, unmarshaller.readBoolean(), false);
                     break;
                 }
                 case BYTE: {
-                    final byte value = unmarshaller.readByte();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public byte getByte() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new ByteReadField(field, unmarshaller.readByte(), false);
                     break;
                 }
                 case CHAR: {
-                    final char value = unmarshaller.readChar();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public char getChar() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new CharReadField(field, unmarshaller.readChar(), false);
                     break;
                 }
                 case DOUBLE: {
-                    final double value = unmarshaller.readDouble();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public double getDouble() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new DoubleReadField(field, unmarshaller.readDouble(), false);
                     break;
                 }
                 case FLOAT: {
-                    final float value = unmarshaller.readFloat();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public float getFloat() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new FloatReadField(field, unmarshaller.readFloat(), false);
                     break;
                 }
                 case INT: {
-                    final int value = unmarshaller.readInt();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public int getInt() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new IntReadField(field, unmarshaller.readInt(), false);
                     break;
                 }
                 case LONG: {
-                    final long value = unmarshaller.readLong();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public long getLong() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new LongReadField(field, unmarshaller.readLong(), false);
                     break;
                 }
                 case OBJECT: {
-                    final Object value = unmarshaller.readObject();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public Object getObject() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new ObjectReadField(field, unmarshaller.readObject(), false);
                     break;
                 }
                 case SHORT: {
-                    final short value = unmarshaller.readShort();
-                    readFields[i] = new ReadField(field.getName(), false) {
-                        public short getShort() throws IOException {
-                            return value;
-                        }
-                    };
+                    readFields[i] = new ShortReadField(field, unmarshaller.readShort(), false);
                     break;
                 }
                 default:

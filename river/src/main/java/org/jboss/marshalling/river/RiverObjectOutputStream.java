@@ -23,6 +23,16 @@
 package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectOutputStream;
+import org.jboss.marshalling.util.BooleanFieldPutter;
+import org.jboss.marshalling.util.ByteFieldPutter;
+import org.jboss.marshalling.util.CharFieldPutter;
+import org.jboss.marshalling.util.DoubleFieldPutter;
+import org.jboss.marshalling.util.FloatFieldPutter;
+import org.jboss.marshalling.util.IntFieldPutter;
+import org.jboss.marshalling.util.LongFieldPutter;
+import org.jboss.marshalling.util.ShortFieldPutter;
+import org.jboss.marshalling.util.ObjectFieldPutter;
+import org.jboss.marshalling.util.FieldPutter;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.reflect.SerializableClass;
 import java.io.IOException;

@@ -75,7 +75,7 @@ public abstract class AbstractMarshaller implements Marshaller {
         bufsize = configuration.getBufferSize();
     }
 
-    private NotActiveException notActiveException() {
+    private static NotActiveException notActiveException() {
         return new NotActiveException("Output not started");
     }
 

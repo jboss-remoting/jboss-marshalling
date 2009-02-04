@@ -36,7 +36,7 @@ public class ObjectFieldPutter extends FieldPutter {
         this.unshared = unshared;
     }
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         if (unshared) {
             marshaller.writeObjectUnshared(value);
         } else {

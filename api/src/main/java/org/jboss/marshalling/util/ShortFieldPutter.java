@@ -31,7 +31,7 @@ import java.io.IOException;
 public class ShortFieldPutter extends FieldPutter {
     private short value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeShort(value);
     }
 

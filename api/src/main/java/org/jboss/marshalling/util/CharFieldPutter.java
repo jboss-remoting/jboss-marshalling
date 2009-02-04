@@ -31,7 +31,7 @@ import java.io.IOException;
 public class CharFieldPutter extends FieldPutter {
     private char value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeChar(value);
     }
 

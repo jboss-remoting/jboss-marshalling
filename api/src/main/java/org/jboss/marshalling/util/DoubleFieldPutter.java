@@ -31,7 +31,7 @@ import java.io.IOException;
 public class DoubleFieldPutter extends FieldPutter {
     private double value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeDouble(value);
     }
 

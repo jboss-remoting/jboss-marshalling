@@ -31,7 +31,7 @@ import java.io.IOException;
 public class ByteFieldPutter extends FieldPutter {
     private byte value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeByte(value);
     }
 

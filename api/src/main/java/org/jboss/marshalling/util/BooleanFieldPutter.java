@@ -31,7 +31,7 @@ import org.jboss.marshalling.Marshaller;
 public class BooleanFieldPutter extends FieldPutter {
     private boolean value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeBoolean(value);
     }
 

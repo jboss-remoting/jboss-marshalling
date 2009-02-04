@@ -31,7 +31,7 @@ import java.io.IOException;
 public class FloatFieldPutter extends FieldPutter {
     private float value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeFloat(value);
     }
 

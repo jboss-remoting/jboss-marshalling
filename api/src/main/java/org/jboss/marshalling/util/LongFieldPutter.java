@@ -31,7 +31,7 @@ import java.io.IOException;
 public class LongFieldPutter extends FieldPutter {
     private long value;
 
-    protected void write(final Marshaller marshaller) throws IOException {
+    public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeLong(value);
     }
 

@@ -31,6 +31,7 @@ import java.io.EOFException;
  */
 public final class UTFUtils {
     private static final String INVALID_BYTE = "Invalid byte";
+    private static final String MALFORMED = "Malformed UTF-8 sequence";
 
     private UTFUtils() {
     }
@@ -124,6 +125,67 @@ public final class UTFUtils {
             chars[i] = c == -1 ? 0 : (char) c;
         }
         return String.valueOf(chars);
+    }
+
+    /**
+     * Read the given number of characters from the given byte input.  The length given is in bytes.
+     *
+     * @param input the byte source
+     * @param len the number of bytes to read
+     * @return the string
+     * @throws IOException if an I/O error occurs
+     */
+    public static String readUTFBytesByByteCount(final ByteInput input, final long len) throws IOException {
+        final StringBuilder builder = new StringBuilder();
+        for (long i = 0; i < len; i ++) {
+            final int a = input.read();
+            if (a < 0) {
+                throw new EOFException();
+            } else if (a == 0) {
+                builder.append('\0');
+            } else if (a < 0x80) {
+                builder.append((char) a);
+            } else if (a < 0xc0) {
+                throw new UTFDataFormatException(INVALID_BYTE);
+            } else if (a < 0xe0) {
+                if (++i < len) {
+                    final int b = input.read();
+                    if (b == -1) {
+                        throw new EOFException();
+                    } else if ((b & 0xc0) != 0x80) {
+                        throw new UTFDataFormatException(INVALID_BYTE);
+                    }
+                    builder.append((char) ((a & 0x1f) << 6 | b & 0x3f));
+                } else {
+                    throw new UTFDataFormatException(MALFORMED);
+                }
+            } else if (a < 0xf0) {
+                if (++i < len) {
+                    final int b = input.read();
+                    if (b == -1) {
+                        throw new EOFException();
+                    } else if ((b & 0xc0) != 0x80) {
+                        throw new UTFDataFormatException(INVALID_BYTE);
+                    }
+                    if (++i < len) {
+                        final int c1 = input.read();
+                        if (c1 == -1) {
+                            throw new EOFException();
+                        } else if ((c1 & 0xc0) != 0x80) {
+                            throw new UTFDataFormatException(INVALID_BYTE);
+                        }
+                        builder.append((char) ((a & 0x0f) << 12 | (b & 0x3f) << 6 | c1 & 0x3f));
+                    } else {
+                        throw new UTFDataFormatException(MALFORMED);
+                    }
+                } else {
+                    throw new UTFDataFormatException(MALFORMED);
+                }
+            } else {
+                throw new UTFDataFormatException(INVALID_BYTE);
+            }
+        }
+        return builder.toString();
     }
 
     /**

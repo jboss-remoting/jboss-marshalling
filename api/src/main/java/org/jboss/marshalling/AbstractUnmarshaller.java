@@ -270,6 +270,36 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
 
     /** {@inheritDoc} */
     public int readUnsignedByte() throws IOException {
+        return readUnsignedByteDirect();
+    }
+
+    /** {@inheritDoc} */
+    public short readShort() throws IOException {
+        int position = this.position;
+        int remaining = limit - position;
+        if (remaining < 2) {
+            return (short) (readUnsignedByteDirect() << 8 | readUnsignedByteDirect());
+        } else {
+            final byte[] buffer = this.buffer;
+            this.position = position + 2;
+            return (short) (buffer[position] << 8 | (buffer[position + 1] & 0xff));
+        }
+    }
+
+    /** {@inheritDoc} */
+    public int readUnsignedShort() throws IOException {
+        int position = this.position;
+        int remaining = limit - position;
+        if (remaining < 2) {
+            return readUnsignedByteDirect() << 8 | readUnsignedByteDirect();
+        } else {
+            final byte[] buffer = this.buffer;
+            this.position = position + 2;
+            return (buffer[position] & 0xff) << 8 | (buffer[position + 1] & 0xff);
+        }
+    }
+
+    protected int readUnsignedByteDirect() throws IOException {
         final int limit;
         if ((limit = this.limit) == -1) {
             throw eofOnRead();
@@ -287,37 +317,11 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
     }
 
     /** {@inheritDoc} */
-    public short readShort() throws IOException {
-        int position = this.position;
-        int remaining = limit - position;
-        if (remaining < 2) {
-            return (short) (readUnsignedByte() << 8 | readUnsignedByte());
-        } else {
-            final byte[] buffer = this.buffer;
-            this.position = position + 2;
-            return (short) (buffer[position] << 8 | (buffer[position + 1] & 0xff));
-        }
-    }
-
-    /** {@inheritDoc} */
-    public int readUnsignedShort() throws IOException {
-        int position = this.position;
-        int remaining = limit - position;
-        if (remaining < 2) {
-            return readUnsignedByte() << 8 | readUnsignedByte();
-        } else {
-            final byte[] buffer = this.buffer;
-            this.position = position + 2;
-            return (buffer[position] & 0xff) << 8 | (buffer[position + 1] & 0xff);
-        }
-    }
-
-    /** {@inheritDoc} */
     public char readChar() throws IOException {
         int position = this.position;
         int remaining = limit - position;
         if (remaining < 2) {
-            return (char) (readUnsignedByte() << 8 | readUnsignedByte());
+            return (char) (readUnsignedByteDirect() << 8 | readUnsignedByteDirect());
         } else {
             final byte[] buffer = this.buffer;
             this.position = position + 2;
@@ -327,10 +331,28 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
 
     /** {@inheritDoc} */
     public int readInt() throws IOException {
+        return readIntDirect();
+    }
+
+    public long readLong() throws IOException {
+        return readLongDirect();
+    }
+
+    /** {@inheritDoc} */
+    protected long readLongDirect() throws IOException {
+        return (long) readIntDirect() << 32L | (long) readIntDirect() & 0xffffffffL;
+    }
+
+    /** {@inheritDoc} */
+    public float readFloat() throws IOException {
+        return Float.intBitsToFloat(readIntDirect());
+    }
+
+    protected int readIntDirect() throws IOException {
         int position = this.position;
         int remaining = limit - position;
         if (remaining < 4) {
-            return readUnsignedByte() << 24 | readUnsignedByte() << 16 | readUnsignedByte() << 8 | readUnsignedByte();
+            return readUnsignedByteDirect() << 24 | readUnsignedByteDirect() << 16 | readUnsignedByteDirect() << 8 | readUnsignedByteDirect();
         } else {
             final byte[] buffer = this.buffer;
             this.position = position + 4;
@@ -339,18 +361,8 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
     }
 
     /** {@inheritDoc} */
-    public long readLong() throws IOException {
-        return (long)readInt() << 32L | (long)readInt() & 0xffffffffL;
-    }
-
-    /** {@inheritDoc} */
-    public float readFloat() throws IOException {
-        return Float.intBitsToFloat(readInt());
-    }
-
-    /** {@inheritDoc} */
     public double readDouble() throws IOException {
-        return Double.longBitsToDouble(readLong());
+        return Double.longBitsToDouble(readLongDirect());
     }
 
     /** {@inheritDoc} */

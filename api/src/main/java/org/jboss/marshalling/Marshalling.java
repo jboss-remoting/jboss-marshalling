@@ -90,9 +90,8 @@ public final class Marshalling {
         public void readHeader(final ByteInput input) throws IOException {
             final byte[] buf = new byte[headerBytes.length];
             readFully(input, buf);
-            input.read(buf);
             if (! Arrays.equals(buf, headerBytes)) {
-                throw new StreamCorruptedException("Header is incorrect");
+                throw new StreamCorruptedException("Header is incorrect (expected " + Arrays.toString(headerBytes) + ", got " + Arrays.toString(buf) + ")");
             }
         }
 

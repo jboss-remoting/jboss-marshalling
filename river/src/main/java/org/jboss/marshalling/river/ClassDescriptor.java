@@ -75,8 +75,4 @@ public class ClassDescriptor {
     public int getTypeID() {
         return typeID;
     }
-
-    public static ClassDescriptor forClass(Class<?> clazz) {
-        return null;
-    }
 }

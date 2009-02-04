@@ -34,7 +34,7 @@ public interface StreamHeader {
      * @param input the stream header
      * @throws IOException if the header is invalid or an error occurs
      */
-    void readHeader(Unmarshaller input) throws IOException;
+    void readHeader(ByteInput input) throws IOException;
 
     /**
      * Write the stream header to the stream.
@@ -42,5 +42,5 @@ public interface StreamHeader {
      * @param output the stream header
      * @throws IOException if an error occurs
      */
-    void writeHeader(Marshaller output) throws IOException;
+    void writeHeader(ByteOutput output) throws IOException;
 }

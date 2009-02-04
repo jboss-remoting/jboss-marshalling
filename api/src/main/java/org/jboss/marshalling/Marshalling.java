@@ -48,10 +48,10 @@ public final class Marshalling {
     }
 
     private static final StreamHeader NULL_STREAM_HEADER = new StreamHeader() {
-        public void readHeader(final Unmarshaller input) throws IOException {
+        public void readHeader(final ByteInput input) throws IOException {
         }
 
-        public void writeHeader(final Marshaller output) throws IOException {
+        public void writeHeader(final ByteOutput output) throws IOException {
         }
 
         public String toString() {
@@ -87,20 +87,60 @@ public final class Marshalling {
             headerBytes = bytes;
         }
 
-        public void readHeader(final Unmarshaller input) throws IOException {
+        public void readHeader(final ByteInput input) throws IOException {
             final byte[] buf = new byte[headerBytes.length];
-            input.readFully(buf);
+            readFully(input, buf);
+            input.read(buf);
             if (! Arrays.equals(buf, headerBytes)) {
                 throw new StreamCorruptedException("Header is incorrect");
             }
         }
 
-        public void writeHeader(final Marshaller output) throws IOException {
+        public void writeHeader(final ByteOutput output) throws IOException {
             output.write(headerBytes);
         }
 
         public String toString() {
             return "static StreamHeader@" + Integer.toHexString(hashCode()) + " (" + headerBytes.length + " bytes)";
+        }
+    }
+
+    /**
+     * Read bytes from a {@code ByteInput}.  Fully fills in the array.
+     *
+     * @param input the input
+     * @param dest the destination
+     * @throws EOFException if the end of file is reached before the array is filled
+     * @throws IOException if an I/O error occurs
+     */
+    public static void readFully(ByteInput input, byte[] dest) throws IOException {
+        final int len = dest.length;
+        final int r = input.read(dest);
+        if (r == -1) {
+            throw new EOFException();
+        } else if (r < len) {
+            readFully(input, dest, r, len - r);
+        }
+    }
+
+    /**
+     * Read bytes from a {@code ByteInput}.  Fully fills in {@code len} bytes in the array.
+     *
+     * @param input the input
+     * @param dest the destination
+     * @param offs the offset into the array
+     * @param len the number of bytes
+     * @throws EOFException if the end of file is reached before the array is filled
+     * @throws IOException if an I/O error occurs
+     */
+    public static void readFully(ByteInput input, byte[] dest, int offs, int len) throws IOException {
+        while (len > 0) {
+            final int r = input.read(dest, offs, len);
+            if (r == -1) {
+                throw new EOFException();
+            }
+            len -= r;
+            offs += r;
         }
     }
 

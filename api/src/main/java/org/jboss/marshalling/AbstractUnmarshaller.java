@@ -367,12 +367,12 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
 
     /** {@inheritDoc} */
     public String readLine() throws IOException {
-        throw new UnsupportedOperationException("default readLine implementation");
+        throw new UnsupportedOperationException("readLine() not supported");
     }
 
     /** {@inheritDoc} */
     public String readUTF() throws IOException {
-        throw new UnsupportedOperationException("default readUTF implementation");
+        return UTFUtils.readUTFBytesByByteCount(this, readUnsignedShort());
     }
 
     /** {@inheritDoc} */

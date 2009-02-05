@@ -555,13 +555,15 @@ public class RiverMarshaller extends AbstractMarshaller {
         return objectOutputStream == null ? this.objectOutputStream = createObjectOutputStream() : objectOutputStream;
     }
 
+    private final PrivilegedExceptionAction<RiverObjectOutputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<RiverObjectOutputStream>() {
+        public RiverObjectOutputStream run() throws IOException {
+            return new RiverObjectOutputStream(RiverMarshaller.this);
+        }
+    };
+
     private RiverObjectOutputStream createObjectOutputStream() throws IOException {
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<RiverObjectOutputStream>() {
-                public RiverObjectOutputStream run() throws IOException {
-                    return new RiverObjectOutputStream(RiverMarshaller.this);
-                }
-            });
+            return AccessController.doPrivileged(createObjectOutputStreamAction);
         } catch (PrivilegedActionException e) {
             throw (IOException) e.getCause();
         }

@@ -59,6 +59,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private MarshallerObjectInput objectInput;
 
     private static final Field proxyInvocationHandler;
+    private RiverObjectInputStream objectInputStream;
 
     static {
         proxyInvocationHandler = AccessController.doPrivileged(new PrivilegedAction<Field>() {
@@ -378,7 +379,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private static final InvocationHandler DUMMY_HANDLER = new DummyInvocationHandler();
 
-    private static final Object createProxyInstance(Creator creator, Class<?> type) throws IOException {
+    private static Object createProxyInstance(Creator creator, Class<?> type) throws IOException {
         try {
             return creator.create(type);
         } catch (Exception e) {
@@ -659,7 +660,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             doInitSerializable(obj, (SerializableClassDescriptor) superDescriptor);
         }
         if (info.hasReadObject()) {
-            final RiverObjectInputStream objectInputStream = createObjectInputStream();
+            final RiverObjectInputStream objectInputStream = getObjectInputStream();
             final SerializableClassDescriptor oldDescriptor = objectInputStream.swapClass(descriptor);
             final Object oldObj = objectInputStream.swapCurrent(obj);
             final RiverObjectInputStream.State restoreState = objectInputStream.start();
@@ -685,6 +686,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             return new RiverObjectInputStream(RiverUnmarshaller.this);
         }
     };
+
+    private RiverObjectInputStream getObjectInputStream() throws IOException {
+        final RiverObjectInputStream objectInputStream = this.objectInputStream;
+        return objectInputStream == null ? this.objectInputStream = createObjectInputStream() : objectInputStream; 
+    }
 
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         try {

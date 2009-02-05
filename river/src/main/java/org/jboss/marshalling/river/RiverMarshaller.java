@@ -35,12 +35,14 @@ import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
+import org.jboss.marshalling.MarshallerObjectOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.InvalidObjectException;
 import java.io.InvalidClassException;
+import java.io.ObjectOutput;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Field;
 import java.util.IdentityHashMap;
@@ -60,7 +62,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     private int classSeq;
     private final SerializableClassRegistry registry;
     private RiverObjectOutputStream objectOutputStream;
-    private RiverObjectOutput objectOutput;
+    private MarshallerObjectOutput objectOutput;
 
     protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {
         super(marshallerFactory, configuration);
@@ -429,7 +431,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
             writeExternalizerClass(objClass, externalizer);
             instanceCache.put(obj, instanceSeq++);
-            final RiverObjectOutput objectOutput = getObjectOutput();
+            final ObjectOutput objectOutput = getObjectOutput();
             externalizer.writeExternal(obj, objectOutput);
             if (unshared) {
                 instanceCache.put(obj, -1);
@@ -441,11 +443,9 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
             instanceCache.put(obj, instanceSeq++);
             final Externalizable ext = (Externalizable) obj;
-            final RiverObjectOutput objectOutput = getObjectOutput();
+            final ObjectOutput objectOutput = getObjectOutput();
             writeExternalizableClass(objClass);
-            objectOutput.start();
             ext.writeExternal(objectOutput);
-            objectOutput.finish();
             if (unshared) {
                 instanceCache.put(obj, -1);
             }
@@ -465,9 +465,9 @@ public class RiverMarshaller extends AbstractMarshaller {
         throw new NotSerializableException(objClass.getName());
     }
 
-    protected RiverObjectOutput getObjectOutput() {
-        final RiverObjectOutput output = objectOutput;
-        return output == null ? objectOutput = new RiverObjectOutput(this) : output;
+    protected ObjectOutput getObjectOutput() {
+        final ObjectOutput output = objectOutput;
+        return output == null ? objectOutput = new MarshallerObjectOutput(this) : output;
     }
 
 
@@ -501,9 +501,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected void doWriteFields(final SerializableClass info, final Object obj) throws IOException {
         final SerializableField[] serializableFields = info.getFields();
-        final int cnt = serializableFields.length;
-        for (int i = 0; i < cnt; i++) {
-            SerializableField serializableField = serializableFields[i];
+        for (SerializableField serializableField : serializableFields) {
             try {
                 final Field field = serializableField.getField();
                 switch (serializableField.getKind()) {

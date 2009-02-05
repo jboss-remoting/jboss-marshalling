@@ -30,6 +30,7 @@ import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Creator;
+import org.jboss.marshalling.MarshallerObjectInput;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
@@ -55,7 +56,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final ArrayList<Object> instanceCache;
     private final ArrayList<ClassDescriptor> classCache;
     private final SerializableClassRegistry registry;
-    private RiverObjectInput objectInput;
+    private MarshallerObjectInput objectInput;
 
     private static final Field proxyInvocationHandler;
 
@@ -93,9 +94,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         finish();
     }
 
-    private RiverObjectInput getObjectInput() {
-        final RiverObjectInput objectInput = this.objectInput;
-        return objectInput == null ? this.objectInput = new RiverObjectInput(this) : objectInput;
+    private MarshallerObjectInput getObjectInput() {
+        final MarshallerObjectInput objectInput = this.objectInput;
+        return objectInput == null ? this.objectInput = new MarshallerObjectInput(this) : objectInput;
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
@@ -679,13 +680,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
+    private final PrivilegedExceptionAction<RiverObjectInputStream> createObjectInputStreamAction = new PrivilegedExceptionAction<RiverObjectInputStream>() {
+        public RiverObjectInputStream run() throws IOException {
+            return new RiverObjectInputStream(RiverUnmarshaller.this);
+        }
+    };
+
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<RiverObjectInputStream>() {
-                public RiverObjectInputStream run() throws Exception {
-                    return new RiverObjectInputStream(RiverUnmarshaller.this);
-                }
-            });
+            return AccessController.doPrivileged(createObjectInputStreamAction);
         } catch (PrivilegedActionException e) {
             throw (IOException) e.getCause();
         }

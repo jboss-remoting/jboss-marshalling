@@ -329,9 +329,8 @@ public abstract class AbstractMarshaller implements Marshaller {
 
     /** {@inheritDoc} */
     public void writeUTF(final String s) throws IOException {
-        flush();
         writeShort(UTFUtils.getShortUTFLength(s));
-        UTFUtils.writeUTFBytes(byteOutput, s);
+        UTFUtils.writeUTFBytes(this, s);
     }
 
     /** {@inheritDoc} */

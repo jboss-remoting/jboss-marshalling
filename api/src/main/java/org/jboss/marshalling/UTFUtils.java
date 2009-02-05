@@ -140,7 +140,7 @@ public final class UTFUtils {
         for (long i = 0; i < len; i ++) {
             final int a = input.read();
             if (a < 0) {
-                throw new EOFException();
+                throw new EOFException("Expected " + (len - i) + " more bytes");
             } else if (a == 0) {
                 builder.append('\0');
             } else if (a < 0x80) {
@@ -151,7 +151,7 @@ public final class UTFUtils {
                 if (++i < len) {
                     final int b = input.read();
                     if (b == -1) {
-                        throw new EOFException();
+                        throw new EOFException("Expected " + (len - i) + " more bytes");
                     } else if ((b & 0xc0) != 0x80) {
                         throw new UTFDataFormatException(INVALID_BYTE);
                     }
@@ -163,14 +163,14 @@ public final class UTFUtils {
                 if (++i < len) {
                     final int b = input.read();
                     if (b == -1) {
-                        throw new EOFException();
+                        throw new EOFException("Expected " + (len - i) + " more bytes");
                     } else if ((b & 0xc0) != 0x80) {
                         throw new UTFDataFormatException(INVALID_BYTE);
                     }
                     if (++i < len) {
                         final int c1 = input.read();
                         if (c1 == -1) {
-                            throw new EOFException();
+                            throw new EOFException("Expected " + (len - i) + " more bytes");
                         } else if ((c1 & 0xc0) != 0x80) {
                             throw new UTFDataFormatException(INVALID_BYTE);
                         }

@@ -266,6 +266,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         if (externalizer != null) {
             final ExternalizedObject eo = new ExternalizedObject(externalizer, obj);
             doWriteObject(eo, unshared);
+            replacementCache.put(obj, eo);
             return;
         } else if (obj instanceof Externalizable) {
             write(TC_OBJECT);

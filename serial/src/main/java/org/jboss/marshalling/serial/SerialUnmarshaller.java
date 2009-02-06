@@ -249,11 +249,11 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     } catch (ClassCastException e) {
                         throw new InvalidClassException("Expected an enum class descriptor");
                     }
-                    final int h = instanceCache.size();
+                    final int idx = instanceCache.size();
                     instanceCache.add(UNRESOLVED);
                     final String constName = (String) doReadObject(false);
                     final Enum obj = Enum.valueOf(enumType, constName);
-                    instanceCache.set(h, obj);
+                    instanceCache.set(idx, obj);
                     return obj;
                 }
 
@@ -263,6 +263,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         throw new NotSerializableException(descriptor.getClass().getName());
                     }
                     final Object obj = creator.create(descriptor.getType());
+                    final int idx = instanceCache.size();
                     instanceCache.add(unshared ? UNSHARED : obj);
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
                         if (obj instanceof Externalizable) {
@@ -282,6 +283,12 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         throw new InvalidObjectException("Created object should not be Externalizable but it is");
                     } else {
                         doReadSerialObject(descriptor, obj);
+                    }
+                    final SerializableClass sc = registry.lookup(obj.getClass());
+                    if (sc.hasReadResolve()) {
+                        final Object replacement = sc.callReadResolve(obj);
+                        instanceCache.set(idx, replacement);
+                        return replacement;
                     }
                     return obj;
                 }

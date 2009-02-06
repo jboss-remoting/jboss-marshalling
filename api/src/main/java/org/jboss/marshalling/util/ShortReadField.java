@@ -32,9 +32,14 @@ public class ShortReadField extends ReadField {
 
     private final short value;
 
-    public ShortReadField(final SerializableField field, final short value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public ShortReadField(final SerializableField field, final short value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public ShortReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public short getShort() throws IOException {

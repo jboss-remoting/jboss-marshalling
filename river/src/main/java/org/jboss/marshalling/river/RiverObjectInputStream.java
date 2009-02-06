@@ -81,39 +81,39 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
             SerializableField field = streamFields[i];
             switch (field.getKind()) {
                 case BOOLEAN: {
-                    readFields[i] = new BooleanReadField(field, unmarshaller.readBoolean(), false);
+                    readFields[i] = new BooleanReadField(field, unmarshaller.readBoolean());
                     break;
                 }
                 case BYTE: {
-                    readFields[i] = new ByteReadField(field, unmarshaller.readByte(), false);
+                    readFields[i] = new ByteReadField(field, unmarshaller.readByte());
                     break;
                 }
                 case CHAR: {
-                    readFields[i] = new CharReadField(field, unmarshaller.readChar(), false);
+                    readFields[i] = new CharReadField(field, unmarshaller.readChar());
                     break;
                 }
                 case DOUBLE: {
-                    readFields[i] = new DoubleReadField(field, unmarshaller.readDouble(), false);
+                    readFields[i] = new DoubleReadField(field, unmarshaller.readDouble());
                     break;
                 }
                 case FLOAT: {
-                    readFields[i] = new FloatReadField(field, unmarshaller.readFloat(), false);
+                    readFields[i] = new FloatReadField(field, unmarshaller.readFloat());
                     break;
                 }
                 case INT: {
-                    readFields[i] = new IntReadField(field, unmarshaller.readInt(), false);
+                    readFields[i] = new IntReadField(field, unmarshaller.readInt());
                     break;
                 }
                 case LONG: {
-                    readFields[i] = new LongReadField(field, unmarshaller.readLong(), false);
+                    readFields[i] = new LongReadField(field, unmarshaller.readLong());
                     break;
                 }
                 case OBJECT: {
-                    readFields[i] = new ObjectReadField(field, unmarshaller.readObject(), false);
+                    readFields[i] = new ObjectReadField(field, unmarshaller.readObject());
                     break;
                 }
                 case SHORT: {
-                    readFields[i] = new ShortReadField(field, unmarshaller.readShort(), false);
+                    readFields[i] = new ShortReadField(field, unmarshaller.readShort());
                     break;
                 }
                 default:

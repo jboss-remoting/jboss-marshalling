@@ -27,15 +27,6 @@ import java.io.ObjectOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.util.BooleanFieldPutter;
-import org.jboss.marshalling.util.ByteFieldPutter;
-import org.jboss.marshalling.util.CharFieldPutter;
-import org.jboss.marshalling.util.DoubleFieldPutter;
-import org.jboss.marshalling.util.FloatFieldPutter;
-import org.jboss.marshalling.util.IntFieldPutter;
-import org.jboss.marshalling.util.LongFieldPutter;
-import org.jboss.marshalling.util.ShortFieldPutter;
-import org.jboss.marshalling.util.ObjectFieldPutter;
 import org.jboss.marshalling.util.FieldPutter;
 
 /**
@@ -60,75 +51,39 @@ public class RiverPutField extends ObjectOutputStream.PutField {
     }
 
     public void put(final String name, final boolean val) {
-        try {
-            ((BooleanFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a boolean field");
-        }
+        find(name).setBoolean(val);
     }
 
     public void put(final String name, final byte val) {
-        try {
-            ((ByteFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a byte field");
-        }
+        find(name).setByte(val);
     }
 
     public void put(final String name, final char val) {
-        try {
-            ((CharFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a char field");
-        }
+        find(name).setChar(val);
     }
 
     public void put(final String name, final short val) {
-        try {
-            ((ShortFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a short field");
-        }
+        find(name).setShort(val);
     }
 
     public void put(final String name, final int val) {
-        try {
-            ((IntFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not an int field");
-        }
+        find(name).setInt(val);
     }
 
     public void put(final String name, final long val) {
-        try {
-            ((LongFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a long field");
-        }
+        find(name).setLong(val);
     }
 
     public void put(final String name, final float val) {
-        try {
-            ((FloatFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a float field");
-        }
+        find(name).setFloat(val);
     }
 
     public void put(final String name, final double val) {
-        try {
-            ((DoubleFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not a double field");
-        }
+        find(name).setDouble(val);
     }
 
     public void put(final String name, final Object val) {
-        try {
-            ((ObjectFieldPutter)find(name)).set(val);
-        } catch (ClassCastException ex) {
-            throw new IllegalArgumentException("Field named '" + name + "' is not an object field");
-        }
+        find(name).setObject(val);
     }
 
     @Deprecated

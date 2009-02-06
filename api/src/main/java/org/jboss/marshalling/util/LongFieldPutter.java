@@ -35,11 +35,11 @@ public class LongFieldPutter extends FieldPutter {
         marshaller.writeLong(value);
     }
 
-    public long get() {
+    public long getLong() {
         return value;
     }
 
-    public void set(final long value) {
+    public void setLong(final long value) {
         this.value = value;
     }
 }

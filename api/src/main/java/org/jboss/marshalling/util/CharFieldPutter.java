@@ -35,11 +35,11 @@ public class CharFieldPutter extends FieldPutter {
         marshaller.writeChar(value);
     }
 
-    public char get() {
+    public char getChar() {
         return value;
     }
 
-    public void set(final char value) {
+    public void setChar(final char value) {
         this.value = value;
     }
 }

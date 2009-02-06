@@ -32,9 +32,14 @@ public class DoubleReadField extends ReadField {
 
     private final double value;
 
-    public DoubleReadField(final SerializableField field, final double value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public DoubleReadField(final SerializableField field, final double value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public DoubleReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public double getDouble() throws IOException {

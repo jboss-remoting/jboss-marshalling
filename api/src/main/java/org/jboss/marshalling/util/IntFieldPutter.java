@@ -35,11 +35,11 @@ public class IntFieldPutter extends FieldPutter {
         marshaller.writeInt(value);
     }
 
-    public int get() {
+    public int getInt() {
         return value;
     }
 
-    public void set(final int value) {
+    public void setInt(final int value) {
         this.value = value;
     }
 }

@@ -35,11 +35,11 @@ public class FloatFieldPutter extends FieldPutter {
         marshaller.writeFloat(value);
     }
 
-    public float get() {
+    public float getFloat() {
         return value;
     }
 
-    public void set(final float value) {
+    public void setFloat(final float value) {
         this.value = value;
     }
 }

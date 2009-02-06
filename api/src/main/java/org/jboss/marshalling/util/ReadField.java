@@ -80,7 +80,7 @@ public abstract class ReadField implements Comparable<ReadField> {
         throw wrongFieldType();
     }
 
-    private IllegalArgumentException wrongFieldType() {
+    private static IllegalArgumentException wrongFieldType() {
         return new IllegalArgumentException("Invalid field type");
     }
 

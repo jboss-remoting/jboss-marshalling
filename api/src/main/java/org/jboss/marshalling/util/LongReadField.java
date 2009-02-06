@@ -32,9 +32,14 @@ public class LongReadField extends ReadField {
 
     private final long value;
 
-    public LongReadField(final SerializableField field, final long value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public LongReadField(final SerializableField field, final long value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public LongReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public long getLong() throws IOException {

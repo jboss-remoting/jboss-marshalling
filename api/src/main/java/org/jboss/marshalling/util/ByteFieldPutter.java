@@ -35,11 +35,11 @@ public class ByteFieldPutter extends FieldPutter {
         marshaller.writeByte(value);
     }
 
-    public byte get() {
+    public byte getByte() {
         return value;
     }
 
-    public void set(final byte value) {
+    public void setByte(final byte value) {
         this.value = value;
     }
 }

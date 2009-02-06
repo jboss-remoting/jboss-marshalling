@@ -32,9 +32,14 @@ public class CharReadField extends ReadField {
 
     private final char value;
 
-    public CharReadField(final SerializableField field, final char value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public CharReadField(final SerializableField field, final char value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public CharReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public char getChar() throws IOException {

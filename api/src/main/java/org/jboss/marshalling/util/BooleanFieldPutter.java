@@ -35,11 +35,11 @@ public class BooleanFieldPutter extends FieldPutter {
         marshaller.writeBoolean(value);
     }
 
-    public void set(boolean value) {
+    public void setBoolean(boolean value) {
         this.value = value;
     }
 
-    public boolean get() {
+    public boolean getBoolean() {
         return value;
     }
 }

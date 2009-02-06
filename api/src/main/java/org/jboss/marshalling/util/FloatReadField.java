@@ -32,9 +32,14 @@ public class FloatReadField extends ReadField {
 
     private final float value;
 
-    public FloatReadField(final SerializableField field, final float value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public FloatReadField(final SerializableField field, final float value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public FloatReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public float getFloat() throws IOException {

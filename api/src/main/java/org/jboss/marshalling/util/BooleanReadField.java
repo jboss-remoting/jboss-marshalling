@@ -32,9 +32,14 @@ public class BooleanReadField extends ReadField {
 
     private final boolean value;
 
-    public BooleanReadField(final SerializableField field, final boolean value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public BooleanReadField(final SerializableField field, final boolean value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public BooleanReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = false;
     }
 
     public boolean getBoolean() throws IOException {

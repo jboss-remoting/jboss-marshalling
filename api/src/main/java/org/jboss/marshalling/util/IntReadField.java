@@ -32,9 +32,14 @@ public class IntReadField extends ReadField {
 
     private final int value;
 
-    public IntReadField(final SerializableField field, final int value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public IntReadField(final SerializableField field, final int value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public IntReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public int getInt() throws IOException {

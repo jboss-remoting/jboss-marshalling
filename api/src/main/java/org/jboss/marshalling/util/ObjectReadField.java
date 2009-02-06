@@ -32,9 +32,14 @@ public class ObjectReadField extends ReadField {
 
     private final Object value;
 
-    public ObjectReadField(final SerializableField field, final Object value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public ObjectReadField(final SerializableField field, final Object value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public ObjectReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = null;
     }
 
     public Object getObject() throws IOException {

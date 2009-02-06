@@ -32,9 +32,14 @@ public class ByteReadField extends ReadField {
 
     private final byte value;
 
-    public ByteReadField(final SerializableField field, final byte value, final boolean defaulted) {
-        super(field.getName(), defaulted);
+    public ByteReadField(final SerializableField field, final byte value) {
+        super(field.getName(), false);
         this.value = value;
+    }
+
+    public ByteReadField(final SerializableField field) {
+        super(field.getName(), true);
+        value = 0;
     }
 
     public byte getByte() throws IOException {

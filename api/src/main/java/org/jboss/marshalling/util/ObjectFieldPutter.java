@@ -44,11 +44,11 @@ public class ObjectFieldPutter extends FieldPutter {
         }
     }
 
-    public Object get() {
+    public Object getObject() {
         return value;
     }
 
-    public void set(final Object value) {
+    public void setObject(final Object value) {
         this.value = value;
     }
 }

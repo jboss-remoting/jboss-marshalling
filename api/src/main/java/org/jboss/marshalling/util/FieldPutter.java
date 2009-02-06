@@ -34,4 +34,76 @@ public abstract class FieldPutter {
     }
 
     public abstract void write(final Marshaller marshaller) throws IOException;
+
+    public void setBoolean(boolean value) {
+        throw new IllegalArgumentException("Field is not a boolean field");
+    }
+
+    public boolean getBoolean() {
+        throw new IllegalArgumentException("Field is not a boolean field");
+    }
+
+    public byte getByte() {
+        throw new IllegalArgumentException("Field is not a byte field");
+    }
+
+    public void setByte(byte value) {
+        throw new IllegalArgumentException("Field is not a byte field");
+    }
+
+    public char getChar() {
+        throw new IllegalArgumentException("Field is not a char field");
+    }
+
+    public void setChar(char value) {
+        throw new IllegalArgumentException("Field is not a char field");
+    }
+
+    public double getDouble() {
+        throw new IllegalArgumentException("Field is not a double field");
+    }
+
+    public void setDouble(double value) {
+        throw new IllegalArgumentException("Field is not a double field");
+    }
+
+    public float getFloat() {
+        throw new IllegalArgumentException("Field is not a float field");
+    }
+
+    public void setFloat(float value) {
+        throw new IllegalArgumentException("Field is not a float field");
+    }
+
+    public int getInt() {
+        throw new IllegalArgumentException("Field is not an int field");
+    }
+
+    public void setInt(int value) {
+        throw new IllegalArgumentException("Field is not an int field");
+    }
+
+    public long getLong() {
+        throw new IllegalArgumentException("Field is not a long field");
+    }
+
+    public void setLong(long value) {
+        throw new IllegalArgumentException("Field is not a long field");
+    }
+
+    public Object getObject() {
+        throw new IllegalArgumentException("Field is not an Object field");
+    }
+
+    public void setObject(Object value) {
+        throw new IllegalArgumentException("Field is not an Object field");
+    }
+
+    public short getShort() {
+        throw new IllegalArgumentException("Field is not a short field");
+    }
+
+    public void setShort(short value) {
+        throw new IllegalArgumentException("Field is not a short field");
+    }
 }

@@ -35,11 +35,11 @@ public class DoubleFieldPutter extends FieldPutter {
         marshaller.writeDouble(value);
     }
 
-    public double get() {
+    public double getDouble() {
         return value;
     }
 
-    public void set(final double value) {
+    public void setDouble(final double value) {
         this.value = value;
     }
 }

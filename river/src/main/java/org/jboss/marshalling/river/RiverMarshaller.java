@@ -36,6 +36,7 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.MarshallerObjectOutput;
+import org.jboss.marshalling.util.IdentityIntMap;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Externalizable;

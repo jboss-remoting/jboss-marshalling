@@ -20,12 +20,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.marshalling.river;
+package org.jboss.marshalling.util;
 
 import java.util.Arrays;
 
 /**
- *
+ * An efficient identity object map whose keys are objects and whose values are {@code int}s.
  */
 public final class IdentityIntMap<T> {
     private int[] values;
@@ -33,6 +33,12 @@ public final class IdentityIntMap<T> {
     private int count;
     private int resizeCount;
 
+    /**
+     * Construct a new instance with the given initial capacity and load factor.
+     *
+     * @param initialCapacity the initial capacity
+     * @param loadFactor the load factor
+     */
     public IdentityIntMap(int initialCapacity, final float loadFactor) {
         if (initialCapacity < 1) {
             throw new IllegalArgumentException("initialCapacity must be > 0");
@@ -52,18 +58,38 @@ public final class IdentityIntMap<T> {
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
     }
 
+    /**
+     * Construct a new instance with the given load factor and an initial capacity of 64.
+     *
+     * @param loadFactor the load factor
+     */
     public IdentityIntMap(final float loadFactor) {
         this(64, loadFactor);
     }
 
+    /**
+     * Construct a new instance with the given initial capacity and a load factor of {@code 0.5}.
+     *
+     * @param initialCapacity the initial capacity
+     */
     public IdentityIntMap(final int initialCapacity) {
         this(initialCapacity, 0.5f);
     }
 
+    /**
+     * Construct a new instance with an initial capacity of 64 and a load factor of {@code 0.5}.
+     */
     public IdentityIntMap() {
         this(0.5f);
     }
 
+    /**
+     * Get a value from the map.
+     *
+     * @param key the key
+     * @param defVal the value to return if the key is not found
+     * @return the map value at the given key, or the value of {@code defVal} if it's not found
+     */
     public int get(T key, int defVal) {
         if (key == null) {
             throw new NullPointerException("key is null");
@@ -85,6 +111,12 @@ public final class IdentityIntMap<T> {
         }
     }
 
+    /**
+     * Put a value into the map.  Any previous mapping is discarded silently.
+     *
+     * @param key the key
+     * @param value the value to store
+     */
     public void put(T key, int value) {
         if (key == null) {
             throw new NullPointerException("key is null");
@@ -111,7 +143,7 @@ public final class IdentityIntMap<T> {
         }
     }
 
-    private final void resize() {
+    private void resize() {
         final Object[] oldKeys = keys;
         final int oldsize = oldKeys.length;
         final int[] oldValues = values;
@@ -150,6 +182,11 @@ public final class IdentityIntMap<T> {
         count = 0;
     }
 
+    /**
+     * Get a string summary representation of this map.
+     *
+     * @return a string representation
+     */
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Map length = ").append(keys.length).append(", count = ").append(count).append(", resize count = ").append(resizeCount).append('\n');

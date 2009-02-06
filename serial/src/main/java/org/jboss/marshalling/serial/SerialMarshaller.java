@@ -29,7 +29,7 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.UTFUtils;
-import org.jboss.marshalling.MarshallerObjectOutput;
+import org.jboss.marshalling.util.IdentityIntMap;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;

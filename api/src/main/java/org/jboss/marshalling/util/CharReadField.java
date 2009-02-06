@@ -42,6 +42,10 @@ public class CharReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.CHAR;
+    }
+
     public char getChar() throws IOException {
         return value;
     }

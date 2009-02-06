@@ -42,6 +42,10 @@ public class FloatReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.FLOAT;
+    }
+
     public float getFloat() throws IOException {
         return value;
     }

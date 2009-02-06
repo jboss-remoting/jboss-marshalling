@@ -34,6 +34,7 @@ import org.jboss.marshalling.util.IntReadField;
 import org.jboss.marshalling.util.LongReadField;
 import org.jboss.marshalling.util.ObjectReadField;
 import org.jboss.marshalling.util.ShortReadField;
+import org.jboss.marshalling.util.Kind;
 import java.io.IOException;
 import java.io.ObjectStreamConstants;
 import java.io.InvalidClassException;
@@ -146,7 +147,7 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
             }
             // next object fields
             for (SerializableField serializableField : fields) {
-                if (serializableField.getKind() == SerializableField.Kind.OBJECT) {
+                if (serializableField.getKind() == Kind.OBJECT) {
                     serializableField.getField().set(subject, serialUnmarshaller.readObject());
                 }
             }

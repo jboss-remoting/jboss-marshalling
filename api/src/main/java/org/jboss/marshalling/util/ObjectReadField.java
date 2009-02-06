@@ -42,6 +42,10 @@ public class ObjectReadField extends ReadField {
         value = null;
     }
 
+    public Kind getKind() {
+        return Kind.OBJECT;
+    }
+
     public Object getObject() throws IOException {
         return value;
     }

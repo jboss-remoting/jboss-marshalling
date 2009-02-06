@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import org.jboss.marshalling.util.Kind;
 
 /**
  * Reflection information about a field on a serializable class.
@@ -41,31 +42,6 @@ public final class SerializableField {
     private final boolean unshared;
     private final Kind kind;
     private volatile boolean missing;
-
-    /**
-     * The kind of type for this field.
-     */
-    public enum Kind {
-        /** A {@code boolean}-type primitive field. */
-        BOOLEAN,
-        /** A {@code byte}-type primitive field. */
-        BYTE,
-        /** A {@code short}-type primitive field. */
-        SHORT,
-        /** An {@code int}-type primitive field. */
-        INT,
-        /** A {@code long}-type primitive field. */
-        LONG,
-        /** A {@code char}-type primitive field. */
-        CHAR,
-        /** A {@code float}-type primitive field. */
-        FLOAT,
-        /** A {@code double}-type primitive field. */
-        DOUBLE,
-        /** An object field. */
-        OBJECT,
-        ;
-    }
 
     SerializableField(Class<?> clazz, Class<?> type, String name, boolean unshared) {
         classRef = new WeakReference<Class<?>>(clazz);

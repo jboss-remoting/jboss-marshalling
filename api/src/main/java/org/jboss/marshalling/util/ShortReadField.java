@@ -42,6 +42,10 @@ public class ShortReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.SHORT;
+    }
+
     public short getShort() throws IOException {
         return value;
     }

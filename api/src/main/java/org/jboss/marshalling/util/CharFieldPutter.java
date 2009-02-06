@@ -35,6 +35,10 @@ public class CharFieldPutter extends FieldPutter {
         marshaller.writeChar(value);
     }
 
+    public Kind getKind() {
+        return Kind.CHAR;
+    }
+
     public char getChar() {
         return value;
     }

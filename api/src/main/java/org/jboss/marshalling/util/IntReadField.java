@@ -42,6 +42,10 @@ public class IntReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.INT;
+    }
+
     public int getInt() throws IOException {
         return value;
     }

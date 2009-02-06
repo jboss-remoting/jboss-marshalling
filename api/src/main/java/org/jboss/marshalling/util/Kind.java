@@ -22,31 +22,19 @@
 
 package org.jboss.marshalling.util;
 
-import org.jboss.marshalling.reflect.SerializableField;
-import java.io.IOException;
-
 /**
  *
  */
-public class LongReadField extends ReadField {
-
-    private final long value;
-
-    public LongReadField(final SerializableField field, final long value) {
-        super(field.getName(), false);
-        this.value = value;
-    }
-
-    public LongReadField(final SerializableField field) {
-        super(field.getName(), true);
-        value = 0;
-    }
-
-    public Kind getKind() {
-        return Kind.LONG;
-    }
-
-    public long getLong() throws IOException {
-        return value;
-    }
+public enum Kind {
+    BOOLEAN,
+    BYTE,
+    CHAR,
+    DOUBLE,
+    FLOAT,
+    INT,
+    LONG,
+    OBJECT,
+    SHORT,
+    ;
+    
 }

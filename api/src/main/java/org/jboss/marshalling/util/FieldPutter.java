@@ -35,6 +35,8 @@ public abstract class FieldPutter {
 
     public abstract void write(final Marshaller marshaller) throws IOException;
 
+    public abstract Kind getKind();
+
     public void setBoolean(boolean value) {
         throw new IllegalArgumentException("Field is not a boolean field");
     }

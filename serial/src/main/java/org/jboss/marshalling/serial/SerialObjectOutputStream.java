@@ -35,10 +35,11 @@ import org.jboss.marshalling.util.IntFieldPutter;
 import org.jboss.marshalling.util.LongFieldPutter;
 import org.jboss.marshalling.util.ObjectFieldPutter;
 import org.jboss.marshalling.util.ShortFieldPutter;
+import org.jboss.marshalling.util.Kind;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.TreeMap;
 
 /**
  *
@@ -48,6 +49,7 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
     protected enum State {
         OFF,
         NEW,
+        FIELDS,
         ON,
         ;
     }
@@ -57,6 +59,7 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
     private State state = State.OFF;
     private Object currentObject;
     private SerializableClass currentSerializableClass;
+    private Map<String, FieldPutter> currentFieldMap;
 
     protected SerialObjectOutputStream(final SerialMarshaller serialMarshaller, final BlockMarshaller blockMarshaller) throws IOException, SecurityException {
         super(blockMarshaller);
@@ -91,6 +94,14 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
         this.currentObject = currentObject;
     }
 
+    Map<String, FieldPutter> saveCurrentFieldMap() {
+        return currentFieldMap;
+    }
+
+    void setCurrentFieldMap(Map<String, FieldPutter> map) {
+        currentFieldMap = map;
+    }
+
     SerializableClass saveCurrentSerializableClass(final SerializableClass currentSerializableClass) {
         try {
             return this.currentSerializableClass;
@@ -104,111 +115,133 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
     }
 
     public void writeFields() throws IOException {
+        if (state == State.FIELDS) {
+            for (FieldPutter putter : currentFieldMap.values()) {
+                if (putter.getKind() != Kind.OBJECT) {
+                    putter.write(serialMarshaller);
+                }
+            }
+            for (FieldPutter putter : currentFieldMap.values()) {
+                if (putter.getKind() == Kind.OBJECT) {
+                    putter.write(serialMarshaller);
+                }
+            }
+        } else {
+            throw new IllegalStateException("fields may not be written now");
+        }
+        state = State.ON;
+    }
+
+    public PutField putFields() throws IOException {
         if (state == State.NEW) {
+            final Map<String, FieldPutter> map = new TreeMap<String, FieldPutter>();
+            currentFieldMap = map;
+            for (SerializableField serializableField : currentSerializableClass.getFields()) {
+                final FieldPutter putter;
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        putter = new BooleanFieldPutter();
+                        break;
+                    }
+                    case BYTE: {
+                        putter = new ByteFieldPutter();
+                        break;
+                    }
+                    case CHAR: {
+                        putter = new CharFieldPutter();
+                        break;
+                    }
+                    case DOUBLE: {
+                        putter = new DoubleFieldPutter();
+                        break;
+                    }
+                    case FLOAT: {
+                        putter = new FloatFieldPutter();
+                        break;
+                    }
+                    case INT: {
+                        putter = new IntFieldPutter();
+                        break;
+                    }
+                    case LONG: {
+                        putter = new LongFieldPutter();
+                        break;
+                    }
+                    case OBJECT: {
+                        putter = new ObjectFieldPutter(serializableField.isUnshared());
+                        break;
+                    }
+                    case SHORT: {
+                        putter = new ShortFieldPutter();
+                        break;
+                    }
+                    default: {
+                        continue;
+                    }
+                }
+                map.put(serializableField.getName(), putter);
+            }
+            state = State.FIELDS;
+            return new PutField() {
+                public void put(final String name, final boolean val) {
+                    find(name).setBoolean(val);
+                }
+
+                public void put(final String name, final byte val) {
+                    find(name).setByte(val);
+                }
+
+                public void put(final String name, final char val) {
+                    find(name).setChar(val);
+                }
+
+                public void put(final String name, final short val) {
+                    find(name).setShort(val);
+                }
+
+                public void put(final String name, final int val) {
+                    find(name).setInt(val);
+                }
+
+                public void put(final String name, final long val) {
+                    find(name).setLong(val);
+                }
+
+                public void put(final String name, final float val) {
+                    find(name).setFloat(val);
+                }
+
+                public void put(final String name, final double val) {
+                    find(name).setDouble(val);
+                }
+
+                public void put(final String name, final Object val) {
+                    find(name).setObject(val);
+                }
+
+                public void write(final ObjectOutput out) throws IOException {
+                    throw new UnsupportedOperationException("write(ObjectOutput)");
+                }
+
+                private FieldPutter find(final String name) {
+                    final FieldPutter putter = map.get(name);
+                    if (putter == null) {
+                        throw new IllegalArgumentException("No field named '" + name + "' found");
+                    }
+                    return putter;
+                }
+            };
+        } else {
+            throw new IllegalStateException("putFields() may not be called now");
+        }
+    }
+
+    public void defaultWriteObject() throws IOException {
+        if (state == State.NEW || state == State.FIELDS) {
             serialMarshaller.doWriteFields(currentSerializableClass, currentObject);
         } else {
             throw new IllegalStateException("fields may not be written now");
         }
-    }
-
-    public PutField putFields() throws IOException {
-        final Map<String, FieldPutter> map = new HashMap<String, FieldPutter>();
-        for (SerializableField serializableField : currentSerializableClass.getFields()) {
-            final FieldPutter putter;
-            switch (serializableField.getKind()) {
-                case BOOLEAN: {
-                    putter = new BooleanFieldPutter();
-                    break;
-                }
-                case BYTE: {
-                    putter = new ByteFieldPutter();
-                    break;
-                }
-                case CHAR: {
-                    putter = new CharFieldPutter();
-                    break;
-                }
-                case DOUBLE: {
-                    putter = new DoubleFieldPutter();
-                    break;
-                }
-                case FLOAT: {
-                    putter = new FloatFieldPutter();
-                    break;
-                }
-                case INT: {
-                    putter = new IntFieldPutter();
-                    break;
-                }
-                case LONG: {
-                    putter = new LongFieldPutter();
-                    break;
-                }
-                case OBJECT: {
-                    putter = new ObjectFieldPutter(serializableField.isUnshared());
-                    break;
-                }
-                case SHORT: {
-                    putter = new ShortFieldPutter();
-                    break;
-                }
-                default: {
-                    continue;
-                }
-            }
-            map.put(serializableField.getName(), putter);
-        }
-        return new PutField() {
-            public void put(final String name, final boolean val) {
-                find(name).setBoolean(val);
-            }
-
-            public void put(final String name, final byte val) {
-                find(name).setByte(val);
-            }
-
-            public void put(final String name, final char val) {
-                find(name).setChar(val);
-            }
-
-            public void put(final String name, final short val) {
-                find(name).setShort(val);
-            }
-
-            public void put(final String name, final int val) {
-                find(name).setInt(val);
-            }
-
-            public void put(final String name, final long val) {
-                find(name).setLong(val);
-            }
-
-            public void put(final String name, final float val) {
-                find(name).setFloat(val);
-            }
-
-            public void put(final String name, final double val) {
-                find(name).setDouble(val);
-            }
-
-            public void put(final String name, final Object val) {
-                find(name).setObject(val);
-            }
-
-            public void write(final ObjectOutput out) throws IOException {
-                throw new UnsupportedOperationException("write(ObjectOutput)");
-            }
-
-            private FieldPutter find(final String name) {
-                final FieldPutter putter = map.get(name);
-                if (putter == null) {
-                    throw new IllegalArgumentException("No field named '" + name + "' found");
-                }
-                return putter;
-            }
-        };
-    }
-
-    public void defaultWriteObject() throws IOException {
+        state = State.ON;
     }
 }

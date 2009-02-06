@@ -36,6 +36,8 @@ public abstract class ReadField implements Comparable<ReadField> {
         this.defaulted = defaulted;
     }
 
+    public abstract Kind getKind();
+
     public String getName() {
         return name;
     }

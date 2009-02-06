@@ -30,6 +30,8 @@ import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.util.IdentityIntMap;
+import org.jboss.marshalling.util.FieldPutter;
+import org.jboss.marshalling.util.Kind;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -42,6 +44,7 @@ import java.io.NotSerializableException;
 import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.util.IdentityHashMap;
+import java.util.Map;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Field;
 import java.security.PrivilegedExceptionAction;
@@ -268,12 +271,14 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
             final SerialObjectOutputStream oos = getObjectOutputStream();
             final Object oldObj = oos.saveCurrentObject(obj);
             final SerializableClass oldSc = oos.saveCurrentSerializableClass(sc);
+            final Map<String,FieldPutter> map = oos.saveCurrentFieldMap();
             final SerialObjectOutputStream.State oldState = oos.saveState();
             try {
                 sc.callWriteObject(obj, oos);
             } finally {
                 oos.setCurrentObject(oldObj);
                 oos.setCurrentSerializableClass(oldSc);
+                oos.setCurrentFieldMap(map);
                 oos.restoreState(oldState);
             }
             doEndBlock();
@@ -351,8 +356,8 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         for (SerializableField serializableField : serializableFields) {
             try {
                 final Field field = serializableField.getField();
-                SerializableField.Kind i = serializableField.getKind();
-                if (i == SerializableField.Kind.OBJECT) {
+                Kind i = serializableField.getKind();
+                if (i == Kind.OBJECT) {
                     doWriteObject(field.get(obj), serializableField.isUnshared());
                 }
             } catch (IllegalAccessException e) {
@@ -424,7 +429,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                 writeShort(fields.length);
                 // first write primitive fields, then object fields
                 for (SerializableField field : fields) {
-                    final SerializableField.Kind kind = field.getKind();
+                    final Kind kind = field.getKind();
                     final String name = field.getName();
                     final Class<?> type;
                     try {
@@ -433,13 +438,13 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                         // not possible
                         throw new InvalidClassException(forClass.getName(), "Field " + name + "'s class was not found");
                     }
-                    if (kind != SerializableField.Kind.OBJECT) {
+                    if (kind != Kind.OBJECT) {
                         write(primitives.get(type, -1));
                         writeUTF(name);
                     }
                 }
                 for (SerializableField field : fields) {
-                    final SerializableField.Kind kind = field.getKind();
+                    final Kind kind = field.getKind();
                     final String name = field.getName();
                     final Class<?> type;
                     try {
@@ -448,7 +453,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                         // not possible
                         throw new InvalidClassException(forClass.getName(), "Field " + name + "'s class was not found");
                     }
-                    if (kind == SerializableField.Kind.OBJECT) {
+                    if (kind == Kind.OBJECT) {
                         final String signature = getSignature(type);
                         write(signature.charAt(0));
                         writeUTF(name);

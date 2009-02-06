@@ -42,6 +42,10 @@ public class DoubleReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.DOUBLE;
+    }
+
     public double getDouble() throws IOException {
         return value;
     }

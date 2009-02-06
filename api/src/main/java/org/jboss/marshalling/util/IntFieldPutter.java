@@ -35,6 +35,10 @@ public class IntFieldPutter extends FieldPutter {
         marshaller.writeInt(value);
     }
 
+    public Kind getKind() {
+        return Kind.INT;
+    }
+
     public int getInt() {
         return value;
     }

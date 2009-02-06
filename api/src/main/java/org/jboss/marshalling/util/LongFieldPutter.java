@@ -35,6 +35,10 @@ public class LongFieldPutter extends FieldPutter {
         marshaller.writeLong(value);
     }
 
+    public Kind getKind() {
+        return Kind.LONG;
+    }
+
     public long getLong() {
         return value;
     }

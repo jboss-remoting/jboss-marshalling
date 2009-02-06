@@ -35,6 +35,10 @@ public class DoubleFieldPutter extends FieldPutter {
         marshaller.writeDouble(value);
     }
 
+    public Kind getKind() {
+        return Kind.DOUBLE;
+    }
+
     public double getDouble() {
         return value;
     }

@@ -35,6 +35,10 @@ public class FloatFieldPutter extends FieldPutter {
         marshaller.writeFloat(value);
     }
 
+    public Kind getKind() {
+        return Kind.FLOAT;
+    }
+
     public float getFloat() {
         return value;
     }

@@ -35,6 +35,10 @@ public class ShortFieldPutter extends FieldPutter {
         marshaller.writeShort(value);
     }
 
+    public Kind getKind() {
+        return Kind.SHORT;
+    }
+
     public short getShort() {
         return value;
     }

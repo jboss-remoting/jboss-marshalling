@@ -42,6 +42,10 @@ public class ByteReadField extends ReadField {
         value = 0;
     }
 
+    public Kind getKind() {
+        return Kind.BYTE;
+    }
+
     public byte getByte() throws IOException {
         return value;
     }

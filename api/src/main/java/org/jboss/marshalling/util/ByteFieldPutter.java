@@ -35,6 +35,10 @@ public class ByteFieldPutter extends FieldPutter {
         marshaller.writeByte(value);
     }
 
+    public Kind getKind() {
+        return Kind.BYTE;
+    }
+
     public byte getByte() {
         return value;
     }

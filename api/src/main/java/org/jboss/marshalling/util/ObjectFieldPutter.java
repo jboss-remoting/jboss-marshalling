@@ -44,6 +44,10 @@ public class ObjectFieldPutter extends FieldPutter {
         }
     }
 
+    public Kind getKind() {
+        return Kind.OBJECT;
+    }
+
     public Object getObject() {
         return value;
     }

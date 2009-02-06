@@ -42,6 +42,10 @@ public class BooleanReadField extends ReadField {
         value = false;
     }
 
+    public Kind getKind() {
+        return Kind.BOOLEAN;
+    }
+
     public boolean getBoolean() throws IOException {
         return value;
     }

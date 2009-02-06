@@ -306,6 +306,9 @@ public final class Serial implements ObjectStreamConstants {
                 dumpBlockData(map, seq, dis, w, depth + 1);
             }
         } else {
+            if (info.parent != null) {
+                dumpFields(info.parent, map, seq, dis, w, depth);
+            }
             printf(w, depth, "[--] No info for class %s", info.name);
         }
     }

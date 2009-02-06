@@ -52,23 +52,15 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
         ;
     }
 
-    private final SerialMarshaller marshaller;
+    private final SerialMarshaller serialMarshaller;
 
     private State state = State.OFF;
     private Object currentObject;
     private SerializableClass currentSerializableClass;
 
-    /**
-     * Construct a new instance that delegates to the given marshaller.
-     *
-     * @param marshaller the delegate marshaller
-     *
-     * @throws java.io.IOException if an I/O error occurs
-     * @throws SecurityException if the caller does not have permission to construct an instance of this class
-     */
-    protected SerialObjectOutputStream(final SerialMarshaller marshaller) throws IOException, SecurityException {
-        super(marshaller);
-        this.marshaller = marshaller;
+    protected SerialObjectOutputStream(final SerialMarshaller serialMarshaller, final BlockMarshaller blockMarshaller) throws IOException, SecurityException {
+        super(blockMarshaller);
+        this.serialMarshaller = serialMarshaller;
     }
 
     State saveState() {
@@ -113,7 +105,7 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
 
     public void writeFields() throws IOException {
         if (state == State.NEW) {
-            marshaller.doWriteFields(currentSerializableClass, currentObject);
+            serialMarshaller.doWriteFields(currentSerializableClass, currentObject);
         } else {
             throw new IllegalStateException("fields may not be written now");
         }

@@ -284,7 +284,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
 
     private final PrivilegedExceptionAction<SerialObjectOutputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<SerialObjectOutputStream>() {
         public SerialObjectOutputStream run() throws IOException {
-            return new SerialObjectOutputStream(SerialMarshaller.this);
+            return new SerialObjectOutputStream(SerialMarshaller.this, blockMarshaller);
         }
     };
 

@@ -281,7 +281,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     } else if (obj instanceof Externalizable) {
                         throw new InvalidObjectException("Created object should not be Externalizable but it is");
                     } else {
-                        doReadSerialObject(descriptor, obj.getClass(), obj);
+                        doReadSerialObject(descriptor, obj);
                     }
                     return obj;
                 }
@@ -320,8 +320,12 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         }
     }
 
-    private void doReadSerialObject(final Descriptor descriptor, final Class<?> currentClass, final Object obj) throws ClassNotFoundException, IOException {
-        descriptor.readSerial(this, registry.lookup(currentClass), obj);
+    private void doReadSerialObject(final Descriptor descriptor, final Object obj) throws ClassNotFoundException, IOException {
+        final Descriptor parent = descriptor.getParent();
+        if (parent != null) {
+            doReadSerialObject(parent, obj);
+        }
+        descriptor.readSerial(this, registry.lookup(descriptor.getType()), obj);
     }
 
     private static InvalidClassException objectStreamClassException() {

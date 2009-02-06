@@ -72,7 +72,9 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
             } else {
                 defaultReadFields(serialUnmarshaller, subject);
             }
-            serialUnmarshaller.getBlockUnmarshaller().readToEndBlockData();
+            final BlockUnmarshaller blockUnmarshaller = serialUnmarshaller.getBlockUnmarshaller();
+            blockUnmarshaller.readToEndBlockData();
+            blockUnmarshaller.unblock();
         } else {
             if (sc.hasReadObject()) {
                 final BlockUnmarshaller blockUnmarshaller = serialUnmarshaller.getBlockUnmarshaller();
@@ -92,8 +94,6 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
         final SerializableClass oldSerializableClass = ois.saveCurrentSerializableClass(sc);
         final Object oldSubject = ois.saveCurrentSubject(subject);
         try {
-            final BlockUnmarshaller blockUnmarshaller = serialUnmarshaller.getBlockUnmarshaller();
-            blockUnmarshaller.unblock();
             sc.callReadObject(subject, ois);
             if (ois.restoreState(oldState) != SerialObjectInputStream.State.ON) {
                 throw new StreamCorruptedException("readObject() did not read fields");

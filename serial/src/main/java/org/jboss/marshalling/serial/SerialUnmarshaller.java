@@ -365,6 +365,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 }
                 final Class<?> clazz = classResolver.resolveClass(blockUnmarshaller, className, svu);
                 blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
                 final SerializableClass sc = registry.lookup(clazz);
                 final SerializableField[] fields = new SerializableField[fieldCount];
                 for (int i = 0; i < fieldCount; i ++) {
@@ -434,6 +435,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 }
                 final Class<?> clazz = classResolver.resolveProxyClass(blockUnmarshaller, interfaces);
                 blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
                 final Descriptor superDescr = readClassDescriptor();
                 final ProxyDescriptor descr = new ProxyDescriptor(clazz, superDescr, interfaces);
                 instanceCache.set(idx, descr);

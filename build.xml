@@ -445,6 +445,11 @@
                 <include name="**/package-info.java"/>
                 <include name="**/JavaSerializationMarshallerFactory.java"/>
             </fileset>
+            <fileset dir="serial/src/main/java">
+                <include name="**/package-info.java"/>
+                <include name="**/ExtendedObjectStreamConstants.java"/>
+                <include name="**/SerialMarshallerFactory.java"/>
+            </fileset>
         </copy>
         <unzip dest="docs/target/tmp-io/java" src="${java.home}/../src.zip">
             <patternset>
@@ -458,7 +463,8 @@
                 <package name="org.jboss.marshalling.reflect"/>
             </group>
             <group packages="org.jboss.marshalling.river" title="River Marshalling Implementation"/>
-            <group packages="org.jboss.marshalling.serialization.java" title="Java Serialization Marshalling Implementation"/>
+            <group packages="org.jboss.marshalling.serial" title="Java Serialization Marshalling (Native) Implementation"/>
+            <group packages="org.jboss.marshalling.serialization.java" title="Java Serialization Marshalling (Reflection) Implementation"/>
             <packageset dir="api/src/main/java"/>
             <packageset dir="docs/target/tmp/java"/>
             <sourcepath location="docs/target/tmp-io/java"/>

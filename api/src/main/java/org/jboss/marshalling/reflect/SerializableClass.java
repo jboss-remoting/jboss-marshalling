@@ -60,6 +60,7 @@ public final class SerializableClass {
             return o1.getName().compareTo(o2.getName());
         }
     };
+    public static final SerializableField[] NOFIELDS = new SerializableField[0];
 
     SerializableClass(Class<?> subject) {
         final WeakReference<Class<?>> subjectRef = new WeakReference<Class<?>>(subject);

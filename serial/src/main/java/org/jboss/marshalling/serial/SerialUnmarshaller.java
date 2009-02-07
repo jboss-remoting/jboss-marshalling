@@ -560,7 +560,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     public Descriptor descriptorForClass(final Class<?> clazz) {
         if (Externalizable.class.isAssignableFrom(clazz)) {
             // todo - make WRITE_METHOD depend on block mode
-            return new PlainDescriptor(clazz, null, Descriptor.NOFIELDS, SC_EXTERNALIZABLE | SC_BLOCK_DATA);
+            return new PlainDescriptor(clazz, null, SerializableClass.NOFIELDS, SC_EXTERNALIZABLE | SC_BLOCK_DATA);
         } else if (Serializable.class.isAssignableFrom(clazz)) {
             final Class<?> superclass = clazz.getSuperclass();
             final Descriptor parent;

@@ -32,7 +32,6 @@ import java.io.IOException;
 abstract class Descriptor implements ExtendedObjectStreamConstants {
     private final Descriptor parent;
     private final Class<?> type;
-    public static final SerializableField[] NOFIELDS = new SerializableField[0];
 
     protected Descriptor(final Descriptor parent, final Class<?> type) {
         this.parent = parent;
@@ -54,6 +53,6 @@ abstract class Descriptor implements ExtendedObjectStreamConstants {
     }
 
     public SerializableField[] getFields() {
-        return NOFIELDS;
+        return SerializableClass.NOFIELDS;
     }
 }

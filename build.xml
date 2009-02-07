@@ -116,6 +116,45 @@
         </path>
     </target>
 
+    <!-- serial module -->
+
+    <target name="serial.compile.depcheck">
+        <mkdir dir="serial/target/main"/>
+        <uptodate property="serial.compile.uptodate" targetfile="serial/target/main/.lastcompile">
+            <srcfiles dir="serial/src/main/java">
+                <include name="**/"/>
+                <include name="**/*.java"/>
+                <exclude name="**/.*"/>
+            </srcfiles>
+        </uptodate>
+    </target>
+
+    <target name="serial.compile" depends="serial.compile.depcheck" unless="serial.compile.uptodate">
+        <mkdir dir="serial/target/main/classes"/>
+        <javac
+                source="${javac.source}"
+                target="${javac.target}"
+                srcdir="serial/src/main/java"
+                destdir="serial/target/main/classes"
+                debug="true">
+            <compilerarg value="-Xlint:unchecked"/>
+            <classpath>
+                <path refid="api.classpath"/>
+            </classpath>
+        </javac>
+        <touch file="serial/target/main/.lastcompile" verbose="false"/>
+    </target>
+
+    <target name="serial.clean">
+        <delete dir="serial/target"/>
+    </target>
+
+    <target name="serial" description="Build the Serial marshalling implementation module" depends="api,serial.compile">
+        <path id="serial.classpath">
+            <pathelement location="serial/target/main/classes"/>
+        </path>
+    </target>
+
     <!-- serialization-java module -->
 
     <target name="serialization-java.compile.depcheck">
@@ -219,6 +258,7 @@
             <classpath>
                 <path refid="api.classpath"/>
                 <path refid="river.classpath"/>
+                <path refid="serial.classpath"/>
                 <path refid="serialization-java.classpath"/>
                 <path refid="testing-support.classpath"/>
                 <pathelement location="${lib.junit.local}"/>
@@ -250,6 +290,7 @@
                 <path refid="api.classpath"/>
                 <path refid="river.classpath"/>
                 <path refid="serialization-java.classpath"/>
+                <path refid="serial.classpath"/>
                 <path refid="tests.classpath"/>
                 <path refid="testing-support.classpath"/>
                 <pathelement location="${lib.junit.local}"/>
@@ -281,7 +322,7 @@
 
     <target name="tests.run" depends="tests.run.plain,tests.run.security"/>
 
-    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serialization-java,testing-support,tests.compile">
+    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serial,serialization-java,testing-support,tests.compile">
         <path id="tests.classpath">
             <pathelement location="tests/target/main/classes"/>
         </path>

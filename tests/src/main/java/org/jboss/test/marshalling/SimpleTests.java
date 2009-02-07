@@ -33,7 +33,9 @@ import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
+import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
+import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.testsupport.TestSuiteHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1012,7 +1014,8 @@ public final class SimpleTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 Adder adder = (Adder) unmarshaller.readObject();
-                assertSame(adder, unmarshaller.readObject());
+                final Object other = unmarshaller.readObject();
+                assertSame(adder, other);
                 assertEquals(42, adder.add(41));
                 assertEOF(unmarshaller);
             }

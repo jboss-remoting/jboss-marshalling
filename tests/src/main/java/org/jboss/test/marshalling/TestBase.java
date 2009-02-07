@@ -33,6 +33,7 @@ import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
+import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import static org.junit.runners.Parameterized.Parameters;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -100,7 +101,8 @@ public abstract class TestBase {
     public static Collection<Object[]> parameters() {
         final List<MarshallerFactory> marshallerFactories = Arrays.<MarshallerFactory>asList(
                 new RiverMarshallerFactory(),
-                new JavaSerializationMarshallerFactory()
+                new JavaSerializationMarshallerFactory(),
+                new SerialMarshallerFactory()
         );
         final List<StreamHeader> streamHeaders = Arrays.<StreamHeader>asList(
                 Marshalling.nullStreamHeader(),

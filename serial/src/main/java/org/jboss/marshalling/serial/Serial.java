@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.io.IOException;
 import java.io.DataInputStream;
-import java.io.ObjectStreamConstants;
 import java.io.BufferedWriter;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
@@ -40,7 +39,7 @@ import org.jboss.marshalling.Marshalling;
 /**
  *
  */
-public final class Serial implements ObjectStreamConstants {
+public final class Serial implements ExtendedObjectStreamConstants {
     private Serial() {}
 
     private enum FieldType {
@@ -195,6 +194,11 @@ public final class Serial implements ObjectStreamConstants {
                 dumpFields(classInfo, descrMap, seq, dis, w, depth + 1);
                 return;
             }
+            case TC_OBJECTTABLE: {
+                final int handle = seq.getAndIncrement();
+                printf(w, depth, "[%02x] TC_OBJECTTABLE - New object from table, handle is [%08x]", Integer.valueOf(TC_OBJECTTABLE), Integer.valueOf(handle));
+                dumpBlockData(descrMap, seq, dis, w, depth + 1);
+            }
             // newClass
             case TC_CLASS: {
                 printf(w, depth, "[%02x] TC_CLASS - New class", Integer.valueOf(TC_CLASS));
@@ -236,6 +240,7 @@ public final class Serial implements ObjectStreamConstants {
                 return;
             }
             // newClassDesc
+            case TC_CLASSTABLEDESC:
             case TC_PROXYCLASSDESC:
             case TC_CLASSDESC: {
                 dumpDescriptor(descrMap, seq, dis, w, depth, leadByte);
@@ -336,6 +341,12 @@ public final class Serial implements ObjectStreamConstants {
             // nullReference
             case TC_NULL: {
                 printf(w, depth, "[%02x] TC_NULL - Null value", Integer.valueOf(TC_NULL));
+                return null;
+            }
+            case TC_CLASSTABLEDESC: {
+                final int handle = seq.getAndIncrement();
+                printf(w, depth, "[%02x] TC_CLASSTABLEDESC - New class descriptor from table, handle [%08x] - stream is indeterminate from this point on", Integer.valueOf(TC_CLASSTABLEDESC), Integer.valueOf(handle));
+                dumpBlockData(descrMap, seq, dis, w, depth);
                 return null;
             }
             case TC_CLASSDESC: {

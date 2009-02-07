@@ -32,7 +32,6 @@ import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
-import java.io.ObjectStreamConstants;
 import java.io.StreamCorruptedException;
 import java.io.ObjectStreamClass;
 import java.io.InvalidClassException;
@@ -56,7 +55,7 @@ import java.security.PrivilegedActionException;
 /**
  *
  */
-public final class SerialUnmarshaller extends AbstractUnmarshaller implements Unmarshaller, ObjectStreamConstants {
+public final class SerialUnmarshaller extends AbstractUnmarshaller implements Unmarshaller, ExtendedObjectStreamConstants {
 
     private static final Object UNSHARED = new Object();
     private static final Object UNRESOLVED = new Object();
@@ -121,6 +120,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     Object doReadObject(int leadByte, final boolean unshared) throws IOException, ClassNotFoundException {
         depth ++;
         try {
+            final BlockUnmarshaller blockUnmarshaller = this.blockUnmarshaller;
             for (;;) switch (leadByte) {
                 case TC_NULL: {
                     return null;
@@ -287,9 +287,18 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     final SerializableClass sc = registry.lookup(obj.getClass());
                     if (sc.hasReadResolve()) {
                         final Object replacement = sc.callReadResolve(obj);
-                        instanceCache.set(idx, replacement);
+                        if (! unshared) instanceCache.set(idx, replacement);
                         return replacement;
                     }
+                    return obj;
+                }
+
+                case TC_OBJECTTABLE: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(unshared ? UNSHARED : UNRESOLVED);
+                    final Object obj = objectTable.readObject(blockUnmarshaller);
+                    blockUnmarshaller.readToEndBlockData();
+                    if (! unshared) instanceCache.set(idx, obj);
                     return obj;
                 }
 
@@ -352,12 +361,23 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     }
 
     private Descriptor readClassDescriptor(int leadByte) throws IOException, ClassNotFoundException {
+        final BlockUnmarshaller blockUnmarshaller = this.blockUnmarshaller;
         switch (leadByte) {
+            case TC_CLASSTABLEDESC: {
+                final Class<?> clazz = classTable.readClass(blockUnmarshaller);
+                final int idx = instanceCache.size();
+                instanceCache.add(UNRESOLVED);
+                blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
+                Descriptor descriptor = descriptorForClass(clazz);
+                instanceCache.set(idx, descriptor);
+                return descriptor;
+            }
             case TC_CLASSDESC: {
                 final String className = readUTF();
                 final long svu = readLong();
                 final int idx = instanceCache.size();
-                instanceCache.add(null);
+                instanceCache.add(UNRESOLVED);
                 final int descFlags = readUnsignedByte();
                 final int fieldCount = readUnsignedShort();
                 final int[] typecodes = new int[fieldCount];
@@ -535,5 +555,24 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
             validationMap.put(prioKey, validations);
         }
         validations.add(validation);
+    }
+
+    public Descriptor descriptorForClass(final Class<?> clazz) {
+        if (Externalizable.class.isAssignableFrom(clazz)) {
+            // todo - make WRITE_METHOD depend on block mode
+            return new PlainDescriptor(clazz, null, Descriptor.NOFIELDS, SC_EXTERNALIZABLE | SC_BLOCK_DATA);
+        } else if (Serializable.class.isAssignableFrom(clazz)) {
+            final Class<?> superclass = clazz.getSuperclass();
+            final Descriptor parent;
+            if (superclass != null && Serializable.class.isAssignableFrom(superclass)) {
+                parent = descriptorForClass(superclass);
+            } else {
+                parent = null;
+            }
+            final SerializableClass serializableClass = registry.lookup(clazz);
+            return new PlainDescriptor(clazz, parent, serializableClass.getFields(), SC_SERIALIZABLE | (serializableClass.hasWriteObject() ? SC_WRITE_METHOD : 0));
+        } else {
+            return new NoDataDescriptor(clazz, null);
+        }
     }
 }

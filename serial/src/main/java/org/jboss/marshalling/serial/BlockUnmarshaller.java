@@ -29,13 +29,12 @@ import org.jboss.marshalling.UTFUtils;
 import static org.jboss.marshalling.Marshalling.createOptionalDataException;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.io.ObjectStreamConstants;
 import java.io.EOFException;
 
 /**
  *
  */
-public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConstants {
+public final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStreamConstants {
 
     private final SerialUnmarshaller serialUnmarshaller;
     private int remaining;
@@ -69,7 +68,7 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
     void readBlockHeader(int leadByte) throws IOException {
         switch (leadByte) {
             case TC_BLOCKDATA:
-                remaining = serialUnmarshaller.readByte() & 0xff;
+                remaining = serialUnmarshaller.readUnsignedByte();
                 return;
             case TC_BLOCKDATALONG:
                 final int len = serialUnmarshaller.readInt();
@@ -91,8 +90,11 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
             while (remaining > 0) {
                 skipBytes(remaining);
             }
-            final int b = serialUnmarshaller.readUnsignedByte();
+            final int b = serialUnmarshaller.read();
             switch (b) {
+                case -1:
+                    remaining = -1;
+                    return;
                 case TC_ENDBLOCKDATA:
                     remaining = -1;
                     return;
@@ -218,11 +220,7 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
 
     public boolean readBoolean() throws IOException {
         while (remaining == 0) {
-            final int v = serialUnmarshaller.read();
-            if (v == -1) {
-                throw new EOFException();
-            }
-            readBlockHeader(v);
+            readBlockHeader(serialUnmarshaller.readUnsignedByte());
         }
         if (remaining == -1) {
             throw new EOFException();
@@ -233,11 +231,7 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
 
     public byte readByte() throws IOException {
         while (remaining == 0) {
-            final int v = serialUnmarshaller.read();
-            if (v == -1) {
-                throw new EOFException();
-            }
-            readBlockHeader(v);
+            readBlockHeader(serialUnmarshaller.readUnsignedByte());
         }
         if (remaining == -1) {
             throw new EOFException();
@@ -248,11 +242,7 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
 
     public int readUnsignedByte() throws IOException {
         while (remaining == 0) {
-            final int v = serialUnmarshaller.read();
-            if (v == -1) {
-                throw new EOFException();
-            }
-            readBlockHeader(v);
+            readBlockHeader(serialUnmarshaller.readUnsignedByte());
         }
         if (remaining == -1) {
             throw new EOFException();
@@ -321,7 +311,9 @@ public final class BlockUnmarshaller implements Unmarshaller, ObjectStreamConsta
 
     public String readUTF() throws IOException {
         final int len = readUnsignedShort();
-        return UTFUtils.readUTFBytesByByteCount(this, len);
+        final String s = UTFUtils.readUTFBytesByByteCount(this, len);
+        System.err.println("String: " + s);
+        return s;
     }
 
     public void clearInstanceCache() throws IOException {

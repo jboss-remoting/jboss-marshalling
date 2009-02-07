@@ -26,12 +26,11 @@ import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.UTFUtils;
 import java.io.IOException;
-import java.io.ObjectStreamConstants;
 
 /**
  *
  */
-public final class BlockMarshaller implements Marshaller, ObjectStreamConstants {
+public final class BlockMarshaller implements Marshaller, ExtendedObjectStreamConstants {
     private final SerialMarshaller serialMarshaller;
     private final byte[] buffer;
     private int position;

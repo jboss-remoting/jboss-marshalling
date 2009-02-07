@@ -22,38 +22,12 @@
 
 package org.jboss.marshalling.serial;
 
-import org.jboss.marshalling.reflect.SerializableClass;
-import org.jboss.marshalling.reflect.SerializableField;
-import java.io.IOException;
+import java.io.ObjectStreamConstants;
 
 /**
- *
+ * Protocol extensions used locally for JBoss Marshalling extensions to Class/Object Resolvers.
  */
-abstract class Descriptor implements ExtendedObjectStreamConstants {
-    private final Descriptor parent;
-    private final Class<?> type;
-    public static final SerializableField[] NOFIELDS = new SerializableField[0];
-
-    protected Descriptor(final Descriptor parent, final Class<?> type) {
-        this.parent = parent;
-        this.type = type;
-    }
-
-    protected Descriptor getParent() {
-        return parent;
-    }
-
-    protected Class<?> getType() {
-        return type;
-    }
-
-    protected abstract void readSerial(SerialUnmarshaller serialUnmarshaller, SerializableClass sc, Object subject) throws IOException, ClassNotFoundException;
-
-    public int getFlags() {
-        return 0;
-    }
-
-    public SerializableField[] getFields() {
-        return NOFIELDS;
-    }
+public interface ExtendedObjectStreamConstants extends ObjectStreamConstants {
+    int TC_CLASSTABLEDESC = 0xF0;
+    int TC_OBJECTTABLE = 0xF1;
 }

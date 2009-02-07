@@ -30,13 +30,14 @@ import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.Externalize;
+import org.jboss.marshalling.ObjectTable;
+import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.util.IdentityIntMap;
 import org.jboss.marshalling.util.FieldPutter;
 import org.jboss.marshalling.util.Kind;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
-import java.io.ObjectStreamConstants;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
@@ -55,7 +56,7 @@ import java.security.PrivilegedActionException;
 /**
  *
  */
-public final class SerialMarshaller extends AbstractMarshaller implements Marshaller, ObjectStreamConstants {
+public final class SerialMarshaller extends AbstractMarshaller implements Marshaller, ExtendedObjectStreamConstants {
 
     private static final int MIN_BUFFER_SIZE = 16;
 
@@ -94,10 +95,18 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         }
         final IdentityIntMap<Object> instanceCache = this.instanceCache;
         int v;
+        final ObjectTable.Writer writer;
         // - first check for cached objects, Classes, or ObjectStreamClass
         if (! unshared && (v = instanceCache.get(obj, -1)) != -1) {
             write(TC_REFERENCE);
             writeInt(v + baseWireHandle);
+            return;
+        } else if ((writer = objectTable.getObjectWriter(obj)) != null) {
+            write(TC_OBJECTTABLE);
+            final int id = instanceSeq++;
+            if (! unshared) instanceCache.put(obj, id);
+            writer.writeObject(blockMarshaller, obj);
+            doEndBlock();
             return;
         } else if (obj instanceof Class) {
             write(TC_CLASS);
@@ -432,6 +441,14 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
     }
 
     private void writeNewPlainClassDesc(final Class<?> forClass) throws IOException {
+        final ClassTable.Writer writer = classTable.getClassWriter(forClass);
+        if (writer != null) {
+            write(TC_CLASSTABLEDESC);
+            descriptorCache.put(forClass, instanceSeq++);
+            writer.writeClass(blockMarshaller, forClass);
+            doEndBlock();
+            return;
+        }
         write(TC_CLASSDESC);
         writeUTF(classResolver.getClassName(forClass));
         descriptorCache.put(forClass, instanceSeq++);

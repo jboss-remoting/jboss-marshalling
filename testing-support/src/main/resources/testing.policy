@@ -34,6 +34,12 @@ grant codeBase "file:${build.home}/serialization-java/target/main/classes/-"
     permission java.io.SerializablePermission "enableSubstitution";
 };
 
+grant codeBase "file:${build.home}/serial/target/main/classes/-"
+{
+    permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "enableSubclassImplementation";
+    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+};
 
 // Support classes
 

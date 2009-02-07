@@ -311,9 +311,7 @@ public final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStre
 
     public String readUTF() throws IOException {
         final int len = readUnsignedShort();
-        final String s = UTFUtils.readUTFBytesByByteCount(this, len);
-        System.err.println("String: " + s);
-        return s;
+        return UTFUtils.readUTFBytesByByteCount(this, len);
     }
 
     public void clearInstanceCache() throws IOException {

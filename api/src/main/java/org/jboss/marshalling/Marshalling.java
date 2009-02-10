@@ -29,6 +29,8 @@ import java.io.EOFException;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.io.Serializable;
+import java.io.ObjectOutput;
+import java.io.ObjectInput;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.nio.BufferOverflowException;
@@ -466,5 +468,25 @@ public final class Marshalling {
                 throw new RuntimeException("Error invoking constructor", e);
             }
         }
+    }
+
+    private static final Externalizer NULL_EXTERNALIZER = new AbstractExternalizer() {
+        private static final long serialVersionUID = 1L;
+
+        public void writeExternal(final Object subject, final ObjectOutput output) throws IOException {
+        }
+
+        public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
+        }
+    };
+
+    /**
+     * Get a null externalizer.  Useful in conjunction with {@link org.jboss.marshalling.ObjectTable} entries.
+     * This externalizer reads and writes no data.
+     *
+     * @return the null externalizer
+     */
+    public static Externalizer nullExternalizer() {
+        return NULL_EXTERNALIZER;
     }
 }

@@ -116,4 +116,13 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
     protected ObjectTable getDefaultObjectTable() {
         return Marshalling.nullObjectTable();
     }
+
+    /**
+     * Get the default version, which is used if none was configured.  This base implementation returns -1.
+     *
+     * @return the default version to use
+     */
+    protected int getDefaultVersion() {
+        return -1;
+    }
 }

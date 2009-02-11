@@ -38,6 +38,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private int instanceCount = 256;
     private int classCount = 64;
     private int bufferSize = 512;
+    private int version = -1;
 
     /**
      * Construct a new instance.
@@ -253,6 +254,24 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
+     * Get the version to use, for protocols with multiple versions.
+     *
+     * @return the version to use
+     */
+    public int getVersion() {
+        return version;
+    }
+
+    /**
+     * Set the version to use, for protocols with multiple versions.
+     *
+     * @param version the version to use
+     */
+    public void setVersion(final int version) {
+        this.version = version;
+    }
+
+    /**
      * Create a shallow clone.
      *
      * @return a clone
@@ -296,6 +315,7 @@ public final class MarshallingConfiguration implements Cloneable {
         builder.append("instanceCount=").append(instanceCount);
         builder.append(" classCount=").append(classCount);
         builder.append(" bufferSize=").append(bufferSize);
+        builder.append(" version=").append(version);
         return builder.toString();
     }
 }

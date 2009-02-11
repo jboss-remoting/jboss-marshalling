@@ -65,8 +65,11 @@ public class RiverMarshaller extends AbstractMarshaller {
     private RiverObjectOutputStream objectOutputStream;
     private MarshallerObjectOutput objectOutput;
 
-    protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {
+    protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
+        if (configuredVersion > Protocol.MAX_VERSION) {
+            throw new IOException("Protocol version not supported");
+        }
         this.registry = registry;
         final float loadFactor = 0x0.5p0f;
         instanceCache = new IdentityIntMap<Object>((int) ((double)configuration.getInstanceCount() / (double)loadFactor), loadFactor);

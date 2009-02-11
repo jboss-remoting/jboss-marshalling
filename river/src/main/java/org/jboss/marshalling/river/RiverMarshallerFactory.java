@@ -57,4 +57,8 @@ public class RiverMarshallerFactory extends AbstractMarshallerFactory {
     public Marshaller createMarshaller(final MarshallingConfiguration configuration) throws IOException {
         return new RiverMarshaller(this, registry, configuration);
     }
+
+    protected int getDefaultVersion() {
+        return 0;
+    }
 }

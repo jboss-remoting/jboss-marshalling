@@ -26,6 +26,8 @@ package org.jboss.marshalling.river;
  *
  */
 public final class Protocol {
+    public static final int MAX_VERSION = 0;
+
     public static final int ID_NULL_OBJECT              = 0x01;
     public static final int ID_REPEAT_OBJECT            = 0x02;
     public static final int ID_PREDEFINED_OBJECT        = 0x03;
@@ -85,6 +87,14 @@ public final class Protocol {
     public static final int ID_DOUBLE_CLASS             = 0x30;
 
     public static final int ID_VOID_CLASS               = 0x31; // Void.class
+
+    // protocol version >= 1
+    public static final int ID_START_BLOCK_SMALL        = 0x32; // 8 bit size
+    public static final int ID_START_BLOCK_MEDIUM       = 0x33; // 16 bit size
+    public static final int ID_START_BLOCK_LARGE        = 0x34; // 32 bit size
+    public static final int ID_END_BLOCK_DATA           = 0x35;
+    public static final int ID_CLEAR_CLASS_CACHE        = 0x36;
+    public static final int ID_CLEAR_INSTANCE_CACHE     = 0x37;
 
     private Protocol() {
     }

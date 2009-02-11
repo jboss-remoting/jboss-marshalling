@@ -57,6 +57,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final ArrayList<ClassDescriptor> classCache;
     private final SerializableClassRegistry registry;
     private MarshallerObjectInput objectInput;
+    private int version;
 
     private static final Field proxyInvocationHandler;
     private RiverObjectInputStream objectInputStream;
@@ -374,6 +375,19 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private static final class DummyInvocationHandler implements InvocationHandler {
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
             throw new NoSuchMethodError("Invocation handler not yet loaded");
+        }
+    }
+
+    protected void doStart() throws IOException {
+        super.doStart();
+        if (configuredVersion > 0) {
+            int version = readUnsignedByte();
+            if (version > Protocol.MAX_VERSION) {
+                throw new IOException("Unsupported protocol version " + version);
+            }
+            this.version = version;
+        } else {
+            version = 0;
         }
     }
 

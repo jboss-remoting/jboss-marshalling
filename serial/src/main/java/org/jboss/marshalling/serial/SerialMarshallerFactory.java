@@ -41,7 +41,7 @@ public final class SerialMarshallerFactory extends AbstractMarshallerFactory imp
     private final SerializableClassRegistry registry;
 
     private static final StreamHeader defaultHeader = Marshalling.streamHeader(new byte[] {
-            (byte) 0xac, (byte) 0xed, 0x00, 0x05,
+            (byte) 0xac, (byte) 0xed
     });
 
     /**
@@ -57,6 +57,10 @@ public final class SerialMarshallerFactory extends AbstractMarshallerFactory imp
 
     protected StreamHeader getDefaultStreamHeader() {
         return defaultHeader;
+    }
+
+    protected int getDefaultVersion() {
+        return 5;
     }
 
     public Unmarshaller createUnmarshaller(final MarshallingConfiguration configuration) throws IOException {

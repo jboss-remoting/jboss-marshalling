@@ -73,6 +73,9 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
 
     SerialMarshaller(final AbstractMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
+        if (configuredVersion != 5) {
+            throw new IOException("Only protocol version 5 is supported for writing");
+        }
         this.registry = registry;
         instanceCache = new IdentityIntMap<Object>(configuration.getInstanceCount());
         descriptorCache = new IdentityIntMap<Class<?>>(configuration.getClassCount());
@@ -566,6 +569,11 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
     public void start(final ByteOutput byteOutput) throws IOException {
         blockMarshaller = new BlockMarshaller(this, bufferSize < MIN_BUFFER_SIZE ? MIN_BUFFER_SIZE : bufferSize);
         super.start(byteOutput);
+    }
+
+    protected void doStart() throws IOException {
+        super.doStart();
+        writeShort(configuredVersion);
     }
 
     public void finish() throws IOException {

@@ -26,10 +26,6 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
 import org.testng.annotations.Test;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
 import static org.testng.AssertJUnit.*;
 
 /**

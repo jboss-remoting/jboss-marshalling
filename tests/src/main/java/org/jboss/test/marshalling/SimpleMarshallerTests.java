@@ -1142,7 +1142,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     @Test
-    public void testClassReplace() throws Throwable {
+    public void testClassReplace1() throws Throwable {
         final OriginalClass orig = new OriginalClass();
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
@@ -1169,6 +1169,45 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object repl = unmarshaller.readObject();
+                assertEquals(ReplacementClass.class, repl.getClass());
+                assertSame(repl, unmarshaller.readObject());
+                assertEquals(((ReplacementClass)repl).blah, "Testing!");
+            }
+        });
+    }
+
+    @Test
+    public void testClassReplace2() throws Throwable {
+        final OriginalClass orig = new OriginalClass();
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassResolver(new SimpleClassResolver(getClass().getClassLoader()) {
+                    protected Class<?> loadClass(final String name) throws ClassNotFoundException {
+                        if (OriginalClass.class.getName().equals(name)) {
+                            return ReplacementClass.class;
+                        } else {
+                            return super.loadClass(name);
+                        }
+                    }
+                });
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof ObjectOutputStreamMarshaller) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    throw new SkipException("JavaSerializationMarshaller does not support class renaming");
+                }
+                marshaller.writeObject(orig);
+                marshaller.writeObject(orig);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+                    throw new SkipException("Substituting class name on read does not work with " + unmarshaller);
+                }
                 final Object repl = unmarshaller.readObject();
                 assertEquals(ReplacementClass.class, repl.getClass());
                 assertSame(repl, unmarshaller.readObject());

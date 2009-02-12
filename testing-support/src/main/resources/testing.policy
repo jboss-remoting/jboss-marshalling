@@ -4,6 +4,8 @@
 grant codeBase "file:${build.home}/tests/target/main/classes/-"
 {
     permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "enableSubclassImplementation";
+    permission java.io.SerializablePermission "enableSubstitution";
 };
 
 // Permissions for the core
@@ -53,7 +55,7 @@ grant codeBase "file:${idea.home}/-"
     permission java.security.AllPermission;
 };
 
-grant codeBase "file:${lib.junit.local}"
+grant codeBase "file:${lib.testng.local}"
 {
     permission java.security.AllPermission;
 };

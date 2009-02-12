@@ -30,6 +30,8 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.Externalize;
+import org.testng.SkipException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -51,6 +53,15 @@ public final class ObjectOutputStreamTestMarshallerProvider implements TestMarsh
 
         private MyObjectOutputStream(final MarshallingConfiguration config, final OutputStream out) throws IOException {
             super(out);
+            if (config.getClassTable() != null) {
+                throw new SkipException("class tables not supported");
+            }
+            if (config.getObjectTable() != null) {
+                throw new SkipException("object tables not supported");
+            }
+            if (config.getClassExternalizerFactory() != null || config.getExternalizerFactory() != null) {
+                throw new SkipException("externalizers not supported");
+            }
             final ObjectResolver objectResolver = config.getObjectResolver();
             this.objectResolver = objectResolver == null ? Marshalling.nullObjectResolver() : objectResolver;
             final ClassResolver classResolver = config.getClassResolver();
@@ -69,6 +80,9 @@ public final class ObjectOutputStreamTestMarshallerProvider implements TestMarsh
         }
 
         protected Object replaceObject(final Object obj) throws IOException {
+            if (obj.getClass().getAnnotation(Externalize.class) != null) {
+                throw new SkipException("@Externalize object serialization not supported");
+            }
             return objectResolver.writeReplace(obj);
         }
     }

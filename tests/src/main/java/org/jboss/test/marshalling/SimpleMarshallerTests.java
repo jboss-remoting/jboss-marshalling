@@ -33,12 +33,8 @@ import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
-import org.jboss.testsupport.TestSuiteHelper;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import static org.junit.runners.Parameterized.Parameters;
-import static junit.framework.Assert.*;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 import java.util.Collection;
 import java.util.Arrays;
 import java.util.Random;
@@ -62,17 +58,7 @@ import java.lang.reflect.Proxy;
 /**
  *
  */
-@RunWith(Parameterized.class)
 public final class SimpleMarshallerTests extends TestBase {
-
-    public static junit.framework.Test suite() {
-        return TestSuiteHelper.testSuiteFor(SimpleMarshallerTests.class);
-    }
-
-    @Parameters
-    public static Collection<Object[]> parameters() {
-        return TestBase.parameters();
-    }
 
     public SimpleMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
         super(testMarshallerProvider, testUnmarshallerProvider, configuration);

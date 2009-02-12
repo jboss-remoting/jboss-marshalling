@@ -30,6 +30,7 @@ import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.SimpleClassResolver;
+import org.testng.SkipException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.InputStream;
@@ -52,6 +53,12 @@ public final class ObjectInputStreamTestUnmarshallerProvider implements TestUnma
 
         private MyObjectInputStream(final MarshallingConfiguration config, final InputStream in) throws IOException {
             super(in);
+            if (config.getClassTable() != null) {
+                throw new SkipException("class tables not supported");
+            }
+            if (config.getObjectTable() != null) {
+                throw new SkipException("object tables not supported");
+            }
             final ObjectResolver objectResolver = config.getObjectResolver();
             this.objectResolver = objectResolver == null ? Marshalling.nullObjectResolver() : objectResolver;
             final ClassResolver classResolver = config.getClassResolver();

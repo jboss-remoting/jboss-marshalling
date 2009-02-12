@@ -25,55 +25,19 @@ package org.jboss.test.marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.testsupport.TestSuiteHelper;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.Test;
-import java.util.Collection;
-import java.util.ArrayList;
+import org.testng.annotations.Test;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
-import static junit.framework.Assert.*;
+import static org.testng.AssertJUnit.*;
 
 /**
  * A template for running tests on a single object.
  */
-@RunWith(Parameterized.class)
 public final class SingleObjectMarshallerTests extends TestBase {
 
-    public static junit.framework.Test suite() {
-        return TestSuiteHelper.testSuiteFor(SingleObjectMarshallerTests.class);
-    }
-
     private final Object subject;
-
-    private static Map<Object, Object> testMap() {
-        final HashMap<Object, Object> map = new HashMap<Object, Object>();
-        map.put(Integer.valueOf(1694), "Test");
-        map.put("Blah blah", Boolean.TRUE);
-        return map;
-    }
-
-    private static final Object[] testObjects = new Object[] {
-            new TestComplexObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))),
-            new TestComplexExternalizableObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))),
-            Integer.valueOf(1234),
-            Boolean.TRUE,
-            testMap(),
-    };
-
-    @Parameterized.Parameters
-    public static Collection<Object[]> parameters() {
-        final Collection<Object[]> c = new ArrayList<Object[]>();
-        for (Object[] p : TestBase.parameters()) {
-            for (Object o : testObjects) {
-                c.add(new Object[] { p[0], p[1], ((MarshallingConfiguration)p[2]).clone(), o });
-            }
-        }
-        return c;
-    }
 
     public SingleObjectMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration, Object subject) {
         super(testMarshallerProvider, testUnmarshallerProvider, configuration);

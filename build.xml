@@ -27,16 +27,20 @@
         <get src="${remote.license.dir}/${lib.jboss-serialization.license}.txt" dest="${lib.jboss-serialization.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
     </target>
 
-    <!-- Library: JUnit -->
+    <!-- Library: TestNG -->
 
-    <target name="lib.junit-check">
-        <available property="lib.junit.exists" file="${lib.junit.local}"/>
+    <target name="lib.testng-check">
+        <available property="lib.testng.exists" file="${lib.testng.local}"/>
     </target>
 
-    <target name="lib.junit" depends="lib.junit-check" unless="lib.junit.exists">
-        <mkdir dir="${local.repository}/${lib.junit.dir}"/>
-        <get src="${lib.junit.remote}" dest="${lib.junit.local}" usetimestamp="true" ignoreerrors="false"/>
-        <get src="${remote.license.dir}/${lib.junit.license}.txt" dest="${lib.junit.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
+    <target name="lib.testng-fetch" depends="lib.testng-check" unless="lib.testng.exists">
+        <mkdir dir="${local.repository}/${lib.testng.dir}"/>
+        <get src="${lib.testng.remote}" dest="${lib.testng.local}" usetimestamp="true" ignoreerrors="false"/>
+        <get src="${remote.license.dir}/${lib.testng.license}.txt" dest="${lib.testng.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
+    </target>
+
+    <target name="lib.testng" depends="lib.testng-fetch">
+        <taskdef resource="testngtasks" classpath="${lib.testng.local}"/>
     </target>
 
     <!-- api module -->
@@ -217,7 +221,7 @@
                 debug="true">
             <compilerarg value="-Xlint:unchecked"/>
             <classpath>
-                <pathelement location="${lib.junit.local}"/>
+                <pathelement location="${lib.testng.local}"/>
             </classpath>
         </javac>
         <touch file="testing-support/target/main/.lastcompile" verbose="false"/>
@@ -227,7 +231,7 @@
         <delete dir="testing-support/target"/>
     </target>
 
-    <target name="testing-support" description="Build the testing-support module" depends="lib.junit,testing-support.compile">
+    <target name="testing-support" description="Build the testing-support module" depends="lib.testng,testing-support.compile">
         <path id="testing-support.classpath">
             <pathelement location="testing-support/target/main/classes"/>
         </path>
@@ -261,7 +265,7 @@
                 <path refid="serial.classpath"/>
                 <path refid="serialization-java.classpath"/>
                 <path refid="testing-support.classpath"/>
-                <pathelement location="${lib.junit.local}"/>
+                <pathelement location="${lib.testng.local}"/>
             </classpath>
         </javac>
         <touch file="tests/target/main/.lastcompile" verbose="false"/>
@@ -279,13 +283,12 @@
         <echo message="JVM args = ${test.jvmargs}"/>
         <echo message="build.home = ${basedir}"/>
         <echo message="ant.library.dir = ${ant.home}/lib"/>
-        <echo message="lib.junit.local = ${lib.junit.local}"/>
-        <junit printsummary="true" fork="yes" includeantruntime="true">
+        <echo message="lib.testng.local = ${lib.testng.local}"/>
+        <testng outputDir="tests/target/test-results">
             <sysproperty key="build.home" value="${basedir}"/>
             <sysproperty key="ant.library.dir" value="${ant.home}/lib"/>
-            <sysproperty key="lib.junit.local" value="${lib.junit.local}"/>
+            <sysproperty key="lib.testng.local" value="${lib.testng.local}"/>
             <jvmarg line="${test.jvmargs}"/>
-            <formatter type="plain" extension="${extension}"/>
             <classpath>
                 <path refid="api.classpath"/>
                 <path refid="river.classpath"/>
@@ -293,15 +296,12 @@
                 <path refid="serial.classpath"/>
                 <path refid="tests.classpath"/>
                 <path refid="testing-support.classpath"/>
-                <pathelement location="${lib.junit.local}"/>
+                <pathelement location="${lib.testng.local}"/>
             </classpath>
-            <batchtest fork="yes" todir="tests/target/test-results"
-                       haltonfailure="no">
-               <fileset dir="tests/target/main/classes">
-                   <include name="**/*Tests.class"/>
-               </fileset>
-            </batchtest>
-        </junit>
+            <classfileset dir="tests/target/main/classes">
+                <include name="**/*TestFactory.class"/>
+            </classfileset>
+        </testng>
     </target>
 
     <target name="tests.run.plain" depends="tests,testing-support">
@@ -322,7 +322,7 @@
 
     <target name="tests.run" depends="tests.run.plain,tests.run.security"/>
 
-    <target name="tests" description="Build the tests module" depends="lib.junit,api,river,serial,serialization-java,testing-support,tests.compile">
+    <target name="tests" description="Build the tests module" depends="lib.testng,api,river,serial,serialization-java,testing-support,tests.compile">
         <path id="tests.classpath">
             <pathelement location="tests/target/main/classes"/>
         </path>

@@ -23,20 +23,16 @@
 package org.jboss.test.marshalling;
 
 import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import static org.jboss.test.marshalling.Pair.pair;
-import static org.junit.runners.Parameterized.Parameters;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +43,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
-import static junit.framework.Assert.*;
+import static org.testng.AssertJUnit.*;
+import org.testng.annotations.DataProvider;
 
 /**
  *
@@ -98,54 +95,6 @@ public abstract class TestBase {
             }
         }
     }
-
-    @Parameters
-    @SuppressWarnings({ "ZeroLengthArrayAllocation" })
-    public static Collection<Object[]> parameters() {
-
-        final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
-        final TestMarshallerProvider riverTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory);
-        final TestUnmarshallerProvider riverTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory);
-
-        final SerialMarshallerFactory serialMarshallerFactory = new SerialMarshallerFactory();
-        final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
-        final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
-
-        final JavaSerializationMarshallerFactory javaSerializationMarshallerFactory = new JavaSerializationMarshallerFactory();
-        final TestMarshallerProvider javaTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(javaSerializationMarshallerFactory);
-        final TestUnmarshallerProvider javaTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(javaSerializationMarshallerFactory);
-
-        final TestMarshallerProvider oosTestMarshallerProvider = new ObjectOutputStreamTestMarshallerProvider();
-        final TestUnmarshallerProvider oisTestUnmarshallerProvider = new ObjectInputStreamTestUnmarshallerProvider();
-
-        final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
-                // river
-                pair(riverTestMarshallerProvider, riverTestUnmarshallerProvider),
-
-                // serial
-                pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
-                pair(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
-
-                // reflection java serialization
-                pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
-                pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider)
-
-                // todo: jboss serialization
-        );
-
-        final Collection<Object[]> c = new ArrayList<Object[]>();
-        final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setCreator(new SunReflectiveCreator());
-        for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
-            // Add this combination
-            c.add(new Object[] { pair.getA(), pair.getB(), configuration.clone() });
-        }
-
-        return c;
-    }
-
 
     @SuppressWarnings({ "ConstructorNotProtectedInAbstractClass" })
     public TestBase(final TestMarshallerProvider testMarshallerProvider, final TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {

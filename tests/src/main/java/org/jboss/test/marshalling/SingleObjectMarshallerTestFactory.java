@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  *
@@ -61,12 +62,24 @@ public final class SingleObjectMarshallerTestFactory {
         return map;
     }
 
+    private static List<Object> testList() {
+        final ArrayList<Object> list = new ArrayList<Object>();
+        list.add(Integer.valueOf(478392));
+        list.add("A string");
+        list.add(Boolean.FALSE);
+        list.add(Boolean.TRUE);
+        return list;
+    }
+
     private static final Object[] testObjects = new Object[] {
             new TestComplexObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))),
             new TestComplexExternalizableObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))),
             Integer.valueOf(1234),
             Boolean.TRUE,
             testMap(),
+            testList(),
+            Collections.unmodifiableMap(testMap()),
+            Collections.unmodifiableList(testList()),
     };
 
     @Factory(dataProvider = "singleObjectProvider")

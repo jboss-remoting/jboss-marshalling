@@ -32,10 +32,14 @@ import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
+import org.jboss.marshalling.SimpleClassResolver;
+import org.jboss.marshalling.ObjectOutputStreamMarshaller;
+import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
+import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
-import java.util.Collection;
+import org.testng.SkipException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Map;
@@ -744,6 +748,7 @@ public final class SimpleMarshallerTests extends TestBase {
         map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
         map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
         map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setExternalizerFactory(new ExternalizerFactory() {
@@ -759,11 +764,17 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    javaSerializationMarshaller.set(true);
+                }
                 marshaller.writeObject(map);
                 marshaller.writeObject(map);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
+                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
+                }
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(map, m1);
                 assertSame(m1, unmarshaller.readObject());
@@ -779,6 +790,7 @@ public final class SimpleMarshallerTests extends TestBase {
         map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
         map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
         map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setClassExternalizerFactory(new ClassExternalizerFactory() {
@@ -793,11 +805,17 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    javaSerializationMarshaller.set(true);
+                }
                 marshaller.writeObject(map);
                 marshaller.writeObject(map);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
+                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
+                }
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(map, m1);
                 assertSame(m1, unmarshaller.readObject());
@@ -1055,6 +1073,10 @@ public final class SimpleMarshallerTests extends TestBase {
         final TestExternalizerWithAnnotation subject = new TestExternalizerWithAnnotation("Title", 1234);
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    throw new SkipException("JavaSerializationMarshaller does not support Externalizer annotation");
+                }
+
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
             }
@@ -1104,5 +1126,54 @@ public final class SimpleMarshallerTests extends TestBase {
         public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
             // empty
         }
+    }
+
+    public static final class OriginalClass implements Serializable {
+        private static final long serialVersionUID = -1179299150244154246L;
+
+        private String blah = "Testing!";
+    }
+
+    public static final class ReplacementClass implements Serializable {
+
+        private static final long serialVersionUID = -1179299150244154246L;
+
+        private String blah = "Foo!";
+    }
+
+    @Test
+    public void testClassReplace() throws Throwable {
+        final OriginalClass orig = new OriginalClass();
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassResolver(new SimpleClassResolver(getClass().getClassLoader()) {
+                    public String getClassName(final Class<?> clazz) throws IOException {
+                        if (clazz == OriginalClass.class) {
+                            return super.getClassName(ReplacementClass.class);
+                        } else {
+                            return super.getClassName(clazz);
+                        }
+                    }
+                });
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof ObjectOutputStreamMarshaller) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    throw new SkipException("JavaSerializationMarshaller does not support class renaming");
+                }
+                marshaller.writeObject(orig);
+                marshaller.writeObject(orig);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object repl = unmarshaller.readObject();
+                assertEquals(ReplacementClass.class, repl.getClass());
+                assertSame(repl, unmarshaller.readObject());
+                assertEquals(((ReplacementClass)repl).blah, "Testing!");
+            }
+        });
     }
 }

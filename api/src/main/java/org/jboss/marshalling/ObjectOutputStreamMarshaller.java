@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * A Marshaller which simply wraps an object stream.  Useful for retrofitting and testing applications.
  */
-public final class ObjectOutputStreamMarshaller implements Marshaller {
+public class ObjectOutputStreamMarshaller implements Marshaller {
     private final ObjectOutputStream oos;
 
     /**
@@ -147,6 +147,5 @@ public final class ObjectOutputStreamMarshaller implements Marshaller {
 
     /** {@inheritDoc} */
     public void finish() throws IOException {
-        throw new UnsupportedOperationException();
     }
 }

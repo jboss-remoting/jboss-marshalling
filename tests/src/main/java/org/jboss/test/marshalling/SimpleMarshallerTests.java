@@ -22,7 +22,6 @@
 
 package org.jboss.test.marshalling;
 
-import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
@@ -64,9 +63,10 @@ import java.lang.reflect.Proxy;
  *
  */
 @RunWith(Parameterized.class)
-public final class SimpleTests extends TestBase {
+public final class SimpleMarshallerTests extends TestBase {
+
     public static junit.framework.Test suite() {
-        return TestSuiteHelper.testSuiteFor(SimpleTests.class);
+        return TestSuiteHelper.testSuiteFor(SimpleMarshallerTests.class);
     }
 
     @Parameters
@@ -74,9 +74,8 @@ public final class SimpleTests extends TestBase {
         return TestBase.parameters();
     }
 
-    public SimpleTests(MarshallerFactory marshallerFactory, MarshallingConfiguration configuration) {
-        super(marshallerFactory, configuration);
-        System.out.printf("Using %s, %s\n", marshallerFactory, configuration);
+    public SimpleMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
+        super(testMarshallerProvider, testUnmarshallerProvider, configuration);
     }
 
     @Test
@@ -1002,7 +1001,7 @@ public final class SimpleTests extends TestBase {
     @Test
     public void testProxy() throws Throwable {
         final TestInvocationHandler tih = new TestInvocationHandler();
-        final Adder adder = (Adder) Proxy.newProxyInstance(SimpleTests.class.getClassLoader(), new Class<?>[] { Adder.class }, tih);
+        final Adder adder = (Adder) Proxy.newProxyInstance(SimpleMarshallerTests.class.getClassLoader(), new Class<?>[] { Adder.class }, tih);
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 assertEquals(42, adder.add(41));

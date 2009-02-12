@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * An Unmarshaller which simply wraps an object stream.  Useful for retrofitting and testing applications.
  */
-public final class ObjectInputStreamUnmarshaller implements Unmarshaller {
+public class ObjectInputStreamUnmarshaller implements Unmarshaller {
     private final ObjectInputStream ois;
 
     /**
@@ -173,6 +173,5 @@ public final class ObjectInputStreamUnmarshaller implements Unmarshaller {
 
     /** {@inheritDoc} */
     public void finish() throws IOException {
-        throw new UnsupportedOperationException();
     }
 }

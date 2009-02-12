@@ -22,18 +22,20 @@
 
 package org.jboss.test.marshalling;
 
-import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.ByteInput;
+import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
-import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.serial.SerialMarshallerFactory;
+import static org.jboss.test.marshalling.Pair.pair;
 import static org.junit.runners.Parameterized.Parameters;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -52,7 +54,8 @@ import static junit.framework.Assert.*;
  */
 public abstract class TestBase {
 
-    protected final MarshallerFactory marshallerFactory;
+    protected final TestMarshallerProvider testMarshallerProvider;
+    protected final TestUnmarshallerProvider testUnmarshallerProvider;
     protected final MarshallingConfiguration configuration;
 
     public static void assertEOF(final ObjectInput objectInput) throws IOException {
@@ -99,33 +102,45 @@ public abstract class TestBase {
     @Parameters
     @SuppressWarnings({ "ZeroLengthArrayAllocation" })
     public static Collection<Object[]> parameters() {
-        final List<MarshallerFactory> marshallerFactories = Arrays.<MarshallerFactory>asList(
-                new RiverMarshallerFactory(),
-                new JavaSerializationMarshallerFactory(),
-                new SerialMarshallerFactory()
-        );
-        final List<StreamHeader> streamHeaders = Arrays.<StreamHeader>asList(
-                Marshalling.nullStreamHeader(),
-                Marshalling.streamHeader(new byte[] { 1, 2, 3, 4, 5 }),
-                null
-        );
-        final List<Creator> creators = Arrays.<Creator>asList(
-                new ReflectiveCreator(),
-                new SunReflectiveCreator()
+
+        final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
+        final TestMarshallerProvider riverTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory);
+        final TestUnmarshallerProvider riverTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory);
+
+        final SerialMarshallerFactory serialMarshallerFactory = new SerialMarshallerFactory();
+        final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
+        final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
+
+        final JavaSerializationMarshallerFactory javaSerializationMarshallerFactory = new JavaSerializationMarshallerFactory();
+        final TestMarshallerProvider javaTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(javaSerializationMarshallerFactory);
+        final TestUnmarshallerProvider javaTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(javaSerializationMarshallerFactory);
+
+        final TestMarshallerProvider oosTestMarshallerProvider = new ObjectOutputStreamTestMarshallerProvider();
+        final TestUnmarshallerProvider oisTestUnmarshallerProvider = new ObjectInputStreamTestUnmarshallerProvider();
+
+        final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
+                // river
+                pair(riverTestMarshallerProvider, riverTestUnmarshallerProvider),
+
+                // serial
+                pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
+                pair(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
+                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
+
+                // reflection java serialization
+                pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
+                pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
+                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider)
+
+                // todo: jboss serialization
         );
 
         final Collection<Object[]> c = new ArrayList<Object[]>();
         final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        for (MarshallerFactory factory : marshallerFactories) {
-            for (StreamHeader streamHeader : streamHeaders) {
-                configuration.setStreamHeader(streamHeader);
-                for (Creator creator : creators) {
-                    configuration.setCreator(creator);
-
-                    // Add this combination
-                    c.add(new Object[] { factory, configuration.clone() });
-                }
-            }
+        configuration.setCreator(new SunReflectiveCreator());
+        for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
+            // Add this combination
+            c.add(new Object[] { pair.getA(), pair.getB(), configuration.clone() });
         }
 
         return c;
@@ -133,8 +148,9 @@ public abstract class TestBase {
 
 
     @SuppressWarnings({ "ConstructorNotProtectedInAbstractClass" })
-    public TestBase(MarshallerFactory marshallerFactory, MarshallingConfiguration configuration) {
-        this.marshallerFactory = marshallerFactory;
+    public TestBase(final TestMarshallerProvider testMarshallerProvider, final TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
+        this.testMarshallerProvider = testMarshallerProvider;
+        this.testUnmarshallerProvider = testUnmarshallerProvider;
         this.configuration = configuration;
     }
 
@@ -142,14 +158,16 @@ public abstract class TestBase {
         final MarshallingConfiguration configuration = this.configuration.clone();
         readWriteTest.configure(configuration);
 
-        final Marshaller marshaller = marshallerFactory.createMarshaller(configuration);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);
-        marshaller.start(Marshalling.createByteOutput(baos));
+        final ByteOutput byteOutput = Marshalling.createByteOutput(baos);
+
+        final Marshaller marshaller = testMarshallerProvider.create(configuration, byteOutput);
         readWriteTest.runWrite(marshaller);
         marshaller.finish();
         final byte[] bytes = baos.toByteArray();
-        final Unmarshaller unmarshaller = marshallerFactory.createUnmarshaller(configuration);
-        unmarshaller.start(Marshalling.createByteInput(new ByteArrayInputStream(bytes)));
+
+        final ByteInput byteInput = Marshalling.createByteInput(new ByteArrayInputStream(bytes));
+        final Unmarshaller unmarshaller = testUnmarshallerProvider.create(configuration, byteInput);
         readWriteTest.runRead(unmarshaller);
         unmarshaller.finish();
     }

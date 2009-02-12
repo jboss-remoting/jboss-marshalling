@@ -232,6 +232,40 @@ public final class Marshalling {
         };
     }
 
+    /**
+     * Create an {@code InputStream} wrapper for a {@code ByteInput}.
+     *
+     * @param byteInput the byte input
+     * @return the input stream wrapper
+     */
+    public static InputStream createInputStream(final ByteInput byteInput) {
+        return new InputStream() {
+            public int read() throws IOException {
+                return byteInput.read();
+            }
+
+            public int read(final byte[] b) throws IOException {
+                return byteInput.read(b);
+            }
+
+            public int read(final byte[] b, final int off, final int len) throws IOException {
+                return byteInput.read(b, off, len);
+            }
+
+            public long skip(final long n) throws IOException {
+                return byteInput.skip(n);
+            }
+
+            public int available() throws IOException {
+                return byteInput.available();
+            }
+
+            public void close() throws IOException {
+                byteInput.close();
+            }
+        };
+    }
+
     private static EOFException writePastEnd() {
         return new EOFException("Write past end of buffer");
     }
@@ -313,6 +347,36 @@ public final class Marshalling {
 
             public void flush() throws IOException {
                 outputStream.flush();
+            }
+        };
+    }
+
+    /**
+     * Create a {@code OutputStream} wrapper for a {@code ByteOutput}.
+     *
+     * @param byteOutput the byte output
+     * @return the output stream wrapper
+     */
+    public static OutputStream createOutputStream(final ByteOutput byteOutput) {
+        return new OutputStream() {
+            public void write(final int b) throws IOException {
+                byteOutput.write(b);
+            }
+
+            public void write(final byte[] b) throws IOException {
+                byteOutput.write(b);
+            }
+
+            public void write(final byte[] b, final int off, final int len) throws IOException {
+                byteOutput.write(b, off, len);
+            }
+
+            public void flush() throws IOException {
+                byteOutput.flush();
+            }
+
+            public void close() throws IOException {
+                byteOutput.close();
             }
         };
     }

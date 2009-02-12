@@ -22,7 +22,6 @@
 
 package org.jboss.test.marshalling;
 
-import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
@@ -42,9 +41,10 @@ import static junit.framework.Assert.*;
  * A template for running tests on a single object.
  */
 @RunWith(Parameterized.class)
-public final class SingleObjectTests extends TestBase {
+public final class SingleObjectMarshallerTests extends TestBase {
+
     public static junit.framework.Test suite() {
-        return TestSuiteHelper.testSuiteFor(SingleObjectTests.class);
+        return TestSuiteHelper.testSuiteFor(SingleObjectMarshallerTests.class);
     }
 
     private final Object subject;
@@ -69,15 +69,14 @@ public final class SingleObjectTests extends TestBase {
         final Collection<Object[]> c = new ArrayList<Object[]>();
         for (Object[] p : TestBase.parameters()) {
             for (Object o : testObjects) {
-                c.add(new Object[] { p[0], ((MarshallingConfiguration)p[1]).clone(), o });
+                c.add(new Object[] { p[0], p[1], ((MarshallingConfiguration)p[2]).clone(), o });
             }
         }
         return c;
     }
 
-    public SingleObjectTests(MarshallerFactory marshallerFactory, MarshallingConfiguration configuration, Object subject) {
-        super(marshallerFactory, configuration);
-        System.out.printf("Using %s, %s, %s\n", marshallerFactory, configuration, subject);
+    public SingleObjectMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration, Object subject) {
+        super(testMarshallerProvider, testUnmarshallerProvider, configuration);
         this.subject = subject;
     }
 

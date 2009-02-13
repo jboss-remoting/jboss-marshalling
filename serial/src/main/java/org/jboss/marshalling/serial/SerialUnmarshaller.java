@@ -105,7 +105,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
 
     Object readBackReference(int handle) throws IOException {
         final int idx = handle - baseWireHandle;
-        if (idx < 0 || idx > instanceCache.size()) {
+        if (idx < 0 || idx >= instanceCache.size()) {
             throw new StreamCorruptedException(String.format("Invalid backreference: %08x", Integer.valueOf(handle)));
         }
         final Object obj = instanceCache.get(idx);

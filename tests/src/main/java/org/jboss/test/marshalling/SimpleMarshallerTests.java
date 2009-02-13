@@ -1215,4 +1215,36 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    @Test
+    public void testReset() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                final String o1 = "This is a test";
+                final Integer o2 = Integer.valueOf(48392);
+                marshaller.writeObject(o1);
+                marshaller.writeObject(o2);
+                marshaller.writeObject(o1);
+                marshaller.writeObject(o2);
+                marshaller.clearClassCache(); // clears instance cache too
+                marshaller.writeObject(o1);
+                marshaller.writeObject(o2);
+                marshaller.writeObject(o1);
+                marshaller.writeObject(o2);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final String o1 = (String) unmarshaller.readObject();
+                final Integer o2 = (Integer) unmarshaller.readObject();
+                assertSame(o1, unmarshaller.readObject());
+                assertSame(o2, unmarshaller.readObject());
+                final String o1p = (String) unmarshaller.readObject();
+                final Integer o2p = (Integer) unmarshaller.readObject();
+                assertNotSame(o1, o1p);
+                assertNotSame(o2, o2p);
+                assertSame(o1p, unmarshaller.readObject());
+                assertSame(o2p, unmarshaller.readObject());
+            }
+        });
+    }
 }

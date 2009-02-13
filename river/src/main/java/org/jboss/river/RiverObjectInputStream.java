@@ -226,7 +226,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     public void registerValidation(final ObjectInputValidation obj, final int prio) throws NotActiveException, InvalidObjectException {
     }
 
-    public SerializableClassDescriptor swapClass(final SerializableClassDescriptor descriptor) {
+    protected SerializableClassDescriptor swapClass(final SerializableClassDescriptor descriptor) {
         try {
             return serializableClassDescriptor;
         } finally {
@@ -234,7 +234,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
     }
 
-    public Object swapCurrent(final Object obj) {
+    protected Object swapCurrent(final Object obj) {
         try {
             return current;
         } finally {
@@ -242,11 +242,11 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
     }
 
-    public State start() {
+    protected State start() {
         return state.getAndSet(State.UNREAD_FIELDS);
     }
 
-    public void finish(final State restoreState) throws IOException {
+    protected void finish(final State restoreState) throws IOException {
         switch (state.getAndSet(restoreState)) {
             case OFF:
                 // ??
@@ -259,13 +259,13 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
     }
 
-    public void fullReset() {
+    protected void fullReset() {
         state.set(State.OFF);
         serializableClassDescriptor = null;
         current = null;
     }
 
-    public enum State {
+    protected enum State {
         OFF,
         UNREAD_FIELDS,
         ON,

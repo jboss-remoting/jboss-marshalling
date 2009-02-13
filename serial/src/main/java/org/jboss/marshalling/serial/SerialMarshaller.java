@@ -560,6 +560,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         replacementCache.clear();
         externalizers.clear();
         instanceSeq = baseWireHandle;
+        write(TC_RESET);
     }
 
     public void clearClassCache() throws IOException {

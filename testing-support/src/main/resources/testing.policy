@@ -4,6 +4,7 @@
 grant codeBase "file:${build.home}/tests/target/main/classes/-"
 {
     permission java.io.SerializablePermission "allowSerializationReflection";
+    permission java.io.SerializablePermission "creator";
 };
 
 grant codeBase "file:${build.home}/serialization-java/target/test/classes/-"
@@ -27,7 +28,7 @@ grant codeBase "file:${build.home}/api/target/main/classes/-"
     permission java.lang.RuntimePermission "reflectionFactoryAccess";
     permission java.lang.RuntimePermission "accessDeclaredMembers";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-
+    permission java.io.SerializablePermission "creator";
 };
 
 grant codeBase "file:${build.home}/river/target/main/classes/-"
@@ -35,6 +36,7 @@ grant codeBase "file:${build.home}/river/target/main/classes/-"
     permission java.io.SerializablePermission "allowSerializationReflection";
     permission java.io.SerializablePermission "enableSubclassImplementation";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+    permission java.io.SerializablePermission "creator";
 };
 
 grant codeBase "file:${build.home}/serialization-java/target/main/classes/-"
@@ -43,6 +45,7 @@ grant codeBase "file:${build.home}/serialization-java/target/main/classes/-"
     permission java.io.SerializablePermission "enableSubclassImplementation";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
     permission java.io.SerializablePermission "enableSubstitution";
+    permission java.io.SerializablePermission "creator";
 };
 
 

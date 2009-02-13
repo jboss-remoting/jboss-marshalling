@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.EnumSet;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.Permission;
 import java.io.InvalidClassException;
+import java.io.SerializablePermission;
 import org.jboss.marshalling.Creator;
 
 /**
@@ -40,6 +42,15 @@ public class ReflectiveCreator implements Creator {
      * Constructor cache.  Keys and values are weak, and keys and values both use identity comparisons.
      */
     private static final ConcurrentMap<Class<?>, Constructor<?>> constructorMap = new ConcurrentReferenceHashMap<Class<?>, Constructor<?>>(1000, 0.5f, 16, ConcurrentReferenceHashMap.ReferenceType.WEAK, ConcurrentReferenceHashMap.ReferenceType.WEAK, EnumSet.<ConcurrentReferenceHashMap.Option>of(ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS));
+
+    private static final Permission CREATOR_PERM = new SerializablePermission("creator");
+
+    public ReflectiveCreator() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CREATOR_PERM);
+        }
+    }
 
     /**
      * Get the constructor to use for a class.  Returns {@code null} if no suitable constructor is available.

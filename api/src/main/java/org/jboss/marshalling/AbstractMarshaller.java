@@ -76,15 +76,17 @@ public abstract class AbstractMarshaller implements Marshaller {
         this.objectTable = objectTable == null ? marshallerFactory.getDefaultObjectTable() : objectTable;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
-        bufsize = configuration.getBufferSize();
+        final int minBufSize = marshallerFactory.getMinimumBufferSize();
+        final int bufferSize = configuration.getBufferSize();
+        this.bufferSize = bufferSize == -1 ? marshallerFactory.getDefaultBufferSize() : bufferSize < minBufSize ? minBufSize : bufferSize;
     }
 
     private static NotActiveException notActiveException() {
         return new NotActiveException("Output not started");
     }
 
+    protected final int bufferSize;
     private byte[] buffer;
-    private final int bufsize;
     private int position;
 
     /** {@inheritDoc} */
@@ -358,7 +360,7 @@ public abstract class AbstractMarshaller implements Marshaller {
     /** {@inheritDoc} */
     public void start(final ByteOutput byteOutput) throws IOException {
         this.byteOutput = byteOutput;
-        buffer = new byte[bufsize];
+        buffer = new byte[bufferSize];
         doStart();
     }
 

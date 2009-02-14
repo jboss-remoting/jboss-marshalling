@@ -63,7 +63,8 @@ public class RiverMarshaller extends AbstractMarshaller {
     private int classSeq;
     private final SerializableClassRegistry registry;
     private RiverObjectOutputStream objectOutputStream;
-    private MarshallerObjectOutput objectOutput;
+    private ObjectOutput objectOutput;
+    private BlockMarshaller blockMarshaller;
 
     protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
@@ -110,7 +111,12 @@ public class RiverMarshaller extends AbstractMarshaller {
             final ObjectTable.Writer objectTableWriter;
             if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
                 write(Protocol.ID_PREDEFINED_OBJECT);
-                objectTableWriter.writeObject(this, obj);
+                if (configuredVersion > 0) {
+                    objectTableWriter.writeObject(getBlockMarshaller(), obj);
+                    writeEndBlock();
+                } else {
+                    objectTableWriter.writeObject(this, obj);
+                }
                 return;
             }
             objClass = obj.getClass();
@@ -435,8 +441,10 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
             writeExternalizerClass(objClass, externalizer);
             instanceCache.put(obj, instanceSeq++);
-            final ObjectOutput objectOutput = getObjectOutput();
+            final ObjectOutput objectOutput;
+            objectOutput = getObjectOutput();
             externalizer.writeExternal(obj, objectOutput);
+            writeEndBlock();
             if (unshared) {
                 instanceCache.put(obj, -1);
             }
@@ -450,6 +458,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             final ObjectOutput objectOutput = getObjectOutput();
             writeExternalizableClass(objClass);
             ext.writeExternal(objectOutput);
+            writeEndBlock();
             if (unshared) {
                 instanceCache.put(obj, -1);
             }
@@ -469,11 +478,42 @@ public class RiverMarshaller extends AbstractMarshaller {
         throw new NotSerializableException(objClass.getName());
     }
 
-    protected ObjectOutput getObjectOutput() {
-        final ObjectOutput output = objectOutput;
-        return output == null ? objectOutput = new MarshallerObjectOutput(this) : output;
+    private void writeEndBlock() throws IOException {
+        final BlockMarshaller blockMarshaller = this.blockMarshaller;
+        if (blockMarshaller != null) {
+            blockMarshaller.flush();
+            writeByte(Protocol.ID_END_BLOCK_DATA);
+        }
     }
 
+    protected ObjectOutput getObjectOutput() {
+        final ObjectOutput output = objectOutput;
+        return output == null ? configuredVersion == 0 ? (objectOutput = new MarshallerObjectOutput(this)) : (objectOutput = getBlockMarshaller()) : output;
+    }
+
+    protected BlockMarshaller getBlockMarshaller() {
+        final BlockMarshaller blockMarshaller = this.blockMarshaller;
+        return blockMarshaller == null ? (this.blockMarshaller = new BlockMarshaller(this, bufferSize)) : blockMarshaller;
+    }
+
+    private RiverObjectOutputStream getObjectOutputStream() throws IOException {
+        final RiverObjectOutputStream objectOutputStream = this.objectOutputStream;
+        return objectOutputStream == null ? this.objectOutputStream = createObjectOutputStream() : objectOutputStream;
+    }
+
+    private final PrivilegedExceptionAction<RiverObjectOutputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<RiverObjectOutputStream>() {
+        public RiverObjectOutputStream run() throws IOException {
+            return new RiverObjectOutputStream(configuredVersion == 0 ? RiverMarshaller.this : getBlockMarshaller(), RiverMarshaller.this);
+        }
+    };
+
+    private RiverObjectOutputStream createObjectOutputStream() throws IOException {
+        try {
+            return AccessController.doPrivileged(createObjectOutputStreamAction);
+        } catch (PrivilegedActionException e) {
+            throw (IOException) e.getCause();
+        }
+    }
 
     protected void doWriteSerializableObject(final SerializableClass info, final Object obj, final Class<?> objClass) throws IOException {
         final Class<?> superclass = objClass.getSuperclass();
@@ -488,6 +528,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             boolean ok = false;
             try {
                 info.callWriteObject(obj, objectOutputStream);
+                writeEndBlock();
                 objectOutputStream.finish(restoreState);
                 objectOutputStream.swapCurrent(oldObj);
                 objectOutputStream.swapClass(oldInfo);
@@ -499,7 +540,6 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
         } else {
             doWriteFields(info, obj);
-            // todo - write empty block marker?
         }
     }
 
@@ -554,25 +594,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    private RiverObjectOutputStream getObjectOutputStream() throws IOException {
-        final RiverObjectOutputStream objectOutputStream = this.objectOutputStream;
-        return objectOutputStream == null ? this.objectOutputStream = createObjectOutputStream() : objectOutputStream;
-    }
-
-    private final PrivilegedExceptionAction<RiverObjectOutputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<RiverObjectOutputStream>() {
-        public RiverObjectOutputStream run() throws IOException {
-            return new RiverObjectOutputStream(RiverMarshaller.this);
-        }
-    };
-
-    private RiverObjectOutputStream createObjectOutputStream() throws IOException {
-        try {
-            return AccessController.doPrivileged(createObjectOutputStreamAction);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getCause();
-        }
-    }
-
     protected void writeProxyClass(final Class<?> objClass) throws IOException {
         if (! writeKnownClass(objClass)) {
             writeNewProxyClass(objClass);
@@ -584,7 +605,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         if (classTableWriter != null) {
             write(Protocol.ID_PREDEFINED_PROXY_CLASS);
             classCache.put(objClass, classSeq++);
-            classTableWriter.writeClass(this, objClass);
+            writeClassTableData(objClass, classTableWriter);
         } else {
             write(Protocol.ID_PROXY_CLASS);
             final String[] names = classResolver.getProxyInterfaces(objClass);
@@ -593,7 +614,13 @@ public class RiverMarshaller extends AbstractMarshaller {
                 writeString(name);
             }
             classCache.put(objClass, classSeq++);
-            classResolver.annotateProxyClass(this, objClass);
+            if (configuredVersion > 0) {
+                final BlockMarshaller blockMarshaller = getBlockMarshaller();
+                classResolver.annotateProxyClass(blockMarshaller, objClass);
+                writeEndBlock();
+            } else {
+                classResolver.annotateProxyClass(this, objClass);
+            }
         }
     }
 
@@ -608,7 +635,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         if (classTableWriter != null) {
             write(Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS);
             classCache.put(objClass, classSeq++);
-            classTableWriter.writeClass(this, objClass);
+            writeClassTableData(objClass, classTableWriter);
         } else {
             write(Protocol.ID_ENUM_TYPE_CLASS);
             writeString(classResolver.getClassName(objClass));
@@ -697,13 +724,22 @@ public class RiverMarshaller extends AbstractMarshaller {
             if (classTableWriter != null) {
                 write(Protocol.ID_PREDEFINED_PLAIN_CLASS);
                 classCache.put(objClass, classSeq++);
-                classTableWriter.writeClass(this, objClass);
+                writeClassTableData(objClass, classTableWriter);
             } else {
                 write(Protocol.ID_PLAIN_CLASS);
                 writeString(classResolver.getClassName(objClass));
                 doAnnotateClass(objClass);
                 classCache.put(objClass, classSeq++);
             }
+        }
+    }
+
+    private void writeClassTableData(final Class<?> objClass, final ClassTable.Writer classTableWriter) throws IOException {
+        if (configuredVersion > 0) {
+            classTableWriter.writeClass(getBlockMarshaller(), objClass);
+            writeEndBlock();
+        } else {
+            classTableWriter.writeClass(this, objClass);
         }
     }
 
@@ -733,11 +769,15 @@ public class RiverMarshaller extends AbstractMarshaller {
         if (classTableWriter != null) {
             write(Protocol.ID_PREDEFINED_SERIALIZABLE_CLASS);
             classCache.put(objClass, classSeq++);
-            classTableWriter.writeClass(this, objClass);
+            writeClassTableData(objClass, classTableWriter);
         } else {
-            write(Protocol.ID_SERIALIZABLE_CLASS);
-            writeString(classResolver.getClassName(objClass));
             final SerializableClass info = registry.lookup(objClass);
+            if (configuredVersion > 0 && info.hasWriteObject()) {
+                write(Protocol.ID_WRITE_OBJECT_CLASS);
+            } else {
+                write(Protocol.ID_SERIALIZABLE_CLASS);
+            }
+            writeString(classResolver.getClassName(objClass));
             writeLong(info.getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
@@ -769,7 +809,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         if (classTableWriter != null) {
             write(Protocol.ID_PREDEFINED_EXTERNALIZABLE_CLASS);
             classCache.put(objClass, classSeq++);
-            classTableWriter.writeClass(this, objClass);
+            writeClassTableData(objClass, classTableWriter);
         } else {
             write(Protocol.ID_EXTERNALIZABLE_CLASS);
             writeString(classResolver.getClassName(objClass));
@@ -790,7 +830,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         if (classTableWriter != null) {
             write(Protocol.ID_PREDEFINED_EXTERNALIZER_CLASS);
             classCache.put(objClass, classSeq++);
-            classTableWriter.writeClass(this, objClass);
+            writeClassTableData(objClass, classTableWriter);
         } else {
             write(Protocol.ID_EXTERNALIZER_CLASS);
             writeString(classResolver.getClassName(objClass));
@@ -801,20 +841,41 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void doAnnotateClass(final Class<?> objClass) throws IOException {
-        classResolver.annotateClass(this, objClass);
+        if (configuredVersion > 0) {
+            classResolver.annotateClass(getBlockMarshaller(), objClass);
+            writeEndBlock();
+        } else {
+            classResolver.annotateClass(this, objClass);
+        }
     }
 
     public void clearInstanceCache() throws IOException {
         instanceCache.clear();
         replacementCache.clear();
         instanceSeq = 0;
+        if (byteOutput != null) {
+            write(Protocol.ID_CLEAR_INSTANCE_CACHE);
+        }
     }
 
     public void clearClassCache() throws IOException {
         classCache.clear();
         externalizers.clear();
         classSeq = 0;
-        clearInstanceCache();
+        instanceCache.clear();
+        replacementCache.clear();
+        instanceSeq = 0;
+        if (byteOutput != null) {
+            write(Protocol.ID_CLEAR_CLASS_CACHE);
+        }
+    }
+
+    protected void doStart() throws IOException {
+        super.doStart();
+        final int configuredVersion = this.configuredVersion;
+        if (configuredVersion > 0) {
+            writeByte(configuredVersion);
+        }
     }
 
     private void writeString(String string) throws IOException {

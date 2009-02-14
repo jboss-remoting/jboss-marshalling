@@ -47,8 +47,11 @@ public final class SimpleMarshallerTestFactory {
     public static Object[][] parameters() {
 
         final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
-        final TestMarshallerProvider riverTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory);
-        final TestUnmarshallerProvider riverTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory);
+        final TestMarshallerProvider riverTestMarshallerProviderV0 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 0);
+        final TestUnmarshallerProvider riverTestUnmarshallerProviderV0 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 0);
+
+        final TestMarshallerProvider riverTestMarshallerProviderV1 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 1);
+        final TestUnmarshallerProvider riverTestUnmarshallerProviderV1 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 1);
 
         final SerialMarshallerFactory serialMarshallerFactory = new SerialMarshallerFactory();
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
@@ -63,8 +66,10 @@ public final class SimpleMarshallerTestFactory {
 
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
-                // river
-                pair(riverTestMarshallerProvider, riverTestUnmarshallerProvider),
+                // river - v0
+                pair(riverTestMarshallerProviderV0, riverTestUnmarshallerProviderV0),
+                // river - v1 writer, v1 reader
+                pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
 
                 // serial
                 pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),

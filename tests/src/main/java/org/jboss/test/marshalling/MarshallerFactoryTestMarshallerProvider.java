@@ -33,12 +33,22 @@ import java.io.IOException;
  */
 public final class MarshallerFactoryTestMarshallerProvider implements TestMarshallerProvider {
     private final MarshallerFactory marshallerFactory;
+    private final int version;
 
     public MarshallerFactoryTestMarshallerProvider(final MarshallerFactory factory) {
         marshallerFactory = factory;
+        version = -1;
+    }
+
+    public MarshallerFactoryTestMarshallerProvider(final MarshallerFactory factory, final int version) {
+        marshallerFactory = factory;
+        this.version = version;
     }
 
     public Marshaller create(final MarshallingConfiguration config, final ByteOutput target) throws IOException {
+        if (version != -1) {
+            config.setVersion(version);
+        }
         final Marshaller marshaller = marshallerFactory.createMarshaller(config);
         marshaller.start(target);
         return marshaller;

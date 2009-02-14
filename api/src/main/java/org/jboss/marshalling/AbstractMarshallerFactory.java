@@ -125,4 +125,22 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
     protected int getDefaultVersion() {
         return -1;
     }
+
+    /**
+     * Get the default buffer size, which is used if none was configured.  This base implementation returns 512.
+     *
+     * @return the default buffer size
+     */
+    protected int getDefaultBufferSize() {
+        return 512;
+    }
+
+    /**
+     * Get the minimum buffer size.  This base implementation returns 64.
+     *
+     * @return the minimum buffer size
+     */
+    protected int getMinimumBufferSize() {
+        return 64;
+    }
 }

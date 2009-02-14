@@ -23,6 +23,7 @@
 package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectOutputStream;
+import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.util.BooleanFieldPutter;
 import org.jboss.marshalling.util.ByteFieldPutter;
 import org.jboss.marshalling.util.CharFieldPutter;
@@ -50,17 +51,18 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
         ;
     }
 
-    private final boolean blockMode = false;
     private final AtomicReference<State> state = new AtomicReference<State>(State.OFF);
     private final RiverMarshaller marshaller;
+    private final Marshaller delegateMarshaller;
 
     private RiverPutField putField;
     private SerializableClass serializableClass;
     private Object current;
 
-    protected RiverObjectOutputStream(final RiverMarshaller marshaller) throws IOException, SecurityException {
-        super(marshaller);
+    protected RiverObjectOutputStream(final Marshaller delegateMarshaller, final RiverMarshaller marshaller) throws IOException, SecurityException {
+        super(delegateMarshaller);
         this.marshaller = marshaller;
+        this.delegateMarshaller = delegateMarshaller;
     }
 
     public void writeFields() throws IOException {
@@ -168,14 +170,6 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
 
     protected void finish(State restoreState) throws IOException {
         switch (state.getAndSet(restoreState)) {
-            case OFF:
-                // ??
-                break;
-            case ON:
-                if (blockMode) {
-                    // todo flush block
-                }
-                break;
             case UNWRITTEN_FIELDS:
                 throw new NotActiveException("Fields were never written");
         }

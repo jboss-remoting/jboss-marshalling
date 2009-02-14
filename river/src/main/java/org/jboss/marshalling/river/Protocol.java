@@ -26,7 +26,7 @@ package org.jboss.marshalling.river;
  *
  */
 public final class Protocol {
-    public static final int MAX_VERSION = 0;
+    public static final int MAX_VERSION = 1;
 
     public static final int ID_NULL_OBJECT              = 0x01;
     public static final int ID_REPEAT_OBJECT            = 0x02;
@@ -93,8 +93,9 @@ public final class Protocol {
     public static final int ID_START_BLOCK_MEDIUM       = 0x33; // 16 bit size
     public static final int ID_START_BLOCK_LARGE        = 0x34; // 32 bit size
     public static final int ID_END_BLOCK_DATA           = 0x35;
-    public static final int ID_CLEAR_CLASS_CACHE        = 0x36;
+    public static final int ID_CLEAR_CLASS_CACHE        = 0x36; // implies CLEAR_ISNTANCE_CACHE
     public static final int ID_CLEAR_INSTANCE_CACHE     = 0x37;
+    public static final int ID_WRITE_OBJECT_CLASS       = 0x38; // ? extends Serializable.class, plus writeObject method
 
     private Protocol() {
     }

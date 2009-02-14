@@ -23,6 +23,7 @@
 package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectInputStream;
+import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;
 import org.jboss.marshalling.util.ObjectReadField;
@@ -48,9 +49,9 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     private AtomicReference<State> state = new AtomicReference<State>(State.OFF);
     private final RiverUnmarshaller unmarshaller;
     
-    protected RiverObjectInputStream(final RiverUnmarshaller unmarshaller) throws IOException, SecurityException {
-        super(unmarshaller);
-        this.unmarshaller = unmarshaller;
+    protected RiverObjectInputStream(final RiverUnmarshaller riverUnmarshaller, final Unmarshaller delegateUnmarshaller) throws IOException, SecurityException {
+        super(delegateUnmarshaller);
+        unmarshaller = riverUnmarshaller;
     }
 
     private SerializableClassDescriptor serializableClassDescriptor;

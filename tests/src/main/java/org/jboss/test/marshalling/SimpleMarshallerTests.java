@@ -1237,13 +1237,13 @@ public final class SimpleMarshallerTests extends TestBase {
                 final String o1 = (String) unmarshaller.readObject();
                 final Integer o2 = (Integer) unmarshaller.readObject();
                 assertSame(o1, unmarshaller.readObject());
-                assertSame(o2, unmarshaller.readObject());
+                assertEqualsOrSame(o2, unmarshaller.readObject());
                 final String o1p = (String) unmarshaller.readObject();
                 final Integer o2p = (Integer) unmarshaller.readObject();
                 assertNotSame(o1, o1p);
-                assertNotSame(o2, o2p);
+                assertEqualsOrSame(o2, o2p);
                 assertSame(o1p, unmarshaller.readObject());
-                assertSame(o2p, unmarshaller.readObject());
+                assertEqualsOrSame(o2p, unmarshaller.readObject());
             }
         });
     }

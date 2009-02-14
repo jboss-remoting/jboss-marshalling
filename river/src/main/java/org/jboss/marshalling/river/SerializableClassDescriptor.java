@@ -33,8 +33,8 @@ public final class SerializableClassDescriptor extends ClassDescriptor {
     private final ClassDescriptor superClassDescriptor;
     private final SerializableField[] fields;
 
-    public SerializableClassDescriptor(final SerializableClass serializableClass, final ClassDescriptor superClassDescriptor, final SerializableField[] fields) throws ClassNotFoundException {
-        super(serializableClass.getSubjectClass(), Protocol.ID_SERIALIZABLE_CLASS);
+    public SerializableClassDescriptor(final SerializableClass serializableClass, final ClassDescriptor superClassDescriptor, final SerializableField[] fields, final int classType) throws ClassNotFoundException {
+        super(serializableClass.getSubjectClass(), classType);
         this.serializableClass = serializableClass;
         this.superClassDescriptor = superClassDescriptor;
         this.fields = fields;

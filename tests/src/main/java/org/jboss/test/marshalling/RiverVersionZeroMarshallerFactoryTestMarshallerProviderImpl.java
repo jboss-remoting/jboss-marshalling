@@ -26,31 +26,31 @@ import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.StreamHeader;
+import org.jboss.marshalling.ByteInput;
 import java.io.IOException;
 
 /**
  *
  */
-public class MarshallerFactoryTestMarshallerProvider implements TestMarshallerProvider {
-    private final MarshallerFactory marshallerFactory;
-    private final int version;
+public final class RiverVersionZeroMarshallerFactoryTestMarshallerProviderImpl extends MarshallerFactoryTestMarshallerProvider {
 
-    public MarshallerFactoryTestMarshallerProvider(final MarshallerFactory factory) {
-        marshallerFactory = factory;
-        version = -1;
-    }
-
-    public MarshallerFactoryTestMarshallerProvider(final MarshallerFactory factory, final int version) {
-        marshallerFactory = factory;
-        this.version = version;
+    public RiverVersionZeroMarshallerFactoryTestMarshallerProviderImpl(final MarshallerFactory factory) {
+        super(factory, 0);
     }
 
     public Marshaller create(final MarshallingConfiguration config, final ByteOutput target) throws IOException {
-        if (version != -1) {
-            config.setVersion(version);
-        }
-        final Marshaller marshaller = marshallerFactory.createMarshaller(config);
-        marshaller.start(target);
-        return marshaller;
+        final StreamHeader header = config.getStreamHeader();
+        config.setStreamHeader(new StreamHeader() {
+            public void readHeader(final ByteInput input) throws IOException {
+                if (header != null) header.readHeader(input);
+            }
+
+            public void writeHeader(final ByteOutput output) throws IOException {
+                if (header != null) header.writeHeader(output);
+                output.write(0);
+            }
+        });
+        return super.create(config, target);
     }
 }

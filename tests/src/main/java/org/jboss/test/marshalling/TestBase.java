@@ -112,14 +112,14 @@ public abstract class TestBase {
 
         System.out.println("Configuration = " + configuration);
         final Marshaller marshaller = testMarshallerProvider.create(configuration, byteOutput);
-        System.out.println("Marshaller = " + marshaller);
+        System.out.println("Marshaller = " + marshaller + " (version set to " + configuration.getVersion() + ")");
         readWriteTest.runWrite(marshaller);
         marshaller.finish();
         final byte[] bytes = baos.toByteArray();
 
         final ByteInput byteInput = Marshalling.createByteInput(new ByteArrayInputStream(bytes));
         final Unmarshaller unmarshaller = testUnmarshallerProvider.create(configuration, byteInput);
-        System.out.println("Unmarshaller = " + unmarshaller);
+        System.out.println("Unmarshaller = " + unmarshaller + " (version set to " + configuration.getVersion() + ")");
         readWriteTest.runRead(unmarshaller);
         unmarshaller.finish();
     }

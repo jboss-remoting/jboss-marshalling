@@ -50,6 +50,8 @@ public final class SimpleMarshallerTestFactory {
         final TestMarshallerProvider riverTestMarshallerProviderV0 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 0);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV0 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 0);
 
+        final TestMarshallerProvider riverTestMarshallerProviderV0Special = new RiverVersionZeroMarshallerFactoryTestMarshallerProviderImpl(riverMarshallerFactory);
+
         final TestMarshallerProvider riverTestMarshallerProviderV1 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 1);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV1 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 1);
 
@@ -68,6 +70,8 @@ public final class SimpleMarshallerTestFactory {
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
                 // river - v0
                 pair(riverTestMarshallerProviderV0, riverTestUnmarshallerProviderV0),
+                // river - v0 writer, v1 reader
+                pair(riverTestMarshallerProviderV0Special, riverTestUnmarshallerProviderV1),
                 // river - v1 writer, v1 reader
                 pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
 

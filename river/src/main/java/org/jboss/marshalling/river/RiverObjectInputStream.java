@@ -190,6 +190,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     }
 
     public void registerValidation(final ObjectInputValidation obj, final int prio) throws NotActiveException, InvalidObjectException {
+        unmarshaller.addValidation(obj, prio);
     }
 
     protected SerializableClassDescriptor swapClass(final SerializableClassDescriptor descriptor) {

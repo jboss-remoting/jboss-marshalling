@@ -55,6 +55,8 @@ import java.io.ObjectOutput;
 import java.io.ObjectInput;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream;
+import java.io.ObjectInputValidation;
+import java.io.InvalidObjectException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -1244,6 +1246,79 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEqualsOrSame(o2, o2p);
                 assertSame(o1p, unmarshaller.readObject());
                 assertEqualsOrSame(o2p, unmarshaller.readObject());
+            }
+        });
+    }
+
+    public static final class VerifyingTestObject implements Serializable {
+
+        private static final long serialVersionUID = 3554028965858904047L;
+
+        private int number;
+        private String string;
+
+        public VerifyingTestObject() {
+        }
+
+        public VerifyingTestObject(final int number, final String string) {
+            this.number = number;
+            this.string = string;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        public void setNumber(final int number) {
+            this.number = number;
+        }
+
+        public String getString() {
+            return string;
+        }
+
+        public void setString(final String string) {
+            this.string = string;
+        }
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+            oos.defaultWriteObject();
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+            ois.registerValidation(new ObjectInputValidation() {
+                public void validateObject() throws InvalidObjectException {
+                    if (! Integer.toString(number).equals(string)) {
+                        throw new InvalidObjectException("No match");
+                    }
+                }
+            }, 10);
+        }
+    }
+
+    @Test
+    public void testValidation() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(new VerifyingTestObject(1234, "1234"));
+                marshaller.writeObject(new VerifyingTestObject(1234, "4321"));
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                VerifyingTestObject obj = (VerifyingTestObject) unmarshaller.readObject();
+                assertNotNull(obj);
+                assertEquals(1234, obj.number);
+                assertEquals("1234", obj.string);
+                try {
+                    unmarshaller.readObject();
+                    fail("No validation exception thrown");
+                } catch (InvalidObjectException e) {
+                    // ok
+                }
             }
         });
     }

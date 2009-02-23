@@ -32,6 +32,11 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.MarshallerObjectInput;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.Collections;
+import java.util.HashSet;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.io.InvalidObjectException;
@@ -39,6 +44,7 @@ import java.io.InvalidClassException;
 import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.ObjectInput;
+import java.io.ObjectInputValidation;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -61,6 +67,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private int depth;
     private BlockUnmarshaller blockUnmarshaller;
     private RiverObjectInputStream objectInputStream;
+    private final SortedMap<Integer, Set<ObjectInputValidation>> validationMap = new TreeMap<Integer, Set<ObjectInputValidation>>(Collections.reverseOrder());
 
     private static final Field proxyInvocationHandler;
 
@@ -135,8 +142,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
-        return doReadObject(readUnsignedByte(), unshared);
-        // todo - run validators if depth == 0
+        final Object obj = doReadObject(readUnsignedByte(), unshared);
+        if (depth == 0) try {
+            for (Set<ObjectInputValidation> validations : validationMap.values()) {
+                for (ObjectInputValidation validation : validations) {
+                    validation.validateObject();
+                }
+            }
+        } finally {
+            validationMap.clear();
+        }
+        return obj;
     }
 
     Object doReadObject(int leadByte, final boolean unshared) throws IOException, ClassNotFoundException {
@@ -921,6 +937,18 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 throw ioe;
             }
         }
+    }
+
+    void addValidation(final ObjectInputValidation validation, final int prio) {
+        final Set<ObjectInputValidation> validations;
+        final Integer prioKey = Integer.valueOf(prio);
+        if (validationMap.containsKey(prioKey)) {
+            validations = validationMap.get(prioKey);
+        } else {
+            validations = new HashSet<ObjectInputValidation>();
+            validationMap.put(prioKey, validations);
+        }
+        validations.add(validation);
     }
 
     public String readUTF() throws IOException {

@@ -104,22 +104,26 @@ public abstract class TestBase {
     }
 
     public void runReadWriteTest(ReadWriteTest readWriteTest) throws Throwable {
-        final MarshallingConfiguration configuration = this.configuration.clone();
-        readWriteTest.configure(configuration);
+        final MarshallingConfiguration readConfiguration = configuration.clone();
+        readWriteTest.configureRead(readConfiguration);
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);
         final ByteOutput byteOutput = Marshalling.createByteOutput(baos);
 
-        System.out.println("Configuration = " + configuration);
-        final Marshaller marshaller = testMarshallerProvider.create(configuration, byteOutput);
-        System.out.println("Marshaller = " + marshaller + " (version set to " + configuration.getVersion() + ")");
+        System.out.println("Read Configuration = " + readConfiguration);
+        final Marshaller marshaller = testMarshallerProvider.create(readConfiguration, byteOutput);
+        System.out.println("Marshaller = " + marshaller + " (version set to " + readConfiguration.getVersion() + ")");
         readWriteTest.runWrite(marshaller);
         marshaller.finish();
         final byte[] bytes = baos.toByteArray();
 
+        final MarshallingConfiguration writeConfiguration = configuration.clone();
+        readWriteTest.configureWrite(writeConfiguration);
+
         final ByteInput byteInput = Marshalling.createByteInput(new ByteArrayInputStream(bytes));
-        final Unmarshaller unmarshaller = testUnmarshallerProvider.create(configuration, byteInput);
-        System.out.println("Unmarshaller = " + unmarshaller + " (version set to " + configuration.getVersion() + ")");
+        System.out.println("Write Configuration = " + writeConfiguration);
+        final Unmarshaller unmarshaller = testUnmarshallerProvider.create(writeConfiguration, byteInput);
+        System.out.println("Unmarshaller = " + unmarshaller + " (version set to " + writeConfiguration.getVersion() + ")");
         readWriteTest.runRead(unmarshaller);
         unmarshaller.finish();
     }

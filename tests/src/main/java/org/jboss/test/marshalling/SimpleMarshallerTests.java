@@ -1300,9 +1300,6 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testValidation() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
-            public void configure(final MarshallingConfiguration configuration) throws Throwable {
-            }
-
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(new VerifyingTestObject(1234, "1234"));
                 marshaller.writeObject(new VerifyingTestObject(1234, "4321"));

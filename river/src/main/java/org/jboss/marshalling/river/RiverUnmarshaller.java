@@ -45,6 +45,7 @@ import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.ObjectInput;
 import java.io.ObjectInputValidation;
+import java.io.Serializable;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -310,6 +311,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final String className = readString();
                 final long uid = readLong();
                 final Class<?> clazz = doResolveClass(className, uid);
+                final Class<?> superClazz = clazz.getSuperclass();
                 classCache.set(idx, new IncompleteClassDescriptor(clazz, classType));
                 final int cnt = readInt();
                 final String[] names = new String[cnt];
@@ -320,7 +322,24 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     descriptors[i] = doReadClassDescriptor(readUnsignedByte());
                     unshareds[i] = readBoolean();
                 }
-                final ClassDescriptor superDescriptor = doReadClassDescriptor(readUnsignedByte());
+                ClassDescriptor superDescriptor = doReadClassDescriptor(readUnsignedByte());
+                if (superDescriptor != null) {
+                    final Class<?> superType = superDescriptor.getType();
+                    if (! superType.isAssignableFrom(clazz)) {
+                        throw new InvalidClassException(clazz.getName(), "Class does not extend stream superclass");
+                    }
+                    Class<?> cl = superClazz;
+                    while (cl != superType) {
+                        superDescriptor = new SerializableClassDescriptor(registry.lookup(cl), superDescriptor);
+                        cl = cl.getSuperclass();
+                    }
+                } else if (superClazz != null) {
+                    Class<?> cl = superClazz;
+                    while (Serializable.class.isAssignableFrom(cl)) {
+                        superDescriptor = new SerializableClassDescriptor(registry.lookup(cl), superDescriptor);
+                        cl = cl.getSuperclass();
+                    }
+                }
                 final SerializableClass serializableClass = registry.lookup(clazz);
                 final SerializableField[] fields = new SerializableField[cnt];
                 for (int i = 0; i < cnt; i ++) {
@@ -750,7 +769,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return Boolean.valueOf(readBoolean());
             }
             case Protocol.ID_BYTE_CLASS: {
-                // todo - fix to use instance cache ?
                 return Byte.valueOf(readByte());
             }
             case Protocol.ID_SHORT_CLASS: {
@@ -791,14 +809,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final SerializableClass info = registry.lookup(type);
         final ClassDescriptor superDescriptor = descriptor.getSuperClassDescriptor();
         if (superDescriptor instanceof SerializableClassDescriptor) {
-            if (superDescriptor.getType() != type.getSuperclass()) {
-                // todo - readObjectNoData?
-                throw new IllegalStateException("Differing class hierarchies");
-            }
-            doInitSerializable(obj, (SerializableClassDescriptor) superDescriptor);
+            final SerializableClassDescriptor serializableSuperDescriptor = (SerializableClassDescriptor) superDescriptor;
+            doInitSerializable(obj, serializableSuperDescriptor);
         }
         final int typeId = descriptor.getTypeID();
-        if (info.hasReadObject()) {
+        if (descriptor.isGap()) {
+            if (info.hasReadObjectNoData()) {
+                info.callReadObjectNoData(obj);
+            }
+        } else if (info.hasReadObject()) {
             final RiverObjectInputStream objectInputStream = getObjectInputStream();
             final SerializableClassDescriptor oldDescriptor = objectInputStream.swapClass(descriptor);
             final Object oldObj = objectInputStream.swapCurrent(obj);

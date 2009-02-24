@@ -30,6 +30,14 @@ import org.jboss.marshalling.MarshallingConfiguration;
  *
  */
 public abstract class ReadWriteTest {
+    public void configureRead(MarshallingConfiguration configuration) throws Throwable {
+        configure(configuration);
+    }
+
+    public void configureWrite(MarshallingConfiguration configuration) throws Throwable {
+        configure(configuration);
+    }
+
     public void configure(MarshallingConfiguration configuration) throws Throwable {}
 
     public void runWrite(Marshaller marshaller) throws Throwable {};

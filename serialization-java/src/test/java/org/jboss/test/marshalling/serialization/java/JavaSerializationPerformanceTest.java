@@ -141,8 +141,8 @@ public class JavaSerializationPerformanceTest
       System.out.print("testMarshallingWithStreamHeader(): ");
       MarshallingConfiguration config = new MarshallingConfiguration();
       StreamHeader streamHeader = new StreamHeader() {
-         public void readHeader(Unmarshaller input) throws IOException { }
-         public void writeHeader(Marshaller output) throws IOException { }
+         public void readHeader(ByteInput input) throws IOException { }
+         public void writeHeader(ByteOutput output) throws IOException { }
       };
       config.setStreamHeader(streamHeader);
       int time = testMarshalling(config, count);
@@ -222,8 +222,8 @@ public class JavaSerializationPerformanceTest
       System.out.print("testMarshallingWithStreamHeaderAndRecreation(): ");
       MarshallingConfiguration config = new MarshallingConfiguration();
       StreamHeader streamHeader = new StreamHeader() {
-         public void readHeader(Unmarshaller input) throws IOException { }
-         public void writeHeader(Marshaller output) throws IOException { }
+         public void readHeader(ByteInput input) throws IOException { }
+         public void writeHeader(ByteOutput output) throws IOException { }
       };
       config.setStreamHeader(streamHeader);
       int time = doMarshallerTestWithRecreation(config, count);

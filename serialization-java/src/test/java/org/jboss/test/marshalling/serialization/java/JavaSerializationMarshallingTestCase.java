@@ -39,7 +39,6 @@ import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.AbstractClassResolver;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
-import org.jboss.testsupport.LoggingHelper;
 
 /**
  * @author <a href="ron.sigal@jboss.com">Ron Sigal</a>
@@ -50,10 +49,6 @@ import org.jboss.testsupport.LoggingHelper;
  */
 public class JavaSerializationMarshallingTestCase extends TestCase implements Serializable
 {
-   static {
-      LoggingHelper.init();
-   }
-
    /** The serialVersionUID */
    private static final long serialVersionUID = -8328320670610062142L;
    
@@ -256,22 +251,26 @@ public class JavaSerializationMarshallingTestCase extends TestCase implements Se
       private boolean readVisited;
       private boolean writeVisited;
       
-      public void readHeader(Unmarshaller input) throws IOException {
+      public void readHeader(ByteInput input) throws IOException {
          readVisited = true;
          System.out.println("readHeader() visited");
-         short b1 = input.readShort();
-         short b2 = input.readShort();
+         byte[] bytes = new byte[4];
+         Marshalling.readFully(input, bytes);
+         short b1 = (short) ((bytes[0] & 0xff) * 256 + (bytes[1] & 0xff));
+         short b2 = (short) ((bytes[2] & 0xff) * 256 + (bytes[3] & 0xff));
          System.out.println("b1: " + b1 + ", b2: " + b2);
          if (b1 != B1 || b2 != B2) {
                throw new StreamCorruptedException("invalid stream header");
          }
       }
 
-      public void writeHeader(Marshaller output) throws IOException {
+      public void writeHeader(ByteOutput output) throws IOException {
          writeVisited = true;
          System.out.println("writeHeader() visited");
-         output.writeShort(B1);
-         output.writeShort(B2);
+         output.write(B1 >> 8);
+         output.write(B1);
+         output.write(B2 >> 8);
+         output.write(B2);
       }
       
       public boolean ok() {

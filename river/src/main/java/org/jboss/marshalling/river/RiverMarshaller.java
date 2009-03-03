@@ -34,7 +34,6 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ClassExternalizerFactory;
-import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.MarshallerObjectOutput;
 import org.jboss.marshalling.util.IdentityIntMap;
 import java.io.IOException;
@@ -417,23 +416,6 @@ public class RiverMarshaller extends AbstractMarshaller {
             externalizer = classExternalizerFactory.getExternalizer(objClass);
             if (externalizer == null) {
                 externalizer = externalizerFactory.getExternalizer(obj);
-                if (externalizer == null) {
-                    final Externalize annotation = objClass.getAnnotation(Externalize.class);
-                    if (annotation != null) {
-                        final Class<? extends Externalizer> clazz = annotation.value();
-                        try {
-                            externalizer = clazz.newInstance();
-                        } catch (InstantiationException e) {
-                            final InvalidClassException ice = new InvalidClassException(objClass.getName(), "Error instantiating externalizer \"" + clazz.getName() + "\"");
-                            ice.initCause(e);
-                            throw ice;
-                        } catch (IllegalAccessException e) {
-                            final InvalidClassException ice = new InvalidClassException(objClass.getName(), "Illegal access instantiating externalizer \"" + clazz.getName() + "\"");
-                            ice.initCause(e);
-                            throw ice;
-                        }
-                    }
-                }
             }
             externalizers.put(objClass, externalizer);
         }

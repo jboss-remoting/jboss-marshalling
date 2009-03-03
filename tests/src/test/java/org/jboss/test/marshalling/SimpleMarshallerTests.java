@@ -35,6 +35,7 @@ import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.ObjectOutputStreamMarshaller;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
+import org.jboss.marshalling.AnnotationClassExternalizerFactory;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
@@ -1074,6 +1075,10 @@ public final class SimpleMarshallerTests extends TestBase {
     public void testExternalizerAnnotation() throws Throwable {
         final TestExternalizerWithAnnotation subject = new TestExternalizerWithAnnotation("Title", 1234);
         runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassExternalizerFactory(new AnnotationClassExternalizerFactory());
+            }
+
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 if (marshaller instanceof JavaSerializationMarshaller) {
                     throw new SkipException("JavaSerializationMarshaller does not support Externalizer annotation");

@@ -23,17 +23,47 @@
 package org.jboss.marshalling;
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import org.jboss.marshalling.reflect.SerializableClassRegistry;
 
 /**
  * A base implementation of {@code ClassResolver} which simply resolves the class
  * against a classloader which is specified by the subclass implementation.
  */
 public abstract class AbstractClassResolver implements ClassResolver {
+
+    /**
+     * Specifies whether an exception should be thrown on an incorrect serialVersionUID.
+     */
+    protected final boolean enforceSerialVersionUid;
+
+    private static final SerializableClassRegistry registry;
+
+    static {
+        registry = AccessController.doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
+            public SerializableClassRegistry run() {
+                return SerializableClassRegistry.getInstance();
+            }
+        });
+    }
+
     /**
      * Construct a new instance.
      */
     protected AbstractClassResolver() {
+        this(false);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param enforceSerialVersionUid {@code true} if an exception should be thrown on an incorrect serialVersionUID
+     */
+    protected AbstractClassResolver(final boolean enforceSerialVersionUid) {
+        this.enforceSerialVersionUid = enforceSerialVersionUid;
     }
 
     /**
@@ -81,7 +111,14 @@ public abstract class AbstractClassResolver implements ClassResolver {
      * loads the class by name.
      */
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String name, final long serialVersionUID) throws IOException, ClassNotFoundException {
-        return loadClass(name);
+        final Class<?> clazz = loadClass(name);
+        if (enforceSerialVersionUid) {
+            final long uid = registry.lookup(clazz).getEffectiveSerialVersionUID();
+            if (uid != serialVersionUID) {
+                throw new StreamCorruptedException("serialVersionUID does not match!");
+            }
+        }
+        return clazz;
     }
 
     /**

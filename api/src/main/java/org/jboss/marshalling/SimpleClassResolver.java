@@ -34,6 +34,18 @@ public class SimpleClassResolver extends AbstractClassResolver {
      * @param classLoader the classloader to use
      */
     public SimpleClassResolver(final ClassLoader classLoader) {
+        this(false, classLoader);
+    }
+
+    /**
+     * Construct a new instance, specifying a classloader and a flag which determines whether {@code serialVersionUID}
+     * matching will be enforced.
+     *
+     * @param enforceSerialVersionUid {@code true} to throw an exception on unmatched {@code serialVersionUID}
+     * @param classLoader the classloader to use
+     */
+    public SimpleClassResolver(final boolean enforceSerialVersionUid, final ClassLoader classLoader) {
+        super(enforceSerialVersionUid);
         this.classLoader = classLoader;
     }
 

@@ -42,8 +42,22 @@ public class ContextClassResolver extends AbstractClassResolver {
     public ContextClassResolver() {
     }
 
+    /**
+     * Construct a new instance.
+     *
+     * @param enforceSerialVersionUid {@code true} if an exception should be thrown on an incorrect serialVersionUID
+     */
+    public ContextClassResolver(final boolean enforceSerialVersionUid) {
+        super(enforceSerialVersionUid);
+    }
+
     /** {@inheritDoc} */
     protected ClassLoader getClassLoader() {
-        return AccessController.doPrivileged(classLoaderAction);
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            return AccessController.doPrivileged(classLoaderAction);
+        } else {
+            return Thread.currentThread().getContextClassLoader();
+        }
     }
 }

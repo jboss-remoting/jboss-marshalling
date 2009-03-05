@@ -29,7 +29,6 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.Creator;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.SimpleClassResolver;
@@ -745,48 +744,6 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     @Test
-    public void testOldExternalizer() throws Throwable {
-        final Map<String, String> map = new HashMap<String, String>();
-        map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
-        map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
-        map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
-        map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
-        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
-        runReadWriteTest(new ReadWriteTest() {
-            public void configure(final MarshallingConfiguration configuration) throws Throwable {
-                configuration.setExternalizerFactory(new ExternalizerFactory() {
-                    @SuppressWarnings({"unchecked"})
-                    public Externalizer getExternalizer(final Object instance) {
-                        if (instance instanceof HashMap) {
-                            return new HashMapExternalizer();
-                        } else {
-                            return null;
-                        }
-                    }
-                });
-            }
-
-            public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    javaSerializationMarshaller.set(true);
-                }
-                marshaller.writeObject(map);
-                marshaller.writeObject(map);
-            }
-
-            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
-                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
-                }
-                final Object m1 = unmarshaller.readObject();
-                assertEquals(map, m1);
-                assertSame(m1, unmarshaller.readObject());
-                assertEOF(unmarshaller);
-            }
-        });
-    }
-
-    @Test
     public void testExternalizer() throws Throwable {
         final Map<String, String> map = new HashMap<String, String>();
         map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
@@ -1138,6 +1095,7 @@ public final class SimpleMarshallerTests extends TestBase {
     public static final class OriginalClass implements Serializable {
         private static final long serialVersionUID = -1179299150244154246L;
 
+        @SuppressWarnings({ "UnusedDeclaration" })
         private String blah = "Testing!";
     }
 

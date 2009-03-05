@@ -38,16 +38,6 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
     }
 
     /**
-     * Get the default externalizer factory, which is used if none was configured.  This base implementation returns a
-     * no-operation externalizer factory.
-     *
-     * @return the externalizer factory
-     */
-    protected ExternalizerFactory getDefaultExternalizerFactory() {
-        return Marshalling.nullExternalizerFactory();
-    }
-
-    /**
      * Get the default class externalizer factory, which is used if none was configured.  This base implementation returns a
      * no-operation class externalizer factory.
      *

@@ -381,24 +381,6 @@ public final class Marshalling {
         };
     }
 
-    private static final ExternalizerFactory NULL_EXTERNALIZER_FACTORY = new ExternalizerFactory() {
-        public Externalizer getExternalizer(final Object instance) {
-            return null;
-        }
-    };
-
-    /**
-     * Return the null externalizer factory.  This instance does not externalize any classes.
-     *
-     * @return the null externalizer factory
-     *
-     * @deprecated Use {@link #nullClassExternalizerFactory()} instead.
-     */
-    @Deprecated
-    public static ExternalizerFactory nullExternalizerFactory() {
-        return NULL_EXTERNALIZER_FACTORY;
-    }
-
     private static final ClassExternalizerFactory NULL_CLASS_EXTERNALIZER_FACTORY = new ClassExternalizerFactory() {
         public Externalizer getExternalizer(final Class<?> type) {
             return null;

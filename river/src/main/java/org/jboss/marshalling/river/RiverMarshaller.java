@@ -27,7 +27,6 @@ import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.ObjectResolver;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.ObjectTable;
@@ -80,7 +79,6 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected void doWriteObject(final Object original, final boolean unshared) throws IOException {
         final ClassExternalizerFactory classExternalizerFactory = this.classExternalizerFactory;
-        final ExternalizerFactory externalizerFactory = this.externalizerFactory;
         final ObjectResolver objectResolver = this.objectResolver;
         boolean replacing = true;
         Object obj = original;
@@ -414,9 +412,6 @@ public class RiverMarshaller extends AbstractMarshaller {
             externalizer = externalizers.get(objClass);
         } else {
             externalizer = classExternalizerFactory.getExternalizer(objClass);
-            if (externalizer == null) {
-                externalizer = externalizerFactory.getExternalizer(obj);
-            }
             externalizers.put(objClass, externalizer);
         }
         if (externalizer != null) {

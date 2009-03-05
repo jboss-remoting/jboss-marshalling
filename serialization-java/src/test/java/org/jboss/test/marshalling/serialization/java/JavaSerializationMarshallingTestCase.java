@@ -24,11 +24,9 @@ import junit.framework.TestCase;
 
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.ByteOutput;
-import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
@@ -38,6 +36,7 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.AbstractClassResolver;
+import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 
 /**
@@ -448,20 +447,20 @@ public class JavaSerializationMarshallingTestCase extends TestCase implements Se
       public int getInteger() { return held; }
    }
    
-   static class TestExternalizerFactory implements ExternalizerFactory {
+   static class TestExternalizerFactory implements ClassExternalizerFactory {
       public static HashSet<TestExternalizer> externalizers = new HashSet<TestExternalizer>();
       private boolean withCreator;
-      
+
       public TestExternalizerFactory(boolean withCreator) {
          this.withCreator = withCreator;
       }
-      
-      public Externalizer getExternalizer(Object obj) {
-         if (TestExternalizableInt.class.isAssignableFrom(obj.getClass())) {
+
+      public Externalizer getExternalizer(Class<?> objClass) {
+         if (TestExternalizableInt.class.isAssignableFrom(objClass)) {
             TestExternalizer externalizer = new TestExternalizer(withCreator);
             return externalizer;
          }
-         else if (TestExternalizableString.class.isAssignableFrom(obj.getClass())) {
+         else if (TestExternalizableString.class.isAssignableFrom(objClass)) {
             TestExternalizer externalizer = new TestExternalizer(withCreator);
             return externalizer;
          }
@@ -470,7 +469,7 @@ public class JavaSerializationMarshallingTestCase extends TestCase implements Se
          }
       }
    }
-   
+
    public static class TestExternalizer implements Externalizer, Serializable {
       /** The serialVersionUID */
       private static final long serialVersionUID = -8104713864804175542L;

@@ -87,7 +87,6 @@ public class JavaSerializationMarshaller extends AbstractMarshaller
                                                            classTable,
                                                            objectResolver,
                                                            objectTable,
-                                                           externalizerFactory,
                                                            classExternalizerFactory);
                }
                else {
@@ -97,8 +96,7 @@ public class JavaSerializationMarshaller extends AbstractMarshaller
                                                            classTable,
                                                            objectResolver,
                                                            objectTable,
-                                                           externalizerFactory,
-                                                           classExternalizerFactory);
+                          classExternalizerFactory);
                   jsos.completeConstruction();
                }
                return null;

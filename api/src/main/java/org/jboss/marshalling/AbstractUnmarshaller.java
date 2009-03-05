@@ -30,8 +30,7 @@ import java.io.EOFException;
  * write methods delegate directly to the current data output.
  */
 public abstract class AbstractUnmarshaller implements Unmarshaller {
-    /** The configured externalizer factory. */
-    protected final ExternalizerFactory externalizerFactory;
+
     /** The configured class externalizer factory. */
     protected final ClassExternalizerFactory classExternalizerFactory;
     /** The configured stream header. */
@@ -58,8 +57,6 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
      * @param configuration
      */
     protected AbstractUnmarshaller(final AbstractMarshallerFactory marshallerFactory, final MarshallingConfiguration configuration) {
-        final ExternalizerFactory externalizerFactory = configuration.getExternalizerFactory();
-        this.externalizerFactory = externalizerFactory == null ? marshallerFactory.getDefaultExternalizerFactory() : externalizerFactory;
         final ClassExternalizerFactory classExternalizerFactory = configuration.getClassExternalizerFactory();
         this.classExternalizerFactory = classExternalizerFactory == null ? marshallerFactory.getDefaultClassExternalizerFactory() : classExternalizerFactory;
         final StreamHeader streamHeader = configuration.getStreamHeader();

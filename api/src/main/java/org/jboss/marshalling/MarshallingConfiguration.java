@@ -27,7 +27,6 @@ package org.jboss.marshalling;
  */
 public final class MarshallingConfiguration implements Cloneable {
 
-    private ExternalizerFactory externalizerFactory;
     private ClassExternalizerFactory classExternalizerFactory;
     private StreamHeader streamHeader;
     private ClassResolver classResolver;
@@ -44,30 +43,6 @@ public final class MarshallingConfiguration implements Cloneable {
      * Construct a new instance.
      */
     public MarshallingConfiguration() {
-    }
-
-    /**
-     * Get the externalizer factory, or {@code null} if none is specified.
-     *
-     * @return the externalizer factory
-     *
-     * @deprecated Use {@link #getClassExternalizerFactory()} instead.
-     */
-    @Deprecated
-    public ExternalizerFactory getExternalizerFactory() {
-        return externalizerFactory;
-    }
-
-    /**
-     * Set the externalizer factory.  Specify {@code null} to use none.
-     *
-     * @param externalizerFactory the externalizer factory
-     *
-     * @deprecated Use {@link #setClassExternalizerFactory(ClassExternalizerFactory)} instead.
-     */
-    @Deprecated
-    public void setExternalizerFactory(final ExternalizerFactory externalizerFactory) {
-        this.externalizerFactory = externalizerFactory;
     }
 
     /**
@@ -288,9 +263,6 @@ public final class MarshallingConfiguration implements Cloneable {
     public String toString() {
         final StringBuilder builder = new StringBuilder();
         builder.append(super.toString()).append(": ");
-        if (externalizerFactory != null) {
-            builder.append("externalizerFactory=<").append(externalizerFactory.toString()).append("> ");
-        }
         if (classExternalizerFactory != null) {
             builder.append("classExternalizerFactory=<").append(classExternalizerFactory.toString()).append("> ");
         }

@@ -37,7 +37,6 @@ import java.security.PrivilegedAction;
 import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
@@ -127,18 +126,16 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
    private ClassResolver classResolver;
    private ObjectResolver objectResolver;
    private ClassExternalizerFactory classExternalizerFactory;
-   private ExternalizerFactory externalizerFactory;
    private ClassTable classTable;
    private ObjectTable objectTable;
    
    public JavaSerializationOutputStream(JavaSerializationMarshaller marshaller,
-                                       StreamHeader streamHeader,
-                                       ClassResolver classResolver,
-                                       ClassTable classTable,
-                                       ObjectResolver objectResolver,
-                                       ObjectTable objectTable,
-                                       ExternalizerFactory externalizerFactory,
-                                       ClassExternalizerFactory classExternalizerFactory) throws IOException
+                                        StreamHeader streamHeader,
+                                        ClassResolver classResolver,
+                                        ClassTable classTable,
+                                        ObjectResolver objectResolver,
+                                        ObjectTable objectTable,
+                                        ClassExternalizerFactory classExternalizerFactory) throws IOException
    {
       super();   
       
@@ -148,7 +145,6 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       this.classTable = classTable;
       this.objectResolver = objectResolver;
       this.objectTable = objectTable;
-      this.externalizerFactory = externalizerFactory;
       this.classExternalizerFactory = classExternalizerFactory;
       
       try {
@@ -159,7 +155,7 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
          handlesField.set(this, handleTableConstructor.newInstance(new Object[]{10, (float) 3.00}));
          subsField.set(this, replaceTableConstructor.newInstance(new Object[]{10, (float) 3.00}));
          
-         if (objectTable == null && externalizerFactory == null && classExternalizerFactory == null) {
+         if (objectTable == null && classExternalizerFactory == null) {
             setPrivateFieldsAndMethodsForWriteOverride();
             enableOverride(false);
          }
@@ -173,7 +169,6 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
                                         ClassTable classTable,
                                         ObjectResolver objectResolver,
                                         ObjectTable objectTable,
-                                        ExternalizerFactory externalizerFactory,
                                         ClassExternalizerFactory classExternalizerFactory) throws IOException
    {
       super(marshaller.getOutputStream());   
@@ -183,10 +178,9 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       this.classTable = classTable;
       this.objectResolver = objectResolver;
       this.objectTable = objectTable;
-      this.externalizerFactory = externalizerFactory;
       this.classExternalizerFactory = classExternalizerFactory;
 
-      if (objectTable != null || externalizerFactory != null || classExternalizerFactory != null) {
+      if (objectTable != null || classExternalizerFactory != null) {
          try {
             setPrivateFieldsAndMethodsForWriteOverride();
             enableOverride(true);
@@ -295,9 +289,6 @@ public class JavaSerializationOutputStream extends ObjectOutputStream
       Externalizer externalizer = null;
       if (classExternalizerFactory != null) {
          externalizer = classExternalizerFactory.getExternalizer(obj.getClass());
-      }
-      if (externalizer == null && externalizerFactory != null) {
-         externalizer = externalizerFactory.getExternalizer(obj);
       }
 
       if (externalizer != null) {

@@ -35,9 +35,9 @@ import java.util.Set;
 
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.StreamHeader;
@@ -127,12 +127,12 @@ public class JavaSerializationPerformanceTest
    public void testMarshallingWithExternalizer(int count) throws Exception {
       System.out.print("testMarshallingWithExternalizer(): ");
       MarshallingConfiguration config = new MarshallingConfiguration();
-      ExternalizerFactory factory = new ExternalizerFactory() {
-         public Externalizer getExternalizer(Object instance) {
+      ClassExternalizerFactory factory = new ClassExternalizerFactory() {
+         public Externalizer getExternalizer(Class<?> objClass) {
             return null;
          }
       };
-      config.setExternalizerFactory(factory);
+      config.setClassExternalizerFactory(factory);
       int time = testMarshalling(config, count);
       System.out.println(time);
    }
@@ -208,12 +208,12 @@ public class JavaSerializationPerformanceTest
    public void testMarshallingWithExternalizerAndRecreation(int count) throws Exception {
       System.out.print("testMarshallingWithExternalizerAndRecreation(): ");
       MarshallingConfiguration config = new MarshallingConfiguration();
-      ExternalizerFactory factory = new ExternalizerFactory() {
-         public Externalizer getExternalizer(Object instance) {
+      ClassExternalizerFactory factory = new ClassExternalizerFactory() {
+         public Externalizer getExternalizer(Class<?> objClass) {
             return null;
          }
       };
-      config.setExternalizerFactory(factory);
+      config.setClassExternalizerFactory(factory);
       int time = doMarshallerTestWithRecreation(config, count);
       System.out.println(time);
    }

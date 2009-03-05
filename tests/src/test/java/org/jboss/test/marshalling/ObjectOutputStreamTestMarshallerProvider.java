@@ -59,7 +59,7 @@ public final class ObjectOutputStreamTestMarshallerProvider implements TestMarsh
             if (config.getObjectTable() != null) {
                 throw new SkipException("object tables not supported");
             }
-            if (config.getClassExternalizerFactory() != null || config.getExternalizerFactory() != null) {
+            if (config.getClassExternalizerFactory() != null) {
                 throw new SkipException("externalizers not supported");
             }
             final ObjectResolver objectResolver = config.getObjectResolver();

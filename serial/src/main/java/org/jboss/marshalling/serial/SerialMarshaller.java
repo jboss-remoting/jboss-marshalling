@@ -252,9 +252,6 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
             externalizer = externalizers.get(objClass);
         } else {
             externalizer = classExternalizerFactory.getExternalizer(objClass);
-            if (externalizer == null) {
-                externalizer = externalizerFactory.getExternalizer(obj);
-            }
             externalizers.put(objClass, externalizer);
         }
         if (externalizer != null) {

@@ -481,7 +481,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                         throw new InvalidClassException(forClass.getName(), "Field " + name + "'s class was not found");
                     }
                     if (kind == Kind.OBJECT) {
-                        final String signature = getSignature(type);
+                        final String signature = getSignature(type).intern();
                         write(signature.charAt(0));
                         writeUTF(name);
                         writeObject(signature);

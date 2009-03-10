@@ -30,7 +30,6 @@ import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PREDEFINED_C
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PREDEFINED_OBJECT;
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PROXY_CLASS;
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PROXY_OBJECT;
-import static org.jboss.marshalling.serialization.jboss.Protocol.ID_RENAMED_CLASS;
 
 import java.io.IOException;
 import java.io.ObjectStreamClass;
@@ -49,12 +48,14 @@ import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.serialization.java.ObjectResolverWrapper;
 import org.jboss.serial.classmetamodel.ClassMetaData;
+import org.jboss.serial.classmetamodel.ClassMetaDataSlot;
 import org.jboss.serial.classmetamodel.DefaultClassDescriptorStrategy;
 import org.jboss.serial.classmetamodel.StreamingClass;
 import org.jboss.serial.io.JBossObjectInputStreamSharedTree;
 import org.jboss.serial.objectmetamodel.DefaultObjectDescriptorStrategy;
 import org.jboss.serial.objectmetamodel.ObjectsCache;
 import org.jboss.serial.objectmetamodel.ObjectsCache.JBossSeralizationInputInterface;
+import org.jboss.serial.util.HashStringUtil;
 import org.jboss.serial.util.StringUtilBuffer;
 
 /**
@@ -183,35 +184,33 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
                   String className = input.readUTF();
                   try {
                      Class resolvedClass = classResolver.resolveClass(unmarshaller, className, -1);
+                     jbsis.resolvedClassName.set(className);
+                     jbsis.resolvedClass.set(resolvedClass);
                      if (className.equals(resolvedClass.getName())) {
-                        jbsis.resolvedClassName.set(className);
-                        jbsis.resolvedClass.set(resolvedClass);
                         StreamingClass streamingClass = super.readClassDescription(cache, input, passedClassResolver, className);
                         jbsis.resolvedClassName.set(null);
                         return streamingClass;
                      } else {
                         StreamingClass streamingClass = super.readClassDescription(cache, input, passedClassResolver, className);
-                        streamingClass.setMetadata(new ClassMetaData(resolvedClass));
+                        ClassMetaData metaData = streamingClass.getMetadata();
+                        metaData.setClassName(resolvedClass.getName());
+                        metaData.setClazz(resolvedClass);
+                        metaData.setConstructor(resolvedClass.getConstructor());
+                        Long shaHash = HashStringUtil.hashName(resolvedClass.getName());
+                        metaData.setShaHash(shaHash);
+                        ClassMetaDataSlot slot = metaData.getSlots()[0];
+                        slot.setSlotClass(resolvedClass);
+                        slot.setShaHash(shaHash);
+                        jbsis.resolvedClassName.set(null);
                         return streamingClass;
                      }
                   } catch (ClassNotFoundException e) {
                      throw new IOException(e.getMessage());
-                  }
-               } else {
-                  return super.readClassDescription(cache, input, passedClassResolver, null);
-               }
-            }
-            case ID_RENAMED_CLASS: {
-               if (classResolver != null) {
-                  String className = input.readUTF();
-                  try {
-                     Class clazz = classResolver.resolveClass(unmarshaller, className, -1);
-                     return super.readClassDescription(cache, input, passedClassResolver, className, clazz);
-                  } catch (ClassNotFoundException e) {
+                  } catch (NoSuchMethodException e) {
                      throw new IOException(e.getMessage());
                   }
                } else {
-                  throw new IllegalStateException("Need ClassResolver for renamed class");
+                  return super.readClassDescription(cache, input, passedClassResolver, null);
                }
             }
             case ID_PROXY_CLASS: {
@@ -241,14 +240,6 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
             default: {
                throw new IOException("unrecognized class type: " + tag);
             }          
-         }
-      }
-
-      protected StreamingClass createStreamingClass(ObjectsCache cache, JBossSeralizationInputInterface input, org.jboss.serial.classmetamodel.ClassResolver classResolver, String className, Class clazz) throws IOException {
-         if (clazz == null) {
-            return super.createStreamingClass(cache, input, classResolver, className, clazz);
-         } else {
-            return new DerivedStreamingClass(clazz);
          }
       }
    }

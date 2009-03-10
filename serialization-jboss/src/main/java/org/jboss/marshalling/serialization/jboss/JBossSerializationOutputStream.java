@@ -29,27 +29,21 @@ import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PREDEFINED_C
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PREDEFINED_OBJECT;
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PROXY_CLASS;
 import static org.jboss.marshalling.serialization.jboss.Protocol.ID_PROXY_OBJECT;
-import static org.jboss.marshalling.serialization.jboss.Protocol.ID_RENAMED_CLASS;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
-import org.jboss.marshalling.serialization.java.ExternalizableWrapper;
-import org.jboss.marshalling.serialization.java.ObjectTableWriterWrapper;
 import org.jboss.serial.classmetamodel.ClassMetaData;
 import org.jboss.serial.classmetamodel.DefaultClassDescriptorStrategy;
 import org.jboss.serial.io.JBossObjectOutputStreamSharedTree;
@@ -67,12 +61,14 @@ import org.jboss.serial.util.StringUtilBuffer;
  */
 public class JBossSerializationOutputStream extends JBossObjectOutputStreamSharedTree
 {   
+   private static final boolean DONT_WRITE_CLASS_NAME = false;
+   private static final boolean WRITE_CLASS_NAME = true;
+   
    private JBossSerializationMarshaller marshaller;
    private StreamHeader streamHeader;
    private ClassResolver classResolver;
    private ObjectResolver objectResolver;
    private ClassExternalizerFactory classExternalizerFactory;
-   private ExternalizerFactory externalizerFactory;
    private ClassTable classTable;
    private ObjectTable objectTable;
 
@@ -88,7 +84,6 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
                                          ClassTable classTable,
                                          ObjectResolver objectResolver,
                                          ObjectTable objectTable,
-                                         ExternalizerFactory externalizerFactory,
                                          ClassExternalizerFactory classExternalizerFactory,
                                          boolean nativeImmutableHandling) throws IOException {
       super(marshaller.getOutputStream(), checkSerializableClass, buffer);
@@ -98,7 +93,6 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
       this.classTable = classTable;
       this.objectResolver = objectResolver;
       this.objectTable = objectTable;
-      this.externalizerFactory = externalizerFactory;
       this.classExternalizerFactory = classExternalizerFactory;
       this.nativeImmutableHandling = nativeImmutableHandling;
       setClassDescriptorStrategy(new JBMClassDescriptorStrategy(marshaller, this));
@@ -204,23 +198,29 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
                }
                classResolver.annotateProxyClass(marshaller, clazz);
             } else {
+               output.write(ID_ORDINARY_CLASS);
                String className = metaData.getClassName();
                String replacementClassName = classResolver.getClassName(clazz);
                if (className.equals(replacementClassName)) {
-                  output.write(ID_ORDINARY_CLASS);
                   output.writeUTF(className);
                   classResolver.annotateClass(marshaller, clazz);
-                  super.writeClassDescription(clazz, metaData, cache, description, false, true);
+                  super.writeClassDescription(null, metaData, cache, description, DONT_WRITE_CLASS_NAME);
                } else {
-                  output.write(ID_RENAMED_CLASS);
                   output.writeUTF(replacementClassName);
                   classResolver.annotateClass(marshaller, clazz);
-                  super.writeClassDescription(clazz, metaData, cache, description, false, false);
+                  try
+                  {
+                     ClassMetaData replacementMetaData = new ClassMetaData(Class.forName(replacementClassName));
+                     super.writeClassDescription(null, replacementMetaData, cache, description, DONT_WRITE_CLASS_NAME);
+                  }
+                  catch (ClassNotFoundException e) {
+                     throw new IOException(e.getMessage());
+                  }
                }
             }
          } else {
             output.write(ID_ORDINARY_CLASS);
-            super.writeClassDescription(clazz, metaData, cache, description, true, true);
+            super.writeClassDescription(clazz, metaData, cache, description, WRITE_CLASS_NAME);
          }
       }
    }
@@ -228,8 +228,7 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
    static class JBMObjectDescriptorStrategy extends DefaultObjectDescriptorStrategy {
       private JBossSerializationMarshaller marshaller;
       private ClassResolver classResolver;
-      private ObjectTable objectTable;
-      private ExternalizerFactory externalizerFactory;   
+      private ObjectTable objectTable; 
       private ClassExternalizerFactory classExternalizerFactory; 
       private boolean nativeImmutableHandling;
       
@@ -237,7 +236,6 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
          this.marshaller = marshaller;
          this.classResolver = output.classResolver;
          this.objectTable = output.objectTable;
-         this.externalizerFactory = output.externalizerFactory;
          this.classExternalizerFactory = output.classExternalizerFactory;
          this.nativeImmutableHandling = output.nativeImmutableHandling;
       }
@@ -256,9 +254,6 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
          Externalize annotation = null;
          if (classExternalizerFactory != null) {
             externalizer = classExternalizerFactory.getExternalizer(obj.getClass());
-         }
-         if (externalizer == null && externalizerFactory != null) {
-            externalizer = externalizerFactory.getExternalizer(obj);
          }
          if (externalizer == null && obj != null) {
             annotation = obj.getClass().getAnnotation(Externalize.class);

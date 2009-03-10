@@ -91,7 +91,6 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
                                                           classTable,
                                                           objectResolver,
                                                           objectTable,
-                                                          externalizerFactory,
                                                           classExternalizerFactory,
                                                           nativeImmutableHandling);
                jbsos.completeConstruction();

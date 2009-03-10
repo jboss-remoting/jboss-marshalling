@@ -27,7 +27,6 @@ import org.jboss.marshalling.AbstractMarshallerFactory;
 import org.jboss.marshalling.ClassResolver;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.ExternalizerFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
@@ -53,10 +52,6 @@ public final class JBossSerializationMarshallerFactory extends AbstractMarshalle
 
    public Unmarshaller createUnmarshaller(MarshallingConfiguration configuration) throws IOException {
       return new JBossSerializationUnmarshaller(this, configuration);
-   }
-
-   protected ExternalizerFactory getDefaultExternalizerFactory() {
-      return null;
    }
 
    protected ClassExternalizerFactory getDefaultClassExternalizerFactory() {

@@ -41,7 +41,6 @@ public final class Protocol implements DataContainerConstants {
     public static final byte ID_EXTERNALIZER_CLASS       = BASE + 0x07;
     public static final byte ID_PREDEFINED_CLASS         = BASE + 0x08;
     public static final byte ID_RESOLVED_CLASS           = BASE + 0x09;
-    public static final byte ID_RENAMED_CLASS            = BASE + 0x0a;
 
     private Protocol() {
     }

@@ -46,7 +46,16 @@ public class JBossSerializationUnmarshaller extends AbstractUnmarshaller
    
    private ByteInputStream bis;
    private JBossSerializationInputStream jbsis;
+   private boolean jbossSerializationCompatible = false;
       
+   public boolean isJbossSerializationCompatible() {
+      return jbossSerializationCompatible;
+   }
+
+   public void setJbossSerializationCompatible(boolean jbossSerializationCompatible) {
+      this.jbossSerializationCompatible = jbossSerializationCompatible;
+   }
+
    protected JBossSerializationUnmarshaller(AbstractMarshallerFactory marshallerFactory, MarshallingConfiguration configuration) throws IOException {
       super(marshallerFactory, configuration);
    }
@@ -80,7 +89,7 @@ public class JBossSerializationUnmarshaller extends AbstractUnmarshaller
       try {
          AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
             public Void run() throws IOException {
-               jbsis = new JBossSerializationInputStream(JBossSerializationUnmarshaller.this, streamHeader, classResolver, classTable, objectResolver, objectTable, creator);
+               jbsis = new JBossSerializationInputStream(JBossSerializationUnmarshaller.this, streamHeader, classResolver, classTable, objectResolver, objectTable, creator, jbossSerializationCompatible);
                jbsis.completeConstruction();
                return null;
             }

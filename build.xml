@@ -43,6 +43,18 @@
         <taskdef resource="testngtasks" classpath="${lib.testng.local}"/>
     </target>
 
+    <!-- Library: trove -->
+
+    <target name="lib.trove-check">
+        <available property="lib.trove.exists" file="${lib.trove.local}"/>
+    </target>
+
+    <target name="lib.trove-fetch" depends="lib.trove-check" unless="lib.trove.exists">
+        <mkdir dir="${local.repository}/${lib.trove.dir}"/>
+        <get src="${lib.trove.remote}" dest="${lib.trove.local}" usetimestamp="true" ignoreerrors="false"/>
+        <get src="${remote.license.dir}/${lib.trove.license}.txt" dest="${lib.trove.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
+    </target>
+    	
     <!-- api module -->
 
     <target name="api.compile.depcheck">
@@ -197,8 +209,54 @@
             <pathelement location="serialization-java/target/main/classes"/>
         </path>
     </target>
+	
+	
+    <!-- serialization-jboss module -->
 
-    <!-- testing-support module -->
+    <target name="serialization-jboss.compile.depcheck">
+        <mkdir dir="serialization-jboss/target/main"/>
+        <uptodate property="serialization-jboss.compile.uptodate" targetfile="serialization-jboss/target/main/.lastcompile">
+            <srcfiles dir="serialization-jboss/src/main/java">
+                <include name="**/"/>
+                <include name="**/*.java"/>
+                <exclude name="**/.*"/>
+            </srcfiles>
+        </uptodate>
+    </target>
+
+    <target name="serialization-jboss.compile" depends="api,serialization-java,serialization-jboss.compile.depcheck" unless="serialization-jboss.compile.uptodate">
+        <mkdir dir="serialization-jboss/target/main/classes"/>
+    	<echo>${lib.jboss-serialization.local}</echo>
+    	
+        <javac
+                source="${javac.source}"
+                target="${javac.target}"
+                srcdir="serialization-jboss/src/main/java"
+                destdir="serialization-jboss/target/main/classes"
+                debug="true">
+            <compilerarg value="-Xlint:unchecked"/>
+            <classpath>
+                <path refid="api.classpath"/>
+            	<path refid="serialization-java.classpath"/>
+            	<pathelement location="${lib.jboss-serialization.local}"/>
+            	<pathelement location="${lib.trove.local}"/>
+            </classpath>
+        </javac>
+        <touch file="serialization-jboss/target/main/.lastcompile" verbose="false"/>
+    </target>
+
+    <target name="serialization-jboss.clean">
+        <delete dir="serialization-jboss/target"/>
+    </target>
+
+    <target name="serialization-jboss" description="Build the serialization-jboss module" depends="api,serialization-jboss.compile">
+        <path id="serialization-jboss.classpath">
+            <pathelement location="serialization-jboss/target/main/classes"/>
+        </path>
+    </target>
+    	
+    <!--
+     testing-support module -->
 
     <target name="testing-support.compile.depcheck">
         <mkdir dir="testing-support/target/main"/>
@@ -427,7 +485,39 @@
         <delete file="serialization-java.jar"/>
     </target>
 
-    <!-- Javadoc targets -->
+    <target name="serialization-jboss.jar" description="Build the River marshalling implementation jar" depends="serialization-jboss.jar.clean,serialization-jboss">
+        <delete dir="serialization-jboss/target/main/resources/META-INF/"/>
+        <mkdir dir="serialization-jboss/target/main/resources/META-INF/"/>
+        <copy file="serialization-jboss/src/main/resources/META-INF/jboss-classloading.xml" todir="serialization-jboss/target/main/resources/META-INF/"/>
+        <replace file="serialization-jboss/target/main/resources/META-INF/jboss-classloading.xml">
+            <replacefilter token="@VERSION@" value="${version}"/>
+        </replace>
+        <jar jarfile="serialization-jboss.jar">
+            <manifest>
+                <attribute name="Created-By" value="${java.vm.version} (${java.vm.vendor})"/>
+                <attribute name="Specification-Title" value="Java serialization marshalling implementation"/>
+                <attribute name="Specification-Version" value="${version}"/>
+                <attribute name="Specification-Vendor" value="JBoss (http://www.jboss.org/)"/>
+                <attribute name="Implementation-Title" value="Java serialization marshalling implementation"/>
+                <!-- attribute name="Implementation-URL" value="http://labs.jboss.org/jbossremoting/"/ -->
+                <attribute name="Implementation-Version" value="${version}"/>
+                <attribute name="Implementation-Vendor" value="JBoss, a division of Red Hat, Inc."/>
+                <attribute name="Implementation-Vendor-Id" value="http://www.jboss.org"/>
+            </manifest>
+            <metainf dir="serialization-jboss/target/main/resources/META-INF/">
+                <include name="jboss-classloading.xml"/>
+            </metainf>
+            <zipfileset dir="serialization-jboss/target/main/classes">
+                <include name="**/*.class"/>
+            </zipfileset>
+        </jar>
+    </target>
+
+    <target name="serialization-jboss.jar.clean">
+        <delete file="serialization-jboss.jar"/>
+    </target>
+    	
+	<!-- Javadoc targets -->
 
     <target name="javadoc" depends="lib.apiviz,api,river">
         <delete dir="docs/target/main/javadoc"/>
@@ -486,11 +576,11 @@
 
     <!-- Global targets -->
 
-    <target name="jars.clean" description="Clean all JAR targets" depends="api.jar.clean,river.jar.clean,serialization-java.jar.clean"/>
+    <target name="jars.clean" description="Clean all JAR targets" depends="api.jar.clean,river.jar.clean,serialization-java.jar.clean,serialization-jboss.jar.clean"/>
 
-    <target name="all" description="Build all targets" depends="api.jar,river.jar,serialization-java.jar"/>
+    <target name="all" description="Build all targets" depends="api.jar,river.jar,serialization-java.jar,serialization-jboss.jar"/>
 
     <target name="test" description="Run the tests" depends="tests.run"/>
 
-    <target name="clean" description="Clean all targets" depends="api.clean,river.clean,serialization-java.clean,tests.clean,jars.clean"/>
+    <target name="clean" description="Clean all targets" depends="api.clean,river.clean,serial.clean,serialization-java.clean,serialization-jboss.clean,tests.clean,jars.clean"/>
 </project>

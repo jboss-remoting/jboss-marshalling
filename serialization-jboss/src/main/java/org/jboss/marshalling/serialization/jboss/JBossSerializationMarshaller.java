@@ -48,8 +48,8 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
    private ByteOutputStream bos;
    private JBossSerializationOutputStream jbsos;
    private boolean nativeImmutableHandling = true;
-   
-  
+   private boolean jbossSerializationCompatible = false;
+
    protected JBossSerializationMarshaller(AbstractMarshallerFactory marshallerFactory, final MarshallingConfiguration configuration) throws IOException {
       super(marshallerFactory, configuration);
    }
@@ -92,7 +92,8 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
                                                           objectResolver,
                                                           objectTable,
                                                           classExternalizerFactory,
-                                                          nativeImmutableHandling);
+                                                          nativeImmutableHandling, 
+                                                          jbossSerializationCompatible);
                jbsos.completeConstruction();
                return null;
             }
@@ -102,13 +103,19 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
       }
    }
 
-   public boolean isNativeImmutableHandling()
-   {
+   public boolean isJbossSerializationCompatible() {
+      return jbossSerializationCompatible;
+   }
+
+   public void setJbossSerializationCompatible(boolean jbossSerializationCompatible) {
+      this.jbossSerializationCompatible = jbossSerializationCompatible;
+   }
+   
+   public boolean isNativeImmutableHandling() {
       return nativeImmutableHandling;
    }
 
-   public void setNativeImmutableHandling(boolean nativeImmutableHandling)
-   {
+   public void setNativeImmutableHandling(boolean nativeImmutableHandling) {
       this.nativeImmutableHandling = nativeImmutableHandling;
    }
 

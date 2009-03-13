@@ -84,7 +84,8 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
                                         ClassTable classTable,
                                         ObjectResolver objectResolver,
                                         ObjectTable objectTable,
-                                        Creator creator) throws IOException {
+                                        Creator creator, 
+                                        boolean jbossSerializationCompatible) throws IOException {
       super(unmarshaller.getInputStream(), new StringUtilBuffer(10024, 10024));
       this.unmarshaller = unmarshaller;
       this.streamHeader = streamHeader;
@@ -101,9 +102,16 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
          }
       });
       
-      setClassDescriptorStrategy(new JBMClassDescriptorStrategy(unmarshaller, this, classTable, classResolver));
-      setObjectDescriptorStrategy(new JBMObjectDescriptorStrategy(unmarshaller, this));
-      setStandardReplacement(true);
+      if (jbossSerializationCompatible) {
+         setClassDescriptorStrategy(new DefaultClassDescriptorStrategy());
+         setObjectDescriptorStrategy(new DefaultObjectDescriptorStrategy());
+         setStandardReplacement(false);
+      } else {
+         setClassDescriptorStrategy(new JBMClassDescriptorStrategy(unmarshaller, this, classTable, classResolver));
+         setObjectDescriptorStrategy(new JBMObjectDescriptorStrategy(unmarshaller, this));
+         setStandardReplacement(true);
+      }
+      
       readyForStreamHeader = true;
    }
    

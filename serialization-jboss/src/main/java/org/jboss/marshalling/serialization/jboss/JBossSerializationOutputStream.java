@@ -85,7 +85,8 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
                                          ObjectResolver objectResolver,
                                          ObjectTable objectTable,
                                          ClassExternalizerFactory classExternalizerFactory,
-                                         boolean nativeImmutableHandling) throws IOException {
+                                         boolean nativeImmutableHandling,
+                                         boolean jbossSerializationCompatible) throws IOException {
       super(marshaller.getOutputStream(), checkSerializableClass, buffer);
       this.marshaller = marshaller;
       this.streamHeader = streamHeader;
@@ -95,9 +96,16 @@ public class JBossSerializationOutputStream extends JBossObjectOutputStreamShare
       this.objectTable = objectTable;
       this.classExternalizerFactory = classExternalizerFactory;
       this.nativeImmutableHandling = nativeImmutableHandling;
-      setClassDescriptorStrategy(new JBMClassDescriptorStrategy(marshaller, this));
-      setObjectDescriptorStrategy(new JBMObjectDescriptorStrategy(marshaller, this));
-      setStandardReplacement(true);
+      
+      if (jbossSerializationCompatible) {
+         setClassDescriptorStrategy(new DefaultClassDescriptorStrategy());
+         setObjectDescriptorStrategy(new DefaultObjectDescriptorStrategy());
+         setStandardReplacement(false);
+      } else {
+         setClassDescriptorStrategy(new JBMClassDescriptorStrategy(marshaller, this));
+         setObjectDescriptorStrategy(new JBMObjectDescriptorStrategy(marshaller, this));
+         setStandardReplacement(true);
+      }
       
       if (objectResolver != null) {
          AccessController.doPrivileged(new PrivilegedAction<Void>() {

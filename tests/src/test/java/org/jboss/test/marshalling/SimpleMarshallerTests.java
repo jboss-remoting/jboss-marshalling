@@ -145,7 +145,7 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
-    public static final class TestSerializable implements Serializable {
+    public static class TestSerializable implements Serializable {
         private static final long serialVersionUID = -3834685845327229499L;
 
         private int first = 1234;
@@ -176,17 +176,18 @@ public final class SimpleMarshallerTests extends TestBase {
             return 0;
         }
 
-        private void writeObject(ObjectOutputStream oos) throws IOException {
-            final ObjectOutputStream.PutField field = oos.putFields();
-            field.put("first", first);
-            field.put("second", second);
-            field.put("argh", argh);
-            field.put("third", third);
-            field.put("zap", zap);
-            field.put("foo", foo);
-            oos.writeFields();
-        }
+        //        private void writeObject(ObjectOutputStream oos) throws IOException {
+        //            final ObjectOutputStream.PutField field = oos.putFields();
+        //            field.put("first", first);
+        //            field.put("second", second);
+        //            field.put("argh", argh);
+        //            field.put("third", third);
+        //            field.put("zap", zap);
+        //            field.put("foo", foo);
+        //            oos.writeFields();
+        //        }
     }
+
 
     @Test
     public void testSimple() throws Throwable {
@@ -202,6 +203,222 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    public static class TestSerializableNoWriteObjectDefaultReadObject extends TestSerializable {
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double fourth = 1.23;
+
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+        }
+    }
+
+    @Test
+    public void testSerializableNoWriteObjectDefaultReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableNoWriteObjectDefaultReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static class TestSerializableNoWriteObjectGetFieldsReadObject extends TestSerializable {
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double fifth = 2.34;
+
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ObjectInputStream.GetField getField = ois.readFields();
+            fifth = (double) getField.get("fifth", 2.34);
+        }
+    }
+
+    @Test
+    public void testSerializableNoWriteObjectGetFieldsReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableNoWriteObjectGetFieldsReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof JBossSerializationUnmarshaller || unmarshaller instanceof JBossObjectInputStreamUnmarshaller)) {
+                    throw new SkipException("JBossSerialization does not support asymmetric readObject() with GetField");
+                }
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static class TestSerializableDefaultWriteObjectNoReadObject extends TestSerializable {
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double sixth = 3.45;
+
+        protected void writeObject(ObjectOutputStream oos) throws IOException {
+            oos.defaultWriteObject();
+        }
+    }
+
+    @Test
+    public void testSerializableDefaultWriteObjectNoReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableDefaultWriteObjectNoReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableDefaultWriteObjectDefaultReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
+
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+        }
+    }
+
+    @Test
+    public void testSerializableDefaultWriteObjectDefaultReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableDefaultWriteObjectDefaultReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableDefaultWriteObjectGetFieldsReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double eighth = 5.67;
+
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ObjectInputStream.GetField getField = ois.readFields();
+            eighth = (double) getField.get("eighth", 5.67);
+        }
+    }
+
+    @Test
+    public void testSerializableDefaultWriteObjectGetFieldsReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableDefaultWriteObjectGetFieldsReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof JBossSerializationUnmarshaller || unmarshaller instanceof JBossObjectInputStreamUnmarshaller)) {
+                    throw new SkipException("JBossSerialization does not support asymmetric readObject() with GetField");
+                }
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static class TestSerializablePutFieldsWriteObjectNoReadObject extends TestSerializable {
+        private static final long serialVersionUID = 1191166362124148545L;
+        protected double ninth = 6.78;
+
+        protected void writeObject(ObjectOutputStream oos) throws IOException {
+            final ObjectOutputStream.PutField field = oos.putFields();
+            field.put("ninth", ninth);
+            oos.writeFields();
+        }
+    }
+
+    @Test
+    public void testSimplePutFieldsWriteObjectNoReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializablePutFieldsWriteObjectNoReadObject();
+        
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
+                    throw new SkipException("JBossSerialization does not support asymmetric writeObject() with PutField");
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }  
+
+    public static final class TestSerializablePutFieldsWriteObjectDefaultReadObject extends TestSerializablePutFieldsWriteObjectNoReadObject {
+        private static final long serialVersionUID = 1191166362124148545L;
+        protected double tenth = 7.89;
+
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+        }
+    }
+
+    @Test
+    public void testSerializablePutFieldsWriteObjectDefaultReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializablePutFieldsWriteObjectDefaultReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
+                    throw new SkipException("JBossSerialization does not support asymmetric writeObject() with PutField");
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }  
+
+    public static final class TestSerializablePutFieldsWriteObjectGetFieldsReadObject extends TestSerializable {
+        private static final long serialVersionUID = 1191166362124148545L;
+        protected double eleventh = 8.90;
+
+        protected void writeObject(ObjectOutputStream oos) throws IOException {
+            final ObjectOutputStream.PutField field = oos.putFields();
+            field.put("eleventh", eleventh);
+            oos.writeFields();
+        }
+        
+        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ObjectInputStream.GetField getField = ois.readFields();
+            eleventh = (double) getField.get("eleventh", 8.90);
+        }
+    }
+
+    @Test
+    public void testSerializablePutFieldsWriteObjectGetFieldsReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializablePutFieldsWriteObjectGetFieldsReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }  
 
     @Test
     public void testString() throws Throwable {

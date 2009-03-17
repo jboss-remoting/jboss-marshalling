@@ -27,6 +27,18 @@
         <get src="${remote.license.dir}/${lib.jboss-serialization.license}.txt" dest="${lib.jboss-serialization.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
     </target>
 
+    <!-- Library: log4j -->
+
+    <target name="lib.log4j-check">
+        <available property="lib.log4j.exists" file="${lib.log4j.local}"/>
+    </target>
+
+    <target name="lib.log4j" depends="lib.log4j-check" unless="lib.log4j.exists">
+        <mkdir dir="${local.repository}/${lib.log4j.dir}"/>
+        <get src="${lib.log4j.remote}" dest="${lib.log4j.local}" usetimestamp="true" ignoreerrors="false"/>
+        <get src="${remote.license.dir}/${lib.log4j.license}.txt" dest="${lib.log4j.local}.license.txt" usetimestamp="true" ignoreerrors="false"/>
+    </target>
+	
     <!-- Library: TestNG -->
 
     <target name="lib.testng-check">
@@ -252,6 +264,9 @@
     <target name="serialization-jboss" description="Build the serialization-jboss module" depends="api,serialization-jboss.compile">
         <path id="serialization-jboss.classpath">
             <pathelement location="serialization-jboss/target/main/classes"/>
+            <pathelement location="${lib.jboss-serialization.local}"/>
+            <pathelement location="${lib.log4j.local}"/>
+            <pathelement location="${lib.trove.local}"/>
         </path>
     </target>
     	
@@ -298,9 +313,9 @@
     <!-- tests module -->
 
     <target name="tests.compile.depcheck">
-        <mkdir dir="tests/target/main"/>
-        <uptodate property="tests.compile.uptodate" targetfile="tests/target/main/.lastcompile">
-            <srcfiles dir="tests/src/main/java">
+        <mkdir dir="tests/target/test"/>
+        <uptodate property="tests.compile.uptodate" targetfile="tests/target/test/.lastcompile">
+            <srcfiles dir="tests/src/test/java">
                 <include name="**/"/>
                 <include name="**/*.java"/>
                 <exclude name="**/.*"/>
@@ -309,12 +324,12 @@
     </target>
 
     <target name="tests.compile" depends="tests.compile.depcheck" unless="tests.compile.uptodate">
-        <mkdir dir="tests/target/main/classes"/>
+        <mkdir dir="tests/target/test/classes"/>
         <javac
                 source="${javac.source}"
                 target="${javac.target}"
-                srcdir="tests/src/main/java"
-                destdir="tests/target/main/classes"
+                srcdir="tests/src/test/java"
+                destdir="tests/target/test/classes"
                 debug="true">
             <compilerarg value="-Xlint:unchecked"/>
             <classpath>
@@ -322,11 +337,12 @@
                 <path refid="river.classpath"/>
                 <path refid="serial.classpath"/>
                 <path refid="serialization-java.classpath"/>
+                <path refid="serialization-jboss.classpath"/>
                 <path refid="testing-support.classpath"/>
                 <pathelement location="${lib.testng.local}"/>
             </classpath>
         </javac>
-        <touch file="tests/target/main/.lastcompile" verbose="false"/>
+        <touch file="tests/target/test/.lastcompile" verbose="false"/>
     </target>
 
     <target name="tests.clean">
@@ -351,12 +367,13 @@
                 <path refid="api.classpath"/>
                 <path refid="river.classpath"/>
                 <path refid="serialization-java.classpath"/>
+                <path refid="serialization-jboss.classpath"/>
                 <path refid="serial.classpath"/>
                 <path refid="tests.classpath"/>
                 <path refid="testing-support.classpath"/>
                 <pathelement location="${lib.testng.local}"/>
             </classpath>
-            <classfileset dir="tests/target/main/classes">
+            <classfileset dir="tests/target/test/classes">
                 <include name="**/*TestFactory.class"/>
             </classfileset>
         </testng>
@@ -380,9 +397,9 @@
 
     <target name="tests.run" depends="tests.run.plain,tests.run.security"/>
 
-    <target name="tests" description="Build the tests module" depends="lib.testng,api,river,serial,serialization-java,testing-support,tests.compile">
+    <target name="tests" description="Build the tests module" depends="lib.testng,api,river,serial,serialization-java,serialization-jboss,testing-support,tests.compile">
         <path id="tests.classpath">
-            <pathelement location="tests/target/main/classes"/>
+            <pathelement location="tests/target/test/classes"/>
         </path>
     </target>
 
@@ -574,6 +591,80 @@
     </target>
 
 
+    <!-- Alternate JDK tests -->
+    
+    <target name="test.jdks" depends="tests,testing-support">
+        <property environment="env"/>
+        <echo>jdk.home: ${env.JAVA_HOME}</echo>
+        <available property="sun.jdk15.available" file="${sun.jdk15.home}"/>
+        <antcall inheritall="true" inheritrefs="true" target="test.jdk.run">
+            <param name="extension" value="-sun.jdk15"/>
+            <param name="jdk.home" value="${sun.jdk15.home}"/>
+            <param name="message" value="Running with Sun jdk 1.5"/>
+            <param name="available" value="sun.jdk15.available"/>
+        </antcall>
+        <available property="sun.jdk16.available" file="${sun.jdk16.home}"/>
+        <antcall inheritall="true" inheritrefs="true" target="test.jdk.run">
+            <param name="extension" value="-sun.jdk16"/>
+            <param name="jdk.home" value="${sun.jdk16.home}"/>
+            <param name="message" value="Running with Sun jdk 1.6"/>
+            <param name="available" value="sun.jdk16.available"/>
+        </antcall>
+        <available property="jrockit.jdk15.available" file="${jrockit.jdk15.home}"/>
+        <antcall inheritall="true" inheritrefs="true" target="test.jdk.run">
+            <param name="extension" value="-jrockit.jdk15"/>
+            <param name="jdk.home" value="${jrockit.jdk15.home}"/>
+            <param name="message" value="Running with jrockit jdk 1.5"/>
+            <param name="available" value="jrockit.jdk15.available"/>
+        </antcall>
+        <available property="jrockit.jdk16.available" file="${jrockit.jdk16.home}"/>
+        <antcall inheritall="true" inheritrefs="true" target="test.jdk.run">
+            <param name="extension" value="-jrockit.jdk16"/>
+            <param name="jdk.home" value="${jrockit.jdk16.home}"/>
+            <param name="message" value="Running with jrockit jdk 1.6"/>
+            <param name="available" value="jrockit.jdk16.available"/>
+        </antcall>
+    </target>
+	
+    <target name="test.jdk.run" if="${available}">
+        <antcall inheritall="true" inheritrefs="true" target="tests.run.pseudotarget">
+            <param name="test.jvmargs" value="-Ddummy=dummy"/>
+        </antcall>
+    </target>
+    	
+    <!--target name="jdk.test" if="${available}">
+        <echo message="============================================="/>
+        <echo message="${message}"/>
+        <echo message="============================================="/>
+        <mkdir dir="tests/target/test-results"/>    
+        <path id="tests.classpath">
+            <pathelement location="tests/target/main/classes"/>
+        </path>
+        <available property="jdk" filepath="${jdk.home}/bin" file="java"     value="${jdk.home}/bin/java"/>
+        <available property="jdk" filepath="${jdk.home}/bin" file="java.exe" value="${jdk.home}/bin/java.exe"/>
+        <echo>Using jdk: ${jdk}</echo>
+        <testng jvm="${jdk}">
+            <sysproperty key="build.home" value="${basedir}"/>
+            <sysproperty key="ant.library.dir" value="${ant.home}/lib"/>
+            <sysproperty key="lib.junit.local" value="${lib.junit.local}"/>
+            <jvmarg line="${test.jvmargs}"/>
+            <formatter type="plain" extension="${extension}"/>
+            <classpath>
+                <path refid="api.classpath"/>
+                <path refid="river.classpath"/>
+                <path refid="serialization-java.classpath"/>
+                <path refid="tests.classpath"/>
+                <path refid="testing-support.classpath"/>
+                <pathelement location="${lib.junit.local}"/>
+            </classpath>
+            <batchtest fork="yes" todir="tests/target/test-results" haltonfailure="no">
+               <fileset dir="tests/target/main/classes">
+                   <include name="**/JDKTestCase.class"/>
+               </fileset>
+            </batchtest>
+        </testng>
+    </target-->
+	
     <!-- Global targets -->
 
     <target name="jars.clean" description="Clean all JAR targets" depends="api.jar.clean,river.jar.clean,serialization-java.jar.clean,serialization-jboss.jar.clean"/>

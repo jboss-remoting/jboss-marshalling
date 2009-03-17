@@ -1,0 +1,6 @@
+# Sample version of references to alternative jdks.
+
+sun.jdk15.home=c://java/jdk1.5.0_15
+sun.jdk16.home=c://java/jdk1.6.0_06
+jrockit.jdk15.home=c://java/jrockit-R27.5.0-jdk1.5.0_14
+jrockit.jdk16.home=c://java/jrockit-R27.5.0-jdk1.6.0_03

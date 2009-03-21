@@ -766,28 +766,28 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return resolvedObject;
             }
             case Protocol.ID_BOOLEAN_CLASS: {
-                return Boolean.valueOf(readBoolean());
+                return objectResolver.readResolve(Boolean.valueOf(readBoolean()));
             }
             case Protocol.ID_BYTE_CLASS: {
-                return Byte.valueOf(readByte());
+                return objectResolver.readResolve(Byte.valueOf(readByte()));
             }
             case Protocol.ID_SHORT_CLASS: {
-                return Short.valueOf(readShort());
+                return objectResolver.readResolve(Short.valueOf(readShort()));
             }
             case Protocol.ID_INTEGER_CLASS: {
-                return Integer.valueOf(readInt());
+                return objectResolver.readResolve(Integer.valueOf(readInt()));
             }
             case Protocol.ID_LONG_CLASS: {
-                return Long.valueOf(readLong());
+                return objectResolver.readResolve(Long.valueOf(readLong()));
             }
             case Protocol.ID_CHARACTER_CLASS: {
-                return Character.valueOf(readChar());
+                return objectResolver.readResolve(Character.valueOf(readChar()));
             }
             case Protocol.ID_FLOAT_CLASS: {
-                return Float.valueOf(readFloat());
+                return objectResolver.readResolve(Float.valueOf(readFloat()));
             }
             case Protocol.ID_DOUBLE_CLASS: {
-                return Double.valueOf(readDouble());
+                return objectResolver.readResolve(Double.valueOf(readDouble()));
             }
             case Protocol.ID_OBJECT_CLASS:
             case Protocol.ID_PLAIN_CLASS: {

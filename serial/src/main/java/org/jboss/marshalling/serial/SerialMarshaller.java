@@ -182,10 +182,11 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         final Class<?> objClass = obj.getClass();
         if (obj instanceof Enum) {
             write(TC_ENUM);
-            writeClassDescFor(objClass);
+            final Enum theEnum = (Enum) obj;
+            writeClassDescFor(theEnum.getDeclaringClass());
             final int id = instanceSeq++;
             if (! unshared) instanceCache.put(obj, id);
-            doWriteObject(((Enum)obj).name(), false);
+            doWriteObject(theEnum.name(), false);
             return;
         } else if (objClass.isArray()) {
             write(TC_ARRAY);

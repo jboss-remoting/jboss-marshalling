@@ -37,6 +37,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.io.InvalidObjectException;
@@ -543,6 +544,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     protected Object doReadNewObject(final int streamClassType, final boolean unshared) throws ClassNotFoundException, IOException {
         final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType);
         final int classType = descriptor.getTypeID();
+        final List<Object> instanceCache = this.instanceCache;
         switch (classType) {
             case Protocol.ID_PROXY_CLASS: {
                 final Class<?> type = descriptor.getType();

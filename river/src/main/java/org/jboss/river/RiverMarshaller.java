@@ -761,8 +761,8 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeString(objClass.getName());
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
-            writeObject(externalizer);
         }
+        writeObject(externalizer);
     }
 
     protected void doAnnotateClass(final Class<?> objClass) throws IOException {

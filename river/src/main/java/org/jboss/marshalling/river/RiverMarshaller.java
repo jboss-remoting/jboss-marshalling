@@ -169,49 +169,49 @@ public class RiverMarshaller extends AbstractMarshaller {
             case Protocol.ID_BYTE_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_BYTE_CLASS);
-                writeByte(((Byte) original).byteValue());
+                writeByte(((Byte) obj).byteValue());
                 return;
             }
             case Protocol.ID_BOOLEAN_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_BOOLEAN_CLASS);
-                writeBoolean(((Boolean) original).booleanValue());
+                writeBoolean(((Boolean) obj).booleanValue());
                 return;
             }
             case Protocol.ID_CHARACTER_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_CHARACTER_CLASS);
-                writeChar(((Character) original).charValue());
+                writeChar(((Character) obj).charValue());
                 return;
             }
             case Protocol.ID_DOUBLE_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_DOUBLE_CLASS);
-                writeDouble(((Double) original).doubleValue());
+                writeDouble(((Double) obj).doubleValue());
                 return;
             }
             case Protocol.ID_FLOAT_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_FLOAT_CLASS);
-                writeFloat(((Float) original).floatValue());
+                writeFloat(((Float) obj).floatValue());
                 return;
             }
             case Protocol.ID_INTEGER_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_INTEGER_CLASS);
-                writeInt(((Integer) original).intValue());
+                writeInt(((Integer) obj).intValue());
                 return;
             }
             case Protocol.ID_LONG_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_LONG_CLASS);
-                writeLong(((Long) original).longValue());
+                writeLong(((Long) obj).longValue());
                 return;
             }
             case Protocol.ID_SHORT_CLASS: {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
                 write(Protocol.ID_SHORT_CLASS);
-                writeShort(((Short) original).shortValue());
+                writeShort(((Short) obj).shortValue());
                 return;
             }
             case Protocol.ID_STRING_CLASS: {

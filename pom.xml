@@ -41,4 +41,11 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>repository.jboss.org</id>
+            <name>JBoss Maven2 Repository</name>
+            <url>${repository.url}</url>
+        </repository>
+    </distributionManagement>
 </project>

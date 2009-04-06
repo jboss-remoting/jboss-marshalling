@@ -4,15 +4,9 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.jboss.marshalling</groupId>
-        <artifactId>jboss-marshalling</artifactId>
-        <version>1.2.0.CR1</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>serialization-java</artifactId>
+    <version>1.2.0.CR1</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -45,4 +39,11 @@
         </plugins>
         <finalName>serialization-java</finalName>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>repository.jboss.org</id>
+            <name>JBoss Maven2 Repository</name>
+            <url>${repository.url}</url>
+        </repository>
+    </distributionManagement>
 </project>

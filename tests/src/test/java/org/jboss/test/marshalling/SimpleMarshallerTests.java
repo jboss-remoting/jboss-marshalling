@@ -1392,11 +1392,12 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testExternalizablePlusExternalizer() throws Throwable {
         final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
-        final Map<String, String> map = new HashMap<String, String>();
-        map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
-        map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
-        map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
-        map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        final TestExternalizableWithSerializableFields ext2 = new TestExternalizableWithSerializableFields();
+        final TestExternalizableWithSerializableFields ext3 = new TestExternalizableWithSerializableFields();
+        final Map<String, TestExternalizableWithSerializableFields> map = new HashMap<String, TestExternalizableWithSerializableFields>();
+        map.put("kejlwqewq", ext1);
+        map.put("34890fdu90uq09rdewq", ext2);
+        map.put("nczxm,ncoijd0q93wjdwdwq", ext3);
         final AtomicInteger version = new AtomicInteger();
         final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
         runReadWriteTest(new ReadWriteTest() {
@@ -1418,9 +1419,7 @@ public final class SimpleMarshallerTests extends TestBase {
                     javaSerializationMarshaller.set(true);
                 }
                 marshaller.writeObject(map);
-                marshaller.writeObject(ext1);
                 marshaller.writeObject(map);
-                marshaller.writeObject(ext1);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
@@ -1431,10 +1430,8 @@ public final class SimpleMarshallerTests extends TestBase {
                     throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
                 }
                 final Object m1 = unmarshaller.readObject();
-                assertEquals(map, m1);
-                final Object m2 = unmarshaller.readObject();
+                assertEquals(HashMap.class, m1.getClass());
                 assertSame(m1, unmarshaller.readObject());
-                assertSame(m2, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
         });

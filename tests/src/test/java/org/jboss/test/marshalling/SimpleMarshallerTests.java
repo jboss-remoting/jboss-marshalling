@@ -1427,7 +1427,7 @@ public final class SimpleMarshallerTests extends TestBase {
                     throw new SkipException("River v0 can't detect eof on each object");
                 }
                 if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
-                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
+                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizer objects to regular ObjectInputStream");
                 }
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(HashMap.class, m1.getClass());

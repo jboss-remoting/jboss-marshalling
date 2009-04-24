@@ -36,6 +36,7 @@ import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.ObjectOutputStreamMarshaller;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
+import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.NotSerializableException;
 import java.io.IOException;
 import java.io.Serializable;
@@ -1321,6 +1323,119 @@ public final class SimpleMarshallerTests extends TestBase {
                 } catch (InvalidObjectException e) {
                     // ok
                 }
+            }
+        });
+    }
+
+    public static final class TestExternalizableWithSerializableFields implements Externalizable {
+        private boolean ran;
+        private Object obj = new TestSerializableWithFields();
+
+        private static final long serialVersionUID = 2776810457096829768L;
+
+        public void writeExternal(final ObjectOutput out) throws IOException {
+            out.writeInt(54321);
+            out.writeUTF("Hello!");
+            out.writeObject(obj);
+        }
+
+        public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+            assertEquals(54321, in.readInt());
+            assertEquals("Hello!", in.readUTF());
+            obj = in.readObject();
+            assertTrue("No EOF", in.read() == -1);
+            ran = true;
+        }
+    }
+
+    /*
+     * Verify JBMAR-50
+     */
+    @Test
+    public void testExternalizableWithFollowingObjects() throws Throwable {
+        final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
+        final TestExternalizableWithSerializableFields ext2 = new TestExternalizableWithSerializableFields();
+        final TestExternalizableWithSerializableFields ext3 = new TestExternalizableWithSerializableFields();
+        final AtomicInteger version = new AtomicInteger();
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                version.set(configuration.getVersion());
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(ext1);
+                marshaller.writeObject(ext2);
+                marshaller.writeObject(ext3);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof RiverUnmarshaller) && version.get() < 1) {
+                    throw new SkipException("River v0 can't detect eof on each object");
+                }
+                if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+                    throw new SkipException("Unsupported marshaller config");
+                }
+                final TestExternalizableWithSerializableFields rext1 = (TestExternalizableWithSerializableFields) unmarshaller.readObject();
+                final TestExternalizableWithSerializableFields rext2 = (TestExternalizableWithSerializableFields) unmarshaller.readObject();
+                final TestExternalizableWithSerializableFields rext3 = (TestExternalizableWithSerializableFields) unmarshaller.readObject();
+                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertTrue("readExternal 1 was not run", rext1.ran);
+                assertTrue("readExternal 2 was not run", rext2.ran);
+                assertTrue("readExternal 3 was not run", rext3.ran);
+            }
+        });
+        assertFalse("readExternal was run on the original 1", ext1.ran);
+        assertFalse("readExternal was run on the original 2", ext2.ran);
+        assertFalse("readExternal was run on the original 3", ext3.ran);
+    }
+
+    @Test
+    public void testExternalizablePlusExternalizer() throws Throwable {
+        final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
+        final Map<String, String> map = new HashMap<String, String>();
+        map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
+        map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
+        map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
+        map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        final AtomicInteger version = new AtomicInteger();
+        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassExternalizerFactory(new ClassExternalizerFactory() {
+                    public Externalizer getExternalizer(final Class<?> type) {
+                        if (type == HashMap.class) {
+                            return new HashMapExternalizer();
+                        } else {
+                            return null;
+                        }
+                    }
+                });
+                version.set(configuration.getVersion());
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof JavaSerializationMarshaller) {
+                    javaSerializationMarshaller.set(true);
+                }
+                marshaller.writeObject(map);
+                marshaller.writeObject(ext1);
+                marshaller.writeObject(map);
+                marshaller.writeObject(ext1);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if ((unmarshaller instanceof RiverUnmarshaller) && version.get() < 1) {
+                    throw new SkipException("River v0 can't detect eof on each object");
+                }
+                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
+                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
+                }
+                final Object m1 = unmarshaller.readObject();
+                assertEquals(map, m1);
+                final Object m2 = unmarshaller.readObject();
+                assertSame(m1, unmarshaller.readObject());
+                assertSame(m2, unmarshaller.readObject());
+                assertEOF(unmarshaller);
             }
         });
     }

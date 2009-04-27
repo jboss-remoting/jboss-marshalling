@@ -462,6 +462,10 @@ public final class Marshalling {
      */
     public static OptionalDataException createOptionalDataException(boolean eof) {
         final OptionalDataException optionalDataException = createOptionalDataException();
+        final StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        final StackTraceElement[] copyStackTrace = new StackTraceElement[stackTrace.length - 1];
+        System.arraycopy(stackTrace, 1, copyStackTrace, 0, copyStackTrace.length);
+        optionalDataException.setStackTrace(copyStackTrace);
         optionalDataException.eof = eof;
         return optionalDataException;
     }

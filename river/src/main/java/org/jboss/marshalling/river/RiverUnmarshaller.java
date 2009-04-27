@@ -587,9 +587,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final Externalizable obj = (Externalizable) creator.create(type);
                 final int idx = instanceCache.size();
                 instanceCache.add(obj);
-                obj.readExternal(getObjectInput());
                 if (version > 0) {
+                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                    obj.readExternal(blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();
+                    blockUnmarshaller.unblock();
+                } else {
+                    obj.readExternal(getObjectInput());
                 }
                 final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
                 if (unshared) {

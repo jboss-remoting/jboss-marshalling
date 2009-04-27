@@ -299,6 +299,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     instanceCache.add(unshared ? UNSHARED : UNRESOLVED);
                     final Object obj = objectTable.readObject(blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();
+                    blockUnmarshaller.unblock();
                     if (! unshared) instanceCache.set(idx, obj);
                     return obj;
                 }

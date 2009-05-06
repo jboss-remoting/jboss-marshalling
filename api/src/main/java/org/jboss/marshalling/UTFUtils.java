@@ -36,6 +36,24 @@ public final class UTFUtils {
     private UTFUtils() {
     }
 
+    private static final int UTF_BUFS_CHAR_CNT = 256;
+    private static final int UTF_BUFS_BYTE_CNT = UTF_BUFS_CHAR_CNT * 3;
+
+    private static final class BytesHolder extends ThreadLocal<byte[]> {
+        protected byte[] initialValue() {
+            return new byte[UTF_BUFS_BYTE_CNT];
+        }
+    }
+
+    private static final class CharsHolder extends ThreadLocal<char[]> {
+        protected char[] initialValue() {
+            return new char[UTF_BUFS_CHAR_CNT];
+        }
+    }
+
+    private static final BytesHolder BYTES_HOLDER = new BytesHolder();
+    private static final CharsHolder CHARS_HOLDER = new CharsHolder();
+
     /**
      * Get the number of bytes used by the modified UTF-8 encoded form of the given string.  If the length is
      * greater than {@code 65536}, an exception is thrown.
@@ -93,18 +111,31 @@ public final class UTFUtils {
      * @throws IOException if an I/O error occurs
      */
     public static void writeUTFBytes(final ByteOutput output, final String s) throws IOException {
+        final byte[] byteBuf = BYTES_HOLDER.get();
+        final char[] charBuf = CHARS_HOLDER.get();
+
         final int length = s.length();
-        for (int i = 0; i < length; i ++) {
-            final char c = s.charAt(i);
-            if (c > 0 && c <= 0x7f) {
-                output.write(c);
-            } else if (c <= 0x07ff) {
-                output.write(0xc0 | 0x1f & c >> 6);
-                output.write(0x80 | 0x3f & c);
-            } else {
-                output.write(0xe0 | 0x0f & c >> 12);
-                output.write(0x80 | 0x3f & c >> 6);
-                output.write(0x80 | 0x3f & c);
+
+        int strIdx = 0;
+        while (strIdx < length) {
+            int byteIdx = 0;
+            int charLim = Math.min(UTF_BUFS_CHAR_CNT, length - strIdx);
+            s.getChars(strIdx, (strIdx += charLim), charBuf, 0);
+            for (int i = 0; i < charLim; i ++) {
+                final char c = charBuf[i];
+                if (c > 0 && c <= 0x7f) {
+                    byteBuf[byteIdx ++] = (byte) c;
+                } else if (c <= 0x07ff) {
+                    byteBuf[byteIdx ++] = (byte)(0xc0 | 0x1f & c >> 6);
+                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
+                } else {
+                    byteBuf[byteIdx ++] = (byte)(0xe0 | 0x0f & c >> 12);
+                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c >> 6);
+                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
+                }
+            }
+            if (byteIdx > 0) {
+                output.write(byteBuf, 0, byteIdx);
             }
         }
     }
@@ -119,10 +150,60 @@ public final class UTFUtils {
      * @throws IOException if an I/O error occurs
      */
     public static String readUTFBytes(final ByteInput input, final int len) throws IOException {
+        final byte[] byteBuf = BYTES_HOLDER.get();
         final char[] chars = new char[len];
-        for (int i = 0; i < len; i ++) {
-            final int c = readUTFChar(input);
-            chars[i] = c == -1 ? 0 : (char) c;
+        int i = 0, cnt = 0, charIdx = 0;
+        cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
+        if (cnt < 0) {
+            throw new EOFException();
+        }
+        while (charIdx < len) {
+            final int a = byteBuf[i++] & 0xff;
+            if (a < 0x80) {
+                // low bit clear
+                chars[charIdx ++] = (char) a;
+            } else if (a < 0xc0) {
+                throw new UTFDataFormatException(INVALID_BYTE);
+            } else if (a < 0xe0) {
+                if (i == cnt) {
+                    cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
+                    if (cnt < 0) {
+                        throw new EOFException();
+                    }
+                    i = 0;
+                }
+                final int b = byteBuf[i ++] & 0xff;
+                if ((a & 0xc0) != 0x80) {
+                    throw new UTFDataFormatException(INVALID_BYTE);
+                }
+                chars[charIdx ++] = (char) ((a & 0x1f) << 6 | b & 0x3f);
+            } else if (a < 0xf0) {
+                if (i == cnt) {
+                    cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
+                    if (cnt < 0) {
+                        throw new EOFException();
+                    }
+                    i = 0;
+                }
+                final int b = byteBuf[i ++] & 0xff;
+                if ((b & 0xc0) != 0x80) {
+                    throw new UTFDataFormatException(INVALID_BYTE);
+                }
+                if (i == cnt) {
+                    cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
+                    if (cnt < 0) {
+                        throw new EOFException();
+                    }
+                    i = 0;
+                }
+                final int c = byteBuf[i ++] & 0xff;
+                if ((c & 0xc0) != 0x80) {
+                    throw new UTFDataFormatException(INVALID_BYTE);
+                }
+                chars[charIdx ++] = (char) ((a & 0x0f) << 12 | (b & 0x3f) << 6 | c & 0x3f);
+            } else {
+                throw new UTFDataFormatException(INVALID_BYTE);
+            }
         }
         return String.valueOf(chars);
     }

@@ -24,14 +24,13 @@ package org.jboss.marshalling.serialization.jboss;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-
+import java.security.PrivilegedExceptionAction;
 import org.jboss.marshalling.AbstractMarshallerFactory;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.ByteInput;
+import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.serialization.java.ByteInputStream;
 
 /**
  * @author <a href="ron.sigal@jboss.com">Ron Sigal</a>
@@ -44,7 +43,7 @@ public class JBossSerializationUnmarshaller extends AbstractUnmarshaller
 {
 //   private static Logger log = Logger.getLogger(JavaSerializationMarshaller.class);
    
-   private ByteInputStream bis;
+   private InputStream bis;
    private JBossSerializationInputStream jbsis;
    private boolean jbossSerializationCompatible = false;
       
@@ -85,7 +84,7 @@ public class JBossSerializationUnmarshaller extends AbstractUnmarshaller
    /** {@inheritDoc} */
    public void start(final ByteInput byteInput) throws IOException {
       super.start(byteInput);
-      bis = new ByteInputStream(byteInput);
+      bis = Marshalling.createInputStream(byteInput);
       try {
          AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
             public Void run() throws IOException {

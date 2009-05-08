@@ -84,17 +84,6 @@ public final class IdentityIntMap<T> {
     }
 
     /**
-     * Try a trick to decrease the liklihood of collisions.
-     *
-     * @param key the key object
-     * @return the modified hash code
-     */
-    private static int hash(final Object key) {
-        final int h = System.identityHashCode(key);
-        return (h << 1) - (h << 8);
-    }
-
-    /**
      * Get a value from the map.
      *
      * @param key the key
@@ -107,7 +96,7 @@ public final class IdentityIntMap<T> {
         }
         final Object[] keys = this.keys;
         final int mask = keys.length - 1;
-        int hc = hash(key) & mask;
+        int hc = System.identityHashCode(key) & mask;
         Object v;
         for (;;) {
             v = keys[hc];
@@ -136,7 +125,7 @@ public final class IdentityIntMap<T> {
         final int mask = keys.length - 1;
         final int[] values = this.values;
         Object v;
-        int hc = hash(key) & mask;
+        int hc = System.identityHashCode(key) & mask;
         for (int idx = hc;; idx = hc++ & mask) {
             v = keys[idx];
             if (v == null) {
@@ -173,7 +162,7 @@ public final class IdentityIntMap<T> {
         for (int oi = 0; oi < oldsize; oi ++) {
             final Object key = oldKeys[oi];
             if (key != null) {
-                int ni = hash(key) & mask;
+                int ni = System.identityHashCode(key) & mask;
                 for (;;) {
                     final Object v = newKeys[ni];
                     if (v == null) {
@@ -204,7 +193,7 @@ public final class IdentityIntMap<T> {
         for (int i = 0; i < keys.length; i ++) {
             builder.append('[').append(i).append("] = ");
             if (keys[i] != null) {
-                final int hc = hash(keys[i]);
+                final int hc = System.identityHashCode(keys[i]);
                 builder.append("{ ").append(keys[i]).append(" (hash ").append(hc).append(", modulus ").append(hc % keys.length).append(") => ").append(values[i]).append(" }");
             } else {
                 builder.append("(blank)");

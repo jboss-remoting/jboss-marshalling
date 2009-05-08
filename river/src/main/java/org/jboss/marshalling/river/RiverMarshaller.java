@@ -120,8 +120,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 isEnum = obj instanceof Enum;
                 isArray = objClass.isArray();
-                info = isArray || isEnum ? null : registry.lookup(objClass);
-                // replace once
+                // objects with id != -1 will never make use of the "info" param in *any* way
+                info = isArray || isEnum || id != -1 ? null : registry.lookup(objClass);
+                // replace once - objects with id != -1 will not have replacement methods but might be globally replaced
                 if (unreplaced) {
                     if (info != null) {
                         // check for a user replacement

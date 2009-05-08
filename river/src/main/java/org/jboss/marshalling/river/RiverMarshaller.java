@@ -66,7 +66,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
         if (configuredVersion > Protocol.MAX_VERSION) {
-            throw new IOException("Protocol version not supported");
+            throw new IOException("Unsupported protocol version " + configuredVersion);
         }
         this.registry = registry;
         final float loadFactor = 0x0.5p0f;

@@ -91,9 +91,6 @@ public final class IdentityIntMap<T> {
      * @return the map value at the given key, or the value of {@code defVal} if it's not found
      */
     public int get(T key, int defVal) {
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
         final Object[] keys = this.keys;
         final int mask = keys.length - 1;
         int hc = System.identityHashCode(key) & mask;
@@ -118,9 +115,6 @@ public final class IdentityIntMap<T> {
      * @param value the value to store
      */
     public void put(T key, int value) {
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
         final Object[] keys = this.keys;
         final int mask = keys.length - 1;
         final int[] values = this.values;

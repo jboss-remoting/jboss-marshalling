@@ -56,6 +56,9 @@ public final class SimpleMarshallerTestFactory {
         final TestMarshallerProvider riverTestMarshallerProviderV1 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 1);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV1 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 1);
 
+        final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 2);
+        final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 2);
+
         final SerialMarshallerFactory serialMarshallerFactory = new SerialMarshallerFactory();
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
         final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
@@ -79,12 +82,12 @@ public final class SimpleMarshallerTestFactory {
         
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
-                // river - v0
-                pair(riverTestMarshallerProviderV0, riverTestUnmarshallerProviderV0),
-                // river - v0 writer, v1 reader
-                pair(riverTestMarshallerProviderV0Special, riverTestUnmarshallerProviderV1),
                 // river - v1 writer, v1 reader
                 pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
+                // river - v1 writer, v2 reader
+                pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
+                // river - v2 writer, v2 reader
+                pair(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
 
                 // serial
                 pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),

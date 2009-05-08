@@ -90,13 +90,14 @@ public abstract class AbstractMarshaller implements Marshaller {
     public void write(final int v) throws IOException {
         try {
             final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining == 0) {
+            final int position = this.position;
+            if (position == buffer.length) {
                 flush();
                 buffer[0] = (byte) v;
-                position = 1;
+                this.position = 1;
             } else {
-                buffer[position++] = (byte) v;
+                buffer[position] = (byte) v;
+                this.position = position + 1;
             }
         } catch (NullPointerException e) {
             throw notActiveException();

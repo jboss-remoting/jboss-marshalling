@@ -57,7 +57,6 @@ public class RiverMarshaller extends AbstractMarshaller {
     private final IdentityIntMap<Object> instanceCache;
     private final IdentityIntMap<Class<?>> classCache;
     private final IdentityHashMap<Class<?>, Externalizer> externalizers;
-    private final IdentityHashMap<Object, Object> replacementCache;
     private int instanceSeq;
     private int classSeq;
     private final SerializableClassRegistry registry;
@@ -75,7 +74,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         instanceCache = new IdentityIntMap<Object>((int) ((double)configuration.getInstanceCount() / (double)loadFactor), loadFactor);
         classCache = new IdentityIntMap<Class<?>>((int) ((double)configuration.getClassCount() / (double)loadFactor), loadFactor);
         externalizers = new IdentityHashMap<Class<?>, Externalizer>(configuration.getClassCount());
-        replacementCache = new IdentityHashMap<Object, Object>(configuration.getInstanceCount());
     }
 
     protected void doWriteObject(final Object original, final boolean unshared) throws IOException {
@@ -96,10 +94,6 @@ public class RiverMarshaller extends AbstractMarshaller {
             if (obj == null) {
                 write(Protocol.ID_NULL_OBJECT);
                 return;
-            }
-            if (replacementCache.containsKey(obj)) {
-                obj = replacementCache.get(obj);
-                continue;
             }
             final int rid;
             if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
@@ -147,11 +141,6 @@ public class RiverMarshaller extends AbstractMarshaller {
             } else {
                 break;
             }
-        }
-
-        // Cache the replacement
-        if (obj != original) {
-            replacementCache.put(original, obj);
         }
 
         if (isEnum) {
@@ -833,7 +822,6 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     public void clearInstanceCache() throws IOException {
         instanceCache.clear();
-        replacementCache.clear();
         instanceSeq = 0;
         if (byteOutput != null) {
             write(Protocol.ID_CLEAR_INSTANCE_CACHE);
@@ -845,7 +833,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         externalizers.clear();
         classSeq = 0;
         instanceCache.clear();
-        replacementCache.clear();
         instanceSeq = 0;
         if (byteOutput != null) {
             write(Protocol.ID_CLEAR_CLASS_CACHE);

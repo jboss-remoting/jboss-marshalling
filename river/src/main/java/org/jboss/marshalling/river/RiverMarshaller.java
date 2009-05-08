@@ -131,8 +131,12 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     // Check for a global replacement
                     obj = objectResolver.writeReplace(obj);
-                    unreplaced = false;
-                    continue;
+                    if (obj != original) {
+                        unreplaced = false;
+                        continue;
+                    } else {
+                        break;
+                    }
                 } else {
                     break;
                 }

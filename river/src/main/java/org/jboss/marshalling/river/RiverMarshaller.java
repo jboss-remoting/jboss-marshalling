@@ -445,7 +445,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             throw new NotSerializableException(objClass.getName());
         } finally {
-            if (! unreplaced) {
+            if (! unreplaced && obj != original) {
                 final int replId = instanceCache.get(obj, -1);
                 if (replId != -1) {
                     instanceCache.put(original, replId);

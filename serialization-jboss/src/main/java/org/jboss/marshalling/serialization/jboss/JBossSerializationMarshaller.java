@@ -22,15 +22,15 @@
 package org.jboss.marshalling.serialization.jboss;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.AbstractMarshallerFactory;
 import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.serialization.java.ByteOutputStream;
 import org.jboss.serial.util.StringUtilBuffer;
 
 
@@ -45,7 +45,7 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
 {
 //   private static Logger log = Logger.getLogger(JavaSerializationMarshaller.class);
    
-   private ByteOutputStream bos;
+   private OutputStream bos;
    private JBossSerializationOutputStream jbsos;
    private boolean nativeImmutableHandling = true;
    private boolean jbossSerializationCompatible = false;
@@ -62,7 +62,7 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
       jbsos.clear();
    }
    
-   public ByteOutputStream getOutputStream() {
+   public OutputStream getOutputStream() {
       return bos;
    }
    
@@ -78,7 +78,7 @@ public class JBossSerializationMarshaller extends AbstractMarshaller
    
    public void start(final ByteOutput byteOutput) throws IOException {
       super.start(byteOutput);
-      bos = new ByteOutputStream(byteOutput);
+      bos = Marshalling.createOutputStream(byteOutput);
 
       try {
          AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {

@@ -94,12 +94,12 @@ public final class SimpleMarshallerTestFactory {
                 // reflection java serialization
                 pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
                 pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
+                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider)/*,
 
                 // JBossSerialization
                 pair(jbossTestMarshallerProvider, jbossTestUnmarshallerProvider),
                 pair(jbossCompatibilityMarshallerProvider, jbisTestUnmarshallerProvider),
-                pair(jbosTestMarshallerProvider, jbossCompatibilityUnmarshallerProvider)
+                pair(jbosTestMarshallerProvider, jbossCompatibilityUnmarshallerProvider)*/
         );
 
         final Collection<Object[]> c = new ArrayList<Object[]>();

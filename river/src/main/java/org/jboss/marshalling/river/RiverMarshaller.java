@@ -101,7 +101,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 final ObjectTable.Writer objectTableWriter;
                 if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
                     write(Protocol.ID_PREDEFINED_OBJECT);
-                    if (configuredVersion > 0) {
+                    if (configuredVersion == 1) {
                         objectTableWriter.writeObject(getBlockMarshaller(), obj);
                         writeEndBlock();
                     } else {
@@ -590,7 +590,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 writeString(name);
             }
             classCache.put(objClass, classSeq++);
-            if (configuredVersion > 0) {
+            if (configuredVersion == 1) {
                 final BlockMarshaller blockMarshaller = getBlockMarshaller();
                 classResolver.annotateProxyClass(blockMarshaller, objClass);
                 writeEndBlock();
@@ -711,7 +711,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     private void writeClassTableData(final Class<?> objClass, final ClassTable.Writer classTableWriter) throws IOException {
-        if (configuredVersion > 0) {
+        if (configuredVersion == 1) {
             classTableWriter.writeClass(getBlockMarshaller(), objClass);
             writeEndBlock();
         } else {
@@ -817,7 +817,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void doAnnotateClass(final Class<?> objClass) throws IOException {
-        if (configuredVersion > 0) {
+        if (configuredVersion == 1) {
             classResolver.annotateClass(getBlockMarshaller(), objClass);
             writeEndBlock();
         } else {

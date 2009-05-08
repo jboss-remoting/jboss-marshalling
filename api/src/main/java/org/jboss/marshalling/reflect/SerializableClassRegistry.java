@@ -23,10 +23,9 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.SerializablePermission;
-import java.util.concurrent.ConcurrentMap;
-import java.util.EnumSet;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.EnumSet;
 
 /**
  * A registry for reflection information usable by serialization implementations.  Objects returned from this registry
@@ -56,7 +55,7 @@ public final class SerializableClassRegistry {
         return INSTANCE;
     }
 
-    private final ConcurrentMap<Class<?>, SerializableClass> cache = new ConcurrentReferenceHashMap<Class<?>, SerializableClass>(512, 0.8f, 16, ConcurrentReferenceHashMap.ReferenceType.WEAK, ConcurrentReferenceHashMap.ReferenceType.STRONG, EnumSet.of(ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS));
+    private final ConcurrentReferenceHashMap<Class<?>, SerializableClass> cache = new ConcurrentReferenceHashMap<Class<?>, SerializableClass>(512, 0.8f, 16, ConcurrentReferenceHashMap.ReferenceType.WEAK, ConcurrentReferenceHashMap.ReferenceType.STRONG, EnumSet.of(ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS));
 
     /**
      * Look up serialization information for a class.  The resultant object will be cached.

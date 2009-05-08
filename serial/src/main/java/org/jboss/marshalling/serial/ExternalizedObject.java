@@ -72,7 +72,7 @@ public final class ExternalizedObject implements Externalizable, Creator {
      * @return the externalized object
      * @throws ObjectStreamException never
      */
-    public Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws ObjectStreamException {
         return obj;
     }
 

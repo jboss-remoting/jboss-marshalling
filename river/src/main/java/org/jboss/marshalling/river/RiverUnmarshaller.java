@@ -186,7 +186,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a predefined object as unshared");
                     }
-                    if (version > 0) {
+                    if (version == 1) {
                         final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
                         final Object obj = objectTable.readObject(blockUnmarshaller);
                         blockUnmarshaller.readToEndBlockData();
@@ -222,6 +222,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
+        final ArrayList<ClassDescriptor> classCache = this.classCache;
         switch (classType) {
             case Protocol.ID_REPEAT_CLASS: {
                 return classCache.get(readInt());
@@ -256,10 +257,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
                 final ClassDescriptor descriptor = new ClassDescriptor(type, Protocol.ID_PLAIN_CLASS);
-                if (version > 0) {
-                    blockUnmarshaller.readToEndBlockData();
-                    blockUnmarshaller.unblock();
-                }
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -294,7 +291,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     interfaces[i] = readString();
                 }
                 final ClassDescriptor descriptor;
-                if (version > 0) {
+                if (version == 1) {
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
                     descriptor = new ClassDescriptor(classResolver.resolveProxyClass(blockUnmarshaller, interfaces), Protocol.ID_PROXY_CLASS);
                     blockUnmarshaller.readToEndBlockData();
@@ -484,7 +481,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Class<?> readClassTableClass() throws IOException, ClassNotFoundException {
-        if (version > 0) {
+        if (version == 1) {
             final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
             final Class<?> type = classTable.readClass(blockUnmarshaller);
             blockUnmarshaller.readToEndBlockData();
@@ -496,7 +493,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Class<?> doResolveClass(final String className, final long uid) throws IOException, ClassNotFoundException {
-        if (version > 0) {
+        if (version == 1) {
             final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
             final Class<?> resolvedClass = classResolver.resolveClass(blockUnmarshaller, className, uid);
             blockUnmarshaller.readToEndBlockData();

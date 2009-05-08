@@ -26,7 +26,7 @@ package org.jboss.marshalling.river;
  *
  */
 public final class Protocol {
-    public static final int MAX_VERSION = 1;
+    public static final int MAX_VERSION = 2;
 
     public static final int ID_NULL_OBJECT              = 0x01;
     public static final int ID_REPEAT_OBJECT            = 0x02;

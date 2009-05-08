@@ -291,17 +291,19 @@ public final class BlockMarshaller implements Marshaller {
         final int position = this.position;
         if (position == 0) {
             return;
-        } else if (position < 256) {
-            riverMarshaller.write(Protocol.ID_START_BLOCK_SMALL);
-            riverMarshaller.writeByte(position);
-        } else if (position < 65536) {
-            riverMarshaller.write(Protocol.ID_START_BLOCK_MEDIUM);
-            riverMarshaller.writeShort(position);
-        } else {
-            riverMarshaller.write(Protocol.ID_START_BLOCK_LARGE);
-            riverMarshaller.writeInt(position);
         }
-        riverMarshaller.write(buffer, 0, position);
+        final RiverMarshaller marshaller = riverMarshaller;
+        if (position < 256) {
+            marshaller.write(Protocol.ID_START_BLOCK_SMALL);
+            marshaller.writeByte(position);
+        } else if (position < 65536) {
+            marshaller.write(Protocol.ID_START_BLOCK_MEDIUM);
+            marshaller.writeShort(position);
+        } else {
+            marshaller.write(Protocol.ID_START_BLOCK_LARGE);
+            marshaller.writeInt(position);
+        }
+        marshaller.write(buffer, 0, position);
         this.position = 0;
     }
 

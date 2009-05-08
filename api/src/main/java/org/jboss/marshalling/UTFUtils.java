@@ -45,14 +45,7 @@ public final class UTFUtils {
         }
     }
 
-    private static final class CharsHolder extends ThreadLocal<char[]> {
-        protected char[] initialValue() {
-            return new char[UTF_BUFS_CHAR_CNT];
-        }
-    }
-
     private static final BytesHolder BYTES_HOLDER = new BytesHolder();
-    private static final CharsHolder CHARS_HOLDER = new CharsHolder();
 
     /**
      * Get the number of bytes used by the modified UTF-8 encoded form of the given string.  If the length is
@@ -112,31 +105,30 @@ public final class UTFUtils {
      */
     public static void writeUTFBytes(final ByteOutput output, final String s) throws IOException {
         final byte[] byteBuf = BYTES_HOLDER.get();
-        final char[] charBuf = CHARS_HOLDER.get();
 
         final int length = s.length();
 
         int strIdx = 0;
+        int byteIdx = 0;
         while (strIdx < length) {
-            int byteIdx = 0;
-            int charLim = Math.min(UTF_BUFS_CHAR_CNT, length - strIdx);
-            s.getChars(strIdx, (strIdx += charLim), charBuf, 0);
-            for (int i = 0; i < charLim; i ++) {
-                final char c = charBuf[i];
-                if (c > 0 && c <= 0x7f) {
-                    byteBuf[byteIdx ++] = (byte) c;
-                } else if (c <= 0x07ff) {
-                    byteBuf[byteIdx ++] = (byte)(0xc0 | 0x1f & c >> 6);
-                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
-                } else {
-                    byteBuf[byteIdx ++] = (byte)(0xe0 | 0x0f & c >> 12);
-                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c >> 6);
-                    byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
-                }
+            final char c = s.charAt(strIdx ++);
+            if (c > 0 && c <= 0x7f) {
+                byteBuf[byteIdx ++] = (byte) c;
+            } else if (c <= 0x07ff) {
+                byteBuf[byteIdx ++] = (byte)(0xc0 | 0x1f & c >> 6);
+                byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
+            } else {
+                byteBuf[byteIdx ++] = (byte)(0xe0 | 0x0f & c >> 12);
+                byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c >> 6);
+                byteBuf[byteIdx ++] = (byte)(0x80 | 0x3f & c);
             }
-            if (byteIdx > 0) {
+            if (byteIdx > UTF_BUFS_BYTE_CNT - 4) {
                 output.write(byteBuf, 0, byteIdx);
+                byteIdx = 0;
             }
+        }
+        if (byteIdx > 0) {
+            output.write(byteBuf, 0, byteIdx);
         }
     }
 

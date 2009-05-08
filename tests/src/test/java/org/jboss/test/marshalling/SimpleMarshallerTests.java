@@ -1988,7 +1988,7 @@ public final class SimpleMarshallerTests extends TestBase {
 
         public Object createExternal(Class<?> subjectType, ObjectInput input, Creator defaultCreator) throws IOException, ClassNotFoundException {
             if (!TestExternalizableInt.class.isAssignableFrom(subjectType)) {
-                throw new IOException(this + " only works for " + TestExternalizableInt.class);
+                throw new IOException(this + " only works for " + TestExternalizableInt.class + " but I got a " + subjectType);
             }
 
             Object obj = null;
@@ -2024,17 +2024,9 @@ public final class SimpleMarshallerTests extends TestBase {
     }
     
     static class TestExternalizerFactory implements ClassExternalizerFactory {
-        public Externalizer getExternalizer(Object obj) {
-            if (TestExternalizableInt.class.isAssignableFrom(obj.getClass())) {
-                TestExternalizer externalizer = new TestExternalizer();
-                return externalizer;
-            } else {
-                return null;
-            }
-        }
 
         public Externalizer getExternalizer(Class<?> type) {
-            if (TestExternalizableInt.class.isAssignableFrom(type)) {
+            if (type == TestExternalizableInt.class) {
                 TestExternalizer externalizer = new TestExternalizer();
                 return externalizer;
             } else {

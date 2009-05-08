@@ -46,7 +46,6 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.serialization.java.ObjectResolverWrapper;
 import org.jboss.serial.classmetamodel.ClassMetaData;
 import org.jboss.serial.classmetamodel.ClassMetaDataSlot;
 import org.jboss.serial.classmetamodel.DefaultClassDescriptorStrategy;
@@ -91,7 +90,7 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
       this.streamHeader = streamHeader;
       this.classResolver = classResolver;
       this.classTable = classTable;
-      this.objectResolver = new ObjectResolverWrapper(objectResolver);
+      this.objectResolver = objectResolver;
       this.objectTable = objectTable;
       this.creator = creator;
       
@@ -105,11 +104,11 @@ public class JBossSerializationInputStream extends JBossObjectInputStreamSharedT
       if (jbossSerializationCompatible) {
          setClassDescriptorStrategy(new DefaultClassDescriptorStrategy());
          setObjectDescriptorStrategy(new DefaultObjectDescriptorStrategy());
-         setStandardReplacement(false);
+//         setStandardReplacement(false);
       } else {
          setClassDescriptorStrategy(new JBMClassDescriptorStrategy(unmarshaller, this, classTable, classResolver));
          setObjectDescriptorStrategy(new JBMObjectDescriptorStrategy(unmarshaller, this));
-         setStandardReplacement(true);
+//         setStandardReplacement(true);
       }
       
       readyForStreamHeader = true;

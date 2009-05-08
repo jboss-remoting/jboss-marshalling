@@ -221,6 +221,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
+        final ArrayList<ClassDescriptor> classCache = this.classCache;
         switch (classType) {
             case Protocol.ID_REPEAT_CLASS: {
                 return classCache.get(readInt());

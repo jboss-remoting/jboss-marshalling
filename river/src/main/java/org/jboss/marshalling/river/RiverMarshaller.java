@@ -80,373 +80,378 @@ public class RiverMarshaller extends AbstractMarshaller {
         final ClassExternalizerFactory classExternalizerFactory = this.classExternalizerFactory;
         final ExternalizerFactory externalizerFactory = this.externalizerFactory;
         final ObjectResolver objectResolver = this.objectResolver;
-        boolean replacing = true;
         Object obj = original;
         Class<?> objClass;
         int id;
         boolean isArray, isEnum;
         SerializableClass info;
-        int ttl = 100;
-        for (;;) {
-            if (--ttl == 0) {
-                throw new InvalidObjectException("Replacement looped too many times");
-            }
-            if (obj == null) {
-                write(Protocol.ID_NULL_OBJECT);
-                return;
-            }
-            final int rid;
-            if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
-                write(Protocol.ID_REPEAT_OBJECT);
-                writeInt(rid);
-                return;
-            }
-            final ObjectTable.Writer objectTableWriter;
-            if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
-                write(Protocol.ID_PREDEFINED_OBJECT);
-                if (configuredVersion > 0) {
-                    objectTableWriter.writeObject(getBlockMarshaller(), obj);
-                    writeEndBlock();
-                } else {
-                    objectTableWriter.writeObject(this, obj);
+        boolean unreplaced = true;
+        try {
+            for (;;) {
+                if (obj == null) {
+                    write(Protocol.ID_NULL_OBJECT);
+                    return;
                 }
-                return;
-            }
-            objClass = obj.getClass();
-            id = BASIC_CLASSES.get(objClass, -1);
-            // First, non-replaceable classes
-            if (id == Protocol.ID_CLASS_CLASS) {
-                final Class classObj = (Class) obj;
-                write(Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_CLASS_CLASS);
-                writeClassClass(classObj);
-                instanceCache.put(classObj, instanceSeq++);
-                return;
-            }
-            isEnum = obj instanceof Enum;
-            isArray = objClass.isArray();
-            info = isArray || isEnum ? null : registry.lookup(objClass);
-            // replace once
-            if (replacing) {
-                if (info != null) {
-                    // check for a user replacement
-                    if (info.hasWriteReplace()) {
-                        obj = info.callWriteReplace(obj);
+                final int rid;
+                if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
+                    write(Protocol.ID_REPEAT_OBJECT);
+                    writeInt(rid);
+                    return;
+                }
+                final ObjectTable.Writer objectTableWriter;
+                if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
+                    write(Protocol.ID_PREDEFINED_OBJECT);
+                    if (configuredVersion > 0) {
+                        objectTableWriter.writeObject(getBlockMarshaller(), obj);
+                        writeEndBlock();
+                    } else {
+                        objectTableWriter.writeObject(this, obj);
                     }
+                    return;
                 }
-                // Check for a global replacement
-                obj = objectResolver.writeReplace(obj);
-                replacing = false;
-                continue;
-            } else {
-                break;
+                objClass = obj.getClass();
+                id = BASIC_CLASSES.get(objClass, -1);
+                // First, non-replaceable classes
+                if (id == Protocol.ID_CLASS_CLASS) {
+                    final Class classObj = (Class) obj;
+                    write(Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_CLASS_CLASS);
+                    writeClassClass(classObj);
+                    instanceCache.put(classObj, instanceSeq++);
+                    return;
+                }
+                isEnum = obj instanceof Enum;
+                isArray = objClass.isArray();
+                info = isArray || isEnum ? null : registry.lookup(objClass);
+                // replace once
+                if (unreplaced) {
+                    if (info != null) {
+                        // check for a user replacement
+                        if (info.hasWriteReplace()) {
+                            obj = info.callWriteReplace(obj);
+                        }
+                    }
+                    // Check for a global replacement
+                    obj = objectResolver.writeReplace(obj);
+                    unreplaced = false;
+                    continue;
+                } else {
+                    break;
+                }
             }
-        }
 
-        if (isEnum) {
-            // objClass cannot equal Enum.class because it is abstract
-            final Enum<?> theEnum = (Enum<?>) obj;
-            // enums are always shared
-            write(Protocol.ID_NEW_OBJECT);
-            writeEnumClass(theEnum.getDeclaringClass());
-            writeString(theEnum.name());
-            instanceCache.put(obj, instanceSeq++);
-            return;
-        }
-        // Now replaceable classes
-        switch (id) {
-            case Protocol.ID_BYTE_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_BYTE_CLASS);
-                writeByte(((Byte) obj).byteValue());
-                return;
-            }
-            case Protocol.ID_BOOLEAN_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_BOOLEAN_CLASS);
-                writeBoolean(((Boolean) obj).booleanValue());
-                return;
-            }
-            case Protocol.ID_CHARACTER_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_CHARACTER_CLASS);
-                writeChar(((Character) obj).charValue());
-                return;
-            }
-            case Protocol.ID_DOUBLE_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_DOUBLE_CLASS);
-                writeDouble(((Double) obj).doubleValue());
-                return;
-            }
-            case Protocol.ID_FLOAT_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_FLOAT_CLASS);
-                writeFloat(((Float) obj).floatValue());
-                return;
-            }
-            case Protocol.ID_INTEGER_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_INTEGER_CLASS);
-                writeInt(((Integer) obj).intValue());
-                return;
-            }
-            case Protocol.ID_LONG_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_LONG_CLASS);
-                writeLong(((Long) obj).longValue());
-                return;
-            }
-            case Protocol.ID_SHORT_CLASS: {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_SHORT_CLASS);
-                writeShort(((Short) obj).shortValue());
-                return;
-            }
-            case Protocol.ID_STRING_CLASS: {
-                final String string = (String) obj;
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_STRING_CLASS);
-                writeString(string);
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                    instanceSeq++;
-                } else {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                return;
-            }
-            case Protocol.ID_BYTE_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_BYTE_ARRAY_CLASS);
-                final byte[] bytes = (byte[]) obj;
-                final int len = bytes.length;
-                writeInt(len);
-                write(bytes, 0, len);
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_BOOLEAN_ARRAY_CLASS);
-                final boolean[] booleans = (boolean[]) obj;
-                final int len = booleans.length;
-                writeInt(len);
-                final int bc = len & ~7;
-                for (int i = 0; i < bc;) {
-                    write(
-                            (booleans[i++] ? 1 : 0)
-                                    | (booleans[i++] ? 2 : 0)
-                                    | (booleans[i++] ? 4 : 0)
-                                    | (booleans[i++] ? 8 : 0)
-                                    | (booleans[i++] ? 16 : 0)
-                                    | (booleans[i++] ? 32 : 0)
-                                    | (booleans[i++] ? 64 : 0)
-                                    | (booleans[i++] ? 128 : 0)
-                    );
-                }
-                if (bc < len) {
-                    int out = 0;
-                    int bit = 1;
-                    for (int i = bc; i < len; i++) {
-                        if (booleans[i]) out |= bit;
-                        bit <<= 1;
-                    }
-                    write(out);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_CHAR_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_CHAR_ARRAY_CLASS);
-                final char[] chars = (char[]) obj;
-                final int len = chars.length;
-                writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeChar(chars[i]);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_SHORT_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_SHORT_ARRAY_CLASS);
-                final short[] shorts = (short[]) obj;
-                final int len = shorts.length;
-                writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeShort(shorts[i]);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_INT_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_INT_ARRAY_CLASS);
-                final int[] ints = (int[]) obj;
-                final int len = ints.length;
-                writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeInt(ints[i]);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_LONG_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_LONG_ARRAY_CLASS);
-                final long[] longs = (long[]) obj;
-                final int len = longs.length;
-                writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeLong(longs[i]);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_FLOAT_ARRAY_CLASS: {
-                if (! unshared) {
-                    instanceCache.put(obj, instanceSeq++);
-                }
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_FLOAT_ARRAY_CLASS);
-                final float[] floats = (float[]) obj;
-                final int len = floats.length;
-                writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeFloat(floats[i]);
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
-                return;
-            }
-            case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+            if (isEnum) {
+                // objClass cannot equal Enum.class because it is abstract
+                final Enum<?> theEnum = (Enum<?>) obj;
+                // enums are always shared
+                write(Protocol.ID_NEW_OBJECT);
+                writeEnumClass(theEnum.getDeclaringClass());
+                writeString(theEnum.name());
                 instanceCache.put(obj, instanceSeq++);
+                return;
+            }
+            // Now replaceable classes
+            switch (id) {
+                case Protocol.ID_BYTE_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_BYTE_CLASS);
+                    writeByte(((Byte) obj).byteValue());
+                    return;
+                }
+                case Protocol.ID_BOOLEAN_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_BOOLEAN_CLASS);
+                    writeBoolean(((Boolean) obj).booleanValue());
+                    return;
+                }
+                case Protocol.ID_CHARACTER_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_CHARACTER_CLASS);
+                    writeChar(((Character) obj).charValue());
+                    return;
+                }
+                case Protocol.ID_DOUBLE_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_DOUBLE_CLASS);
+                    writeDouble(((Double) obj).doubleValue());
+                    return;
+                }
+                case Protocol.ID_FLOAT_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_FLOAT_CLASS);
+                    writeFloat(((Float) obj).floatValue());
+                    return;
+                }
+                case Protocol.ID_INTEGER_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_INTEGER_CLASS);
+                    writeInt(((Integer) obj).intValue());
+                    return;
+                }
+                case Protocol.ID_LONG_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_LONG_CLASS);
+                    writeLong(((Long) obj).longValue());
+                    return;
+                }
+                case Protocol.ID_SHORT_CLASS: {
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_SHORT_CLASS);
+                    writeShort(((Short) obj).shortValue());
+                    return;
+                }
+                case Protocol.ID_STRING_CLASS: {
+                    final String string = (String) obj;
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_STRING_CLASS);
+                    writeString(string);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                        instanceSeq++;
+                    } else {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    return;
+                }
+                case Protocol.ID_BYTE_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_BYTE_ARRAY_CLASS);
+                    final byte[] bytes = (byte[]) obj;
+                    final int len = bytes.length;
+                    writeInt(len);
+                    write(bytes, 0, len);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_BOOLEAN_ARRAY_CLASS);
+                    final boolean[] booleans = (boolean[]) obj;
+                    final int len = booleans.length;
+                    writeInt(len);
+                    final int bc = len & ~7;
+                    for (int i = 0; i < bc;) {
+                        write(
+                                (booleans[i++] ? 1 : 0)
+                                        | (booleans[i++] ? 2 : 0)
+                                        | (booleans[i++] ? 4 : 0)
+                                        | (booleans[i++] ? 8 : 0)
+                                        | (booleans[i++] ? 16 : 0)
+                                        | (booleans[i++] ? 32 : 0)
+                                        | (booleans[i++] ? 64 : 0)
+                                        | (booleans[i++] ? 128 : 0)
+                        );
+                    }
+                    if (bc < len) {
+                        int out = 0;
+                        int bit = 1;
+                        for (int i = bc; i < len; i++) {
+                            if (booleans[i]) out |= bit;
+                            bit <<= 1;
+                        }
+                        write(out);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_CHAR_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_CHAR_ARRAY_CLASS);
+                    final char[] chars = (char[]) obj;
+                    final int len = chars.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeChar(chars[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_SHORT_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_SHORT_ARRAY_CLASS);
+                    final short[] shorts = (short[]) obj;
+                    final int len = shorts.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeShort(shorts[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_INT_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_INT_ARRAY_CLASS);
+                    final int[] ints = (int[]) obj;
+                    final int len = ints.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeInt(ints[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_LONG_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_LONG_ARRAY_CLASS);
+                    final long[] longs = (long[]) obj;
+                    final int len = longs.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeLong(longs[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_FLOAT_ARRAY_CLASS: {
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_FLOAT_ARRAY_CLASS);
+                    final float[] floats = (float[]) obj;
+                    final int len = floats.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeFloat(floats[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(Protocol.ID_DOUBLE_ARRAY_CLASS);
+                    final double[] doubles = (double[]) obj;
+                    final int len = doubles.length;
+                    writeInt(len);
+                    for (int i = 0; i < len; i ++) {
+                        writeDouble(doubles[i]);
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case -1: break;
+                default: throw new NotSerializableException(objClass.getName());
+            }
+            if (isArray) {
                 write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                write(Protocol.ID_DOUBLE_ARRAY_CLASS);
-                final double[] doubles = (double[]) obj;
-                final int len = doubles.length;
+                writeObjectArrayClass(objClass);
+                instanceCache.put(obj, instanceSeq++);
+                final Object[] objects = (Object[]) obj;
+                final int len = objects.length;
                 writeInt(len);
-                for (int i = 0; i < len; i ++) {
-                    writeDouble(doubles[i]);
+                for (int i = 0; i < len; i++) {
+                    doWriteObject(objects[i], unshared);
                 }
                 if (unshared) {
                     instanceCache.put(obj, -1);
                 }
                 return;
             }
-            case -1: break;
-            default: throw new NotSerializableException(objClass.getName());
-        }
-        if (isArray) {
-            write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-            writeObjectArrayClass(objClass);
-            instanceCache.put(obj, instanceSeq++);
-            final Object[] objects = (Object[]) obj;
-            final int len = objects.length;
-            writeInt(len);
-            for (int i = 0; i < len; i++) {
-                doWriteObject(objects[i], unshared);
+            // serialize proxies efficiently
+            if (Proxy.isProxyClass(objClass)) {
+                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                instanceCache.put(obj, instanceSeq++);
+                writeProxyClass(objClass);
+                doWriteObject(Proxy.getInvocationHandler(obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
             }
-            if (unshared) {
-                instanceCache.put(obj, -1);
+            // it's a user type
+            // user type #1: externalizer
+            Externalizer externalizer;
+            if (externalizers.containsKey(objClass)) {
+                externalizer = externalizers.get(objClass);
+            } else {
+                externalizer = classExternalizerFactory.getExternalizer(objClass);
+                if (externalizer == null) {
+                    externalizer = externalizerFactory.getExternalizer(obj);
+                }
+                externalizers.put(objClass, externalizer);
             }
-            return;
-        }
-        // serialize proxies efficiently
-        if (Proxy.isProxyClass(objClass)) {
-            write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-            instanceCache.put(obj, instanceSeq++);
-            writeProxyClass(objClass);
-            doWriteObject(Proxy.getInvocationHandler(obj), false);
-            if (unshared) {
-                instanceCache.put(obj, -1);
+            if (externalizer != null) {
+                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                writeExternalizerClass(objClass, externalizer);
+                instanceCache.put(obj, instanceSeq++);
+                final ObjectOutput objectOutput;
+                objectOutput = getObjectOutput();
+                externalizer.writeExternal(obj, objectOutput);
+                writeEndBlock();
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
             }
-            return;
-        }
-        // it's a user type
-        // user type #1: externalizer
-        Externalizer externalizer;
-        if (externalizers.containsKey(objClass)) {
-            externalizer = externalizers.get(objClass);
-        } else {
-            externalizer = classExternalizerFactory.getExternalizer(objClass);
-            if (externalizer == null) {
-                externalizer = externalizerFactory.getExternalizer(obj);
+            // user type #2: externalizable
+            if (obj instanceof Externalizable) {
+                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                instanceCache.put(obj, instanceSeq++);
+                final Externalizable ext = (Externalizable) obj;
+                final ObjectOutput objectOutput = getObjectOutput();
+                writeExternalizableClass(objClass);
+                ext.writeExternal(objectOutput);
+                writeEndBlock();
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
             }
-            externalizers.put(objClass, externalizer);
-        }
-        if (externalizer != null) {
-            write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-            writeExternalizerClass(objClass, externalizer);
-            instanceCache.put(obj, instanceSeq++);
-            final ObjectOutput objectOutput;
-            objectOutput = getObjectOutput();
-            externalizer.writeExternal(obj, objectOutput);
-            writeEndBlock();
-            if (unshared) {
-                instanceCache.put(obj, -1);
+            // user type #3: serializable
+            if (obj instanceof Serializable) {
+                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                writeSerializableClass(objClass);
+                instanceCache.put(obj, instanceSeq++);
+                doWriteSerializableObject(info, obj, objClass);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
             }
-            return;
-        }
-        // user type #2: externalizable
-        if (obj instanceof Externalizable) {
-            write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-            instanceCache.put(obj, instanceSeq++);
-            final Externalizable ext = (Externalizable) obj;
-            final ObjectOutput objectOutput = getObjectOutput();
-            writeExternalizableClass(objClass);
-            ext.writeExternal(objectOutput);
-            writeEndBlock();
-            if (unshared) {
-                instanceCache.put(obj, -1);
+            throw new NotSerializableException(objClass.getName());
+        } finally {
+            if (! unreplaced) {
+                final int replId = instanceCache.get(obj, -1);
+                if (replId != -1) {
+                    instanceCache.put(original, replId);
+                }
             }
-            return;
         }
-        // user type #3: serializable
-        if (obj instanceof Serializable) {
-            write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-            writeSerializableClass(objClass);
-            instanceCache.put(obj, instanceSeq++);
-            doWriteSerializableObject(info, obj, objClass);
-            if (unshared) {
-                instanceCache.put(obj, -1);
-            }
-            return;
-        }
-        throw new NotSerializableException(objClass.getName());
     }
 
     private void writeEndBlock() throws IOException {

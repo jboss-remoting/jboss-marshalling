@@ -92,8 +92,14 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 final int rid;
                 if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
-                    write(Protocol.ID_REPEAT_OBJECT);
-                    writeInt(rid);
+                    final int diff = rid - instanceSeq;
+                    if (configuredVersion >= 2 && diff >= -256) {
+                        write(Protocol.ID_REPEAT_OBJECT_NEAR);
+                        write(diff);
+                    } else {
+                        write(Protocol.ID_REPEAT_OBJECT);
+                        writeInt(rid);
+                    }
                     return;
                 }
                 final ObjectTable.Writer objectTableWriter;

@@ -97,6 +97,9 @@ public final class Protocol {
     public static final int ID_CLEAR_INSTANCE_CACHE     = 0x37;
     public static final int ID_WRITE_OBJECT_CLASS       = 0x38; // ? extends Serializable.class, plus writeObject method
 
+    // protocol version >= 2
+    public static final int ID_REPEAT_OBJECT_NEAR       = 0x39; // 8-bit unsigned negative int relative
+
     private Protocol() {
     }
 }

@@ -175,6 +175,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
                 }
+                case Protocol.ID_REPEAT_OBJECT_NEAR: {
+                    if (unshared) {
+                        throw new InvalidObjectException("Attempt to read a backreference as unshared");
+                    }
+                    try {
+                        final Object obj = instanceCache.get((read() | 0xffffff00) + instanceCache.size());
+                        if (obj != null) return obj;
+                    } catch (IndexOutOfBoundsException e) {
+                    }
+                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
+                }
                 case Protocol.ID_NEW_OBJECT:
                 case Protocol.ID_NEW_OBJECT_UNSHARED: {
                     if (unshared != (leadByte == Protocol.ID_NEW_OBJECT_UNSHARED)) {

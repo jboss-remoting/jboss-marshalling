@@ -164,7 +164,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case Protocol.ID_NULL_OBJECT: {
                     return null;
                 }
-                case Protocol.ID_REPEAT_OBJECT: {
+                case Protocol.ID_REPEAT_OBJECT_FAR: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
@@ -181,6 +181,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     try {
                         final Object obj = instanceCache.get((read() | 0xffffff00) + instanceCache.size());
+                        if (obj != null) return obj;
+                    } catch (IndexOutOfBoundsException e) {
+                    }
+                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
+                }
+                case Protocol.ID_REPEAT_OBJECT_NEARISH: {
+                    if (unshared) {
+                        throw new InvalidObjectException("Attempt to read a backreference as unshared");
+                    }
+                    try {
+                        final Object obj = instanceCache.get((readShort() | 0xffff0000) + instanceCache.size());
                         if (obj != null) return obj;
                     } catch (IndexOutOfBoundsException e) {
                     }
@@ -235,8 +246,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
         final ArrayList<ClassDescriptor> classCache = this.classCache;
         switch (classType) {
-            case Protocol.ID_REPEAT_CLASS: {
+            case Protocol.ID_REPEAT_CLASS_FAR: {
                 return classCache.get(readInt());
+            }
+            case Protocol.ID_REPEAT_CLASS_NEAR: {
+                return classCache.get((read() | 0xffffff00) + classCache.size());
+            }
+            case Protocol.ID_REPEAT_CLASS_NEARISH: {
+                return classCache.get((readShort() | 0xffff0000) + classCache.size());
             }
             case Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS: {
                 final int idx = classCache.size();

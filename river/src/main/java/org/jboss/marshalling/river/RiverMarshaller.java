@@ -92,14 +92,19 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 final int rid;
                 if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
-                    final int diff = rid - instanceSeq;
-                    if (configuredVersion >= 2 && diff >= -256) {
-                        write(Protocol.ID_REPEAT_OBJECT_NEAR);
-                        write(diff);
-                    } else {
-                        write(Protocol.ID_REPEAT_OBJECT);
-                        writeInt(rid);
+                    if (configuredVersion >= 2) {
+                        final int diff = rid - instanceSeq;
+                        if (diff >= -256) {
+                            write(Protocol.ID_REPEAT_OBJECT_NEAR);
+                            write(diff);
+                        } else if (diff >= -65536) {
+                            write(Protocol.ID_REPEAT_OBJECT_NEARISH);
+                            writeShort(diff);
+                        }
+                        return;
                     }
+                    write(Protocol.ID_REPEAT_OBJECT_FAR);
+                    writeInt(rid);
                     return;
                 }
                 final ObjectTable.Writer objectTableWriter;
@@ -733,7 +738,18 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
         i = classCache.get(objClass, -1);
         if (i != -1) {
-            write(Protocol.ID_REPEAT_CLASS);
+            if (configuredVersion >= 2) {
+                final int diff = i - classSeq;
+                if (diff >= -256) {
+                    write(Protocol.ID_REPEAT_CLASS_NEAR);
+                    write(diff);
+                } else if (diff >= -65536) {
+                    write(Protocol.ID_REPEAT_CLASS_NEARISH);
+                    writeShort(diff);
+                }
+                return true;
+            }
+            write(Protocol.ID_REPEAT_CLASS_FAR);
             writeInt(i);
             return true;
         }

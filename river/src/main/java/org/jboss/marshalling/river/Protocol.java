@@ -29,12 +29,12 @@ public final class Protocol {
     public static final int MAX_VERSION = 2;
 
     public static final int ID_NULL_OBJECT              = 0x01;
-    public static final int ID_REPEAT_OBJECT            = 0x02;
+    public static final int ID_REPEAT_OBJECT_FAR        = 0x02;
     public static final int ID_PREDEFINED_OBJECT        = 0x03;
     public static final int ID_NEW_OBJECT               = 0x04;
     public static final int ID_NEW_OBJECT_UNSHARED      = 0x05;
 
-    public static final int ID_REPEAT_CLASS             = 0x06;
+    public static final int ID_REPEAT_CLASS_FAR         = 0x06;
 
     public static final int ID_PLAIN_CLASS              = 0x07;
     public static final int ID_PROXY_CLASS              = 0x08; // Proxy.isProxy(?) == true
@@ -99,6 +99,9 @@ public final class Protocol {
 
     // protocol version >= 2
     public static final int ID_REPEAT_OBJECT_NEAR       = 0x39; // 8-bit unsigned negative int relative
+    public static final int ID_REPEAT_OBJECT_NEARISH    = 0x3a; // 16-bit unsigned negative int relative
+    public static final int ID_REPEAT_CLASS_NEAR        = 0x3b; // 8-bit unsigned negative int relative
+    public static final int ID_REPEAT_CLASS_NEARISH     = 0x3c; // 16-bit unsigned negative int relative
 
     private Protocol() {
     }

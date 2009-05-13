@@ -22,40 +22,37 @@
 
 package org.jboss.marshalling.river;
 
-import org.jboss.marshalling.AbstractUnmarshaller;
-import org.jboss.marshalling.UTFUtils;
-import org.jboss.marshalling.reflect.SerializableClass;
-import org.jboss.marshalling.reflect.SerializableClassRegistry;
-import org.jboss.marshalling.reflect.SerializableField;
-import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.Creator;
-import org.jboss.marshalling.MarshallerObjectInput;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.io.IOException;
-import java.io.StreamCorruptedException;
-import java.io.InvalidObjectException;
-import java.io.InvalidClassException;
 import java.io.Externalizable;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInput;
 import java.io.ObjectInputValidation;
 import java.io.Serializable;
-import java.lang.reflect.Proxy;
+import java.io.StreamCorruptedException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import org.jboss.marshalling.AbstractUnmarshaller;
+import org.jboss.marshalling.Creator;
+import org.jboss.marshalling.Externalizer;
+import org.jboss.marshalling.MarshallerObjectInput;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.UTFUtils;
+import org.jboss.marshalling.reflect.SerializableClass;
+import org.jboss.marshalling.reflect.SerializableClassRegistry;
+import org.jboss.marshalling.reflect.SerializableField;
 
 /**
  *
@@ -69,7 +66,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private int depth;
     private BlockUnmarshaller blockUnmarshaller;
     private RiverObjectInputStream objectInputStream;
-    private final SortedMap<Integer, Set<ObjectInputValidation>> validationMap = new TreeMap<Integer, Set<ObjectInputValidation>>(Collections.reverseOrder());
+    private SortedSet<Validator> validators;
+    private int validatorSeq;
 
     private static final Field proxyInvocationHandler;
 
@@ -145,14 +143,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
         final Object obj = doReadObject(readUnsignedByte(), unshared);
-        if (depth == 0) try {
-            for (Set<ObjectInputValidation> validations : validationMap.values()) {
-                for (ObjectInputValidation validation : validations) {
-                    validation.validateObject();
+        if (depth == 0) {
+            final SortedSet<Validator> validators = this.validators;
+            if (validators != null) {
+                this.validators = null;
+                validatorSeq = 0;
+                for (Validator validator : validators) {
+                    validator.getValidation().validateObject();
                 }
             }
-        } finally {
-            validationMap.clear();
         }
         return obj;
     }
@@ -990,15 +989,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     void addValidation(final ObjectInputValidation validation, final int prio) {
-        final Set<ObjectInputValidation> validations;
-        final Integer prioKey = Integer.valueOf(prio);
-        if (validationMap.containsKey(prioKey)) {
-            validations = validationMap.get(prioKey);
-        } else {
-            validations = new HashSet<ObjectInputValidation>();
-            validationMap.put(prioKey, validations);
-        }
-        validations.add(validation);
+        final Validator validator = new Validator(prio, validatorSeq++, validation);
+        final SortedSet<Validator> validators = this.validators;
+        (validators == null ? this.validators = new TreeSet<Validator>() : validators).add(validator);
     }
 
     public String readUTF() throws IOException {

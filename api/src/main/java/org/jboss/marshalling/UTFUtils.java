@@ -145,11 +145,14 @@ public final class UTFUtils {
         final byte[] byteBuf = BYTES_HOLDER.get();
         final char[] chars = new char[len];
         int i = 0, cnt = 0, charIdx = 0;
-        cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
-        if (cnt < 0) {
-            throw new EOFException();
-        }
         while (charIdx < len) {
+            if (i == cnt) {
+                cnt = input.read(byteBuf, 0, Math.min(UTF_BUFS_BYTE_CNT, len - charIdx));
+                if (cnt < 0) {
+                    throw new EOFException();
+                }
+                i = 0;
+            }
             final int a = byteBuf[i++] & 0xff;
             if (a < 0x80) {
                 // low bit clear
@@ -165,7 +168,7 @@ public final class UTFUtils {
                     i = 0;
                 }
                 final int b = byteBuf[i ++] & 0xff;
-                if ((a & 0xc0) != 0x80) {
+                if ((b & 0xc0) != 0x80) {
                     throw new UTFDataFormatException(INVALID_BYTE);
                 }
                 chars[charIdx ++] = (char) ((a & 0x1f) << 6 | b & 0x3f);

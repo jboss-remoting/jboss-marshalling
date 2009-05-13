@@ -1438,4 +1438,35 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    private static final int[] reallyLongStringLengths = { 60, 300, 1000, 15000 };
+    private static final long reallyLongStringLengthSeed = 0x1bd63a9e00333b34L;
+
+    @Test
+    public void testReallyLongStrings() throws Throwable {
+        final Random random = new Random(reallyLongStringLengthSeed);
+        for (int len : reallyLongStringLengths) {
+            final StringBuilder builder = new StringBuilder(len);
+            for (int i = 0; i < len; i ++) {
+                char ch;
+                do {
+                    ch = (char) random.nextInt();
+                } while (! Character.isDefined(ch) || Character.isLowSurrogate(ch) || Character.isHighSurrogate(ch));
+                builder.append(ch);
+            }
+            final String s = builder.toString();
+            runReadWriteTest(new ReadWriteTest() {
+                public void runWrite(final Marshaller marshaller) throws Throwable {
+                    marshaller.writeObject(s);
+                    marshaller.writeObject(s);
+                }
+
+                public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                    final String rs = (String) unmarshaller.readObject();
+                    assertEquals("String does not match", s, rs);
+                    assertSame(rs, unmarshaller.readObject());
+                }
+            });
+        }
+    }
 }

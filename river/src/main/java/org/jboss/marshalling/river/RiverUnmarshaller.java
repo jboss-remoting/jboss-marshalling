@@ -180,7 +180,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
                     try {
-                        final Object obj = instanceCache.get((read() | 0xffffff00) + instanceCache.size());
+                        final Object obj = instanceCache.get((readByte() | 0xffffff00) + instanceCache.size());
                         if (obj != null) return obj;
                     } catch (IndexOutOfBoundsException e) {
                     }
@@ -250,7 +250,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return classCache.get(readInt());
             }
             case Protocol.ID_REPEAT_CLASS_NEAR: {
-                return classCache.get((read() | 0xffffff00) + classCache.size());
+                return classCache.get((readByte() | 0xffffff00) + classCache.size());
             }
             case Protocol.ID_REPEAT_CLASS_NEARISH: {
                 return classCache.get((readShort() | 0xffff0000) + classCache.size());

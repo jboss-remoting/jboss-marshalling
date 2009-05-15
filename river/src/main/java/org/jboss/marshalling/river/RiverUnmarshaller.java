@@ -745,11 +745,22 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     array[i++] = (v & 128) != 0;
                 }
                 if (bc < cnt) {
-                    v = readUnsignedByte();
-                    int bit = 1;
-                    for (int i = bc; i < cnt; i ++) {
-                        array[i] = (v & bit) != 0;
-                        bit <<= 1;
+                    v = readByte();
+                    switch (cnt & 7) {
+                        case 7:
+                            array[bc + 6] = (v & 64) != 0;
+                        case 6:
+                            array[bc + 5] = (v & 32) != 0;
+                        case 5:
+                            array[bc + 4] = (v & 16) != 0;
+                        case 4:
+                            array[bc + 3] = (v & 8) != 0;
+                        case 3:
+                            array[bc + 2] = (v & 4) != 0;
+                        case 2:
+                            array[bc + 1] = (v & 2) != 0;
+                        case 1:
+                            array[bc] = (v & 1) != 0;
                     }
                 }
                 final Object resolvedObject = objectResolver.readResolve(array);

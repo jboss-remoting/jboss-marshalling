@@ -216,9 +216,29 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 case Protocol.ID_STRING_CLASS: {
                     final String string = (String) obj;
-                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                    write(Protocol.ID_STRING_CLASS);
-                    writeString(string);
+                    if (configuredVersion >= 2) {
+                        final int len = string.length();
+                        if (len == 0) {
+                            write(Protocol.ID_STRING_EMPTY);
+                            // don't cache empty strings
+                            return;
+                        } else if (len < 256) {
+                            write(Protocol.ID_STRING_SMALL);
+                            write(len);
+                        } else if (len < 65336) {
+                            write(Protocol.ID_STRING_MEDIUM);
+                            writeShort(len);
+                        } else {
+                            write(Protocol.ID_STRING_LARGE);
+                            writeInt(len);
+                        }
+                        flush();
+                        UTFUtils.writeUTFBytes(byteOutput, string);
+                    } else {
+                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                        write(Protocol.ID_STRING_CLASS);
+                        writeString(string);
+                    }
                     if (unshared) {
                         instanceCache.put(obj, -1);
                         instanceSeq++;

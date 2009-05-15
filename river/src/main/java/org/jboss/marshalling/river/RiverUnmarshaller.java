@@ -203,6 +203,34 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     return doReadNewObject(readUnsignedByte(), unshared);
                 }
+                // v2 string types
+                case Protocol.ID_STRING_EMPTY: {
+                    return "";
+                }
+                case Protocol.ID_STRING_SMALL: {
+                    // ignore unshared setting
+                    int length = readUnsignedByte();
+                    final String s = UTFUtils.readUTFBytes(this, length);
+                    instanceCache.add(s);
+                    return s;
+                }
+                case Protocol.ID_STRING_MEDIUM: {
+                    // ignore unshared setting
+                    int length = readUnsignedShort();
+                    final String s = UTFUtils.readUTFBytes(this, length);
+                    instanceCache.add(s);
+                    return s;
+                }
+                case Protocol.ID_STRING_LARGE: {
+                    // ignore unshared setting
+                    int length = readInt();
+                    if (length < 0) {
+                        throw new StreamCorruptedException("Invalid length value for string in stream (" + length + ")");
+                    }
+                    final String s = UTFUtils.readUTFBytes(this, length);
+                    instanceCache.add(s);
+                    return s;
+                }
                 case Protocol.ID_PREDEFINED_OBJECT: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a predefined object as unshared");
@@ -684,6 +712,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return resolvedObject;
             }
             case Protocol.ID_STRING_CLASS: {
+                // v1 string
                 final String obj = readString();
                 final Object resolvedObject = objectResolver.readResolve(obj);
                 if (unshared) {

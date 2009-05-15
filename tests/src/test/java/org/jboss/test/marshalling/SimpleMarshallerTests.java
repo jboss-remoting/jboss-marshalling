@@ -2184,7 +2184,7 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
-    private static final int[] reallyLongStringLengths = { 60, 300, 1000, 15000 };
+    private static final int[] reallyLongStringLengths = { 0, 60, 255, 256, 300, 1000, 15000, 65538 };
     private static final long reallyLongStringLengthSeed = 0x1bd63a9e00333b34L;
 
     @Test

@@ -104,9 +104,9 @@ public final class Protocol {
     public static final int ID_REPEAT_CLASS_NEARISH     = 0x3c; // 16-bit unsigned negative int relative
     public static final int ID_STRING_EMPTY             = 0x3d; // ""; not cached
     // these three are cached
-    public static final int ID_STRING_SMALL             = 0x3e; // <256 chars
-    public static final int ID_STRING_MEDIUM            = 0x3f; // <256 chars
-    public static final int ID_STRING_LARGE             = 0x40; // <256 chars
+    public static final int ID_STRING_SMALL             = 0x3e; // <0x100 chars
+    public static final int ID_STRING_MEDIUM            = 0x3f; // <0x10000 chars
+    public static final int ID_STRING_LARGE             = 0x40; // <0x80000000 chars
 
     private Protocol() {
     }

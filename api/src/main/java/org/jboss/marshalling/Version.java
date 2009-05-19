@@ -33,7 +33,7 @@ public final class Version {
     /**
      * The version.
      */
-    public static final String VERSION = "1.1.0.GA";
+    public static final String VERSION = "1.1.3.GA";
 
     /**
      * Print the version to {@code System.out}.

@@ -160,7 +160,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         depth ++;
         try {
             for (;;) switch (leadByte) {
-                case Protocol.ID_NULL_OBJECT: {
+                case Protocol.ID_NULL: {
                     return null;
                 }
                 case Protocol.ID_REPEAT_OBJECT_FAR: {
@@ -199,7 +199,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case Protocol.ID_NEW_OBJECT:
                 case Protocol.ID_NEW_OBJECT_UNSHARED: {
                     if (unshared != (leadByte == Protocol.ID_NEW_OBJECT_UNSHARED)) {
-                        throw new InvalidObjectException("Shared/unshared object mismatch");
+                        throw sharedMismatch();
                     }
                     return doReadNewObject(readUnsignedByte(), unshared);
                 }
@@ -210,26 +210,66 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case Protocol.ID_STRING_SMALL: {
                     // ignore unshared setting
                     int length = readUnsignedByte();
-                    final String s = UTFUtils.readUTFBytes(this, length);
+                    final String s = UTFUtils.readUTFBytes(this, length == 0 ? 0x100 : length);
                     instanceCache.add(s);
                     return s;
                 }
                 case Protocol.ID_STRING_MEDIUM: {
                     // ignore unshared setting
                     int length = readUnsignedShort();
-                    final String s = UTFUtils.readUTFBytes(this, length);
+                    final String s = UTFUtils.readUTFBytes(this, length == 0 ? 0x10000 : length);
                     instanceCache.add(s);
                     return s;
                 }
                 case Protocol.ID_STRING_LARGE: {
                     // ignore unshared setting
                     int length = readInt();
-                    if (length < 0) {
+                    if (length <= 0) {
                         throw new StreamCorruptedException("Invalid length value for string in stream (" + length + ")");
                     }
                     final String s = UTFUtils.readUTFBytes(this, length);
                     instanceCache.add(s);
                     return s;
+                }
+                case Protocol.ID_ARRAY_EMPTY:
+                case Protocol.ID_ARRAY_EMPTY_UNSHARED: {
+                    if (unshared != (leadByte == Protocol.ID_ARRAY_EMPTY_UNSHARED)) {
+                        throw sharedMismatch();
+                    }
+                    final int idx = instanceCache.size();
+                    final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte()).getType(), 0);
+                    instanceCache.add(obj);
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return obj;
+                }
+                case Protocol.ID_ARRAY_SMALL:
+                case Protocol.ID_ARRAY_SMALL_UNSHARED: {
+                    if (unshared != (leadByte == Protocol.ID_ARRAY_SMALL_UNSHARED)) {
+                        throw sharedMismatch();
+                    }
+                    final int len = readUnsignedByte();
+                    return doReadArray(len == 0 ? 0x100 : len, unshared);
+                }
+                case Protocol.ID_ARRAY_MEDIUM:
+                case Protocol.ID_ARRAY_MEDIUM_UNSHARED: {
+                    if (unshared != (leadByte == Protocol.ID_ARRAY_MEDIUM_UNSHARED)) {
+                        throw sharedMismatch();
+                    }
+                    final int len = readUnsignedShort();
+                    return doReadArray(len == 0 ? 0x10000 : len, unshared);
+                }
+                case Protocol.ID_ARRAY_LARGE:
+                case Protocol.ID_ARRAY_LARGE_UNSHARED: {
+                    if (unshared != (leadByte == Protocol.ID_ARRAY_LARGE_UNSHARED)) {
+                        throw sharedMismatch();
+                    }
+                    final int len = readUnsignedShort();
+                    return doReadArray(len, unshared);
                 }
                 case Protocol.ID_PREDEFINED_OBJECT: {
                     if (unshared) {
@@ -244,6 +284,33 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     } else {
                         return objectTable.readObject(this);
                     }
+                }
+                case Protocol.ID_BOOLEAN_OBJECT_TRUE: {
+                    return objectResolver.readResolve(Boolean.TRUE);
+                }
+                case Protocol.ID_BOOLEAN_OBJECT_FALSE: {
+                    return objectResolver.readResolve(Boolean.FALSE);
+                }
+                case Protocol.ID_BYTE_OBJECT: {
+                    return objectResolver.readResolve(Byte.valueOf(readByte()));
+                }
+                case Protocol.ID_SHORT_OBJECT: {
+                    return objectResolver.readResolve(Short.valueOf(readShort()));
+                }
+                case Protocol.ID_INTEGER_OBJECT: {
+                    return objectResolver.readResolve(Integer.valueOf(readInt()));
+                }
+                case Protocol.ID_LONG_OBJECT: {
+                    return objectResolver.readResolve(Long.valueOf(readLong()));
+                }
+                case Protocol.ID_FLOAT_OBJECT: {
+                    return objectResolver.readResolve(Float.valueOf(readFloat()));
+                }
+                case Protocol.ID_DOUBLE_OBJECT: {
+                    return objectResolver.readResolve(Double.valueOf(readDouble()));
+                }
+                case Protocol.ID_CHARACTER_OBJECT: {
+                    return objectResolver.readResolve(Character.valueOf(readChar()));
                 }
                 case Protocol.ID_CLEAR_CLASS_CACHE: {
                     if (depth > 1) {
@@ -268,6 +335,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } finally {
             depth --;
         }
+    }
+
+    private static InvalidObjectException sharedMismatch() {
+        return new InvalidObjectException("Shared/unshared object mismatch");
     }
 
     ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
@@ -696,30 +767,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return resolvedObject;
             }
             case Protocol.ID_OBJECT_ARRAY_TYPE_CLASS: {
-                final int cnt = readInt();
-                final Object[] array = (Object[]) Array.newInstance(descriptor.getType().getComponentType(), cnt);
-                final int idx = instanceCache.size();
-                instanceCache.add(array);
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = doReadObject(unshared);
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (array != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
-                }
-                return resolvedObject;
+                return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared);
             }
             case Protocol.ID_STRING_CLASS: {
                 // v1 string
                 final String obj = readString();
                 final Object resolvedObject = objectResolver.readResolve(obj);
-                if (unshared) {
-                    instanceCache.add(null);
-                } else {
-                    instanceCache.add(resolvedObject);
-                }
+                instanceCache.add(unshared ? null : resolvedObject);
                 return resolvedObject;
             }
             case Protocol.ID_CLASS_CLASS: {
@@ -729,111 +783,28 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return obj;
             }
             case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final boolean[] array = new boolean[cnt];
-                int v = 0;
-                int bc = cnt & ~7;
-                for (int i = 0; i < bc; ) {
-                    v = readByte();
-                    array[i++] = (v & 1) != 0;
-                    array[i++] = (v & 2) != 0;
-                    array[i++] = (v & 4) != 0;
-                    array[i++] = (v & 8) != 0;
-                    array[i++] = (v & 16) != 0;
-                    array[i++] = (v & 32) != 0;
-                    array[i++] = (v & 64) != 0;
-                    array[i++] = (v & 128) != 0;
-                }
-                if (bc < cnt) {
-                    v = readByte();
-                    switch (cnt & 7) {
-                        case 7:
-                            array[bc + 6] = (v & 64) != 0;
-                        case 6:
-                            array[bc + 5] = (v & 32) != 0;
-                        case 5:
-                            array[bc + 4] = (v & 16) != 0;
-                        case 4:
-                            array[bc + 3] = (v & 8) != 0;
-                        case 3:
-                            array[bc + 2] = (v & 4) != 0;
-                        case 2:
-                            array[bc + 1] = (v & 2) != 0;
-                        case 1:
-                            array[bc] = (v & 1) != 0;
-                    }
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadBooleanArray(readInt(), unshared);
             }
             case Protocol.ID_BYTE_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final byte[] array = new byte[cnt];
-                readFully(array, 0, array.length);
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadByteArray(readInt(), unshared);
             }
             case Protocol.ID_SHORT_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final short[] array = new short[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readShort();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadShortArray(readInt(), unshared);
             }
             case Protocol.ID_INT_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final int[] array = new int[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readInt();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadIntArray(readInt(), unshared);
             }
             case Protocol.ID_LONG_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final long[] array = new long[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readLong();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadLongArray(readInt(), unshared);
             }
             case Protocol.ID_CHAR_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final char[] array = new char[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readChar();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadCharArray(readInt(), unshared);
             }
             case Protocol.ID_FLOAT_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final float[] array = new float[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readFloat();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadFloatArray(readInt(), unshared);
             }
             case Protocol.ID_DOUBLE_ARRAY_CLASS: {
-                final int cnt = readInt();
-                final double[] array = new double[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    array[i] = readDouble();
-                }
-                final Object resolvedObject = objectResolver.readResolve(array);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
+                return doReadDoubleArray(readInt(), unshared);
             }
             case Protocol.ID_BOOLEAN_CLASS: {
                 return objectResolver.readResolve(Boolean.valueOf(readBoolean()));
@@ -865,6 +836,162 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             default: {
                 throw new InvalidObjectException("Unexpected class type " + classType);
+            }
+        }
+    }
+
+    private Object doReadDoubleArray(final int cnt, final boolean unshared) throws IOException {
+        final double[] array = new double[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readDouble();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadFloatArray(final int cnt, final boolean unshared) throws IOException {
+        final float[] array = new float[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readFloat();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadCharArray(final int cnt, final boolean unshared) throws IOException {
+        final char[] array = new char[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readChar();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadLongArray(final int cnt, final boolean unshared) throws IOException {
+        final long[] array = new long[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readLong();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadIntArray(final int cnt, final boolean unshared) throws IOException {
+        final int[] array = new int[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readInt();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadShortArray(final int cnt, final boolean unshared) throws IOException {
+        final short[] array = new short[cnt];
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = readShort();
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadByteArray(final int cnt, final boolean unshared) throws IOException {
+        final byte[] array = new byte[cnt];
+        readFully(array, 0, array.length);
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadBooleanArray(final int cnt, final boolean unshared) throws IOException {
+        final boolean[] array = new boolean[cnt];
+        int v = 0;
+        int bc = cnt & ~7;
+        for (int i = 0; i < bc; ) {
+            v = readByte();
+            array[i++] = (v & 1) != 0;
+            array[i++] = (v & 2) != 0;
+            array[i++] = (v & 4) != 0;
+            array[i++] = (v & 8) != 0;
+            array[i++] = (v & 16) != 0;
+            array[i++] = (v & 32) != 0;
+            array[i++] = (v & 64) != 0;
+            array[i++] = (v & 128) != 0;
+        }
+        if (bc < cnt) {
+            v = readByte();
+            switch (cnt & 7) {
+                case 7:
+                    array[bc + 6] = (v & 64) != 0;
+                case 6:
+                    array[bc + 5] = (v & 32) != 0;
+                case 5:
+                    array[bc + 4] = (v & 16) != 0;
+                case 4:
+                    array[bc + 3] = (v & 8) != 0;
+                case 3:
+                    array[bc + 2] = (v & 4) != 0;
+                case 2:
+                    array[bc + 1] = (v & 2) != 0;
+                case 1:
+                    array[bc] = (v & 1) != 0;
+            }
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        instanceCache.add(unshared ? null : resolvedObject);
+        return resolvedObject;
+    }
+
+    private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared) throws ClassNotFoundException, IOException {
+        final Object[] array = (Object[]) Array.newInstance(type, cnt);
+        final int idx = instanceCache.size();
+        instanceCache.add(array);
+        for (int i = 0; i < cnt; i ++) {
+            array[i] = doReadObject(unshared);
+        }
+        final Object resolvedObject = objectResolver.readResolve(array);
+        if (unshared) {
+            instanceCache.set(idx, null);
+        } else if (array != resolvedObject) {
+            instanceCache.set(idx, resolvedObject);
+        }
+        return resolvedObject;
+    }
+
+    private Object doReadArray(final int cnt, final boolean unshared) throws ClassNotFoundException, IOException {
+        final int leadByte = readUnsignedByte();
+        switch (leadByte) {
+            case Protocol.ID_PRIM_BOOLEAN: {
+                return doReadBooleanArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_BYTE: {
+                return doReadByteArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_CHAR: {
+                return doReadCharArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_DOUBLE: {
+                return doReadDoubleArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_FLOAT: {
+                return doReadFloatArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_INT: {
+                return doReadIntArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_LONG: {
+                return doReadLongArray(cnt, unshared);
+            }
+            case Protocol.ID_PRIM_SHORT: {
+                return doReadShortArray(cnt, unshared);
+            }
+            default: {
+                return doReadObjectArray(cnt, doReadClassDescriptor(leadByte).getType(), unshared);
             }
         }
     }

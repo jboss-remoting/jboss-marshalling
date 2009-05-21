@@ -28,7 +28,7 @@ package org.jboss.marshalling.river;
 public final class Protocol {
     public static final int MAX_VERSION = 2;
 
-    public static final int ID_NULL_OBJECT              = 0x01;
+    public static final int ID_NULL                     = 0x01;
     public static final int ID_REPEAT_OBJECT_FAR        = 0x02;
     public static final int ID_PREDEFINED_OBJECT        = 0x03;
     public static final int ID_NEW_OBJECT               = 0x04;
@@ -98,15 +98,33 @@ public final class Protocol {
     public static final int ID_WRITE_OBJECT_CLASS       = 0x38; // ? extends Serializable.class, plus writeObject method
 
     // protocol version >= 2
+    // uncached
     public static final int ID_REPEAT_OBJECT_NEAR       = 0x39; // 8-bit unsigned negative int relative
     public static final int ID_REPEAT_OBJECT_NEARISH    = 0x3a; // 16-bit unsigned negative int relative
     public static final int ID_REPEAT_CLASS_NEAR        = 0x3b; // 8-bit unsigned negative int relative
     public static final int ID_REPEAT_CLASS_NEARISH     = 0x3c; // 16-bit unsigned negative int relative
-    public static final int ID_STRING_EMPTY             = 0x3d; // ""; not cached
-    // these three are cached
-    public static final int ID_STRING_SMALL             = 0x3e; // <0x100 chars
-    public static final int ID_STRING_MEDIUM            = 0x3f; // <0x10000 chars
+    public static final int ID_STRING_EMPTY             = 0x3d; // "" (UNCACHED)
+    public static final int ID_STRING_SMALL             = 0x3e; // <=0x100 chars
+    public static final int ID_STRING_MEDIUM            = 0x3f; // <=0x10000 chars
     public static final int ID_STRING_LARGE             = 0x40; // <0x80000000 chars
+    public static final int ID_ARRAY_EMPTY              = 0x41; // zero elements (CACHED)
+    public static final int ID_ARRAY_SMALL              = 0x42; // <=0x100 elements (CACHED)
+    public static final int ID_ARRAY_MEDIUM             = 0x43; // <=0x10000 elements (CACHED)
+    public static final int ID_ARRAY_LARGE              = 0x44; // <0x80000000 elements (CACHED)
+    public static final int ID_ARRAY_EMPTY_UNSHARED     = 0x45; // zero elements (CACHED)
+    public static final int ID_ARRAY_SMALL_UNSHARED     = 0x46; // <=0x100 elements (CACHED)
+    public static final int ID_ARRAY_MEDIUM_UNSHARED    = 0x47; // <=0x10000 elements (CACHED)
+    public static final int ID_ARRAY_LARGE_UNSHARED     = 0x48; // <0x80000000 elements (CACHED)
+    // prim wrappers (more efficient) (always shared, never cached)
+    public static final int ID_BYTE_OBJECT              = 0x49; // (UNCACHED)
+    public static final int ID_SHORT_OBJECT             = 0x4a; // ...
+    public static final int ID_INTEGER_OBJECT           = 0x4b;
+    public static final int ID_LONG_OBJECT              = 0x4c;
+    public static final int ID_CHARACTER_OBJECT         = 0x4d;
+    public static final int ID_FLOAT_OBJECT             = 0x4e;
+    public static final int ID_DOUBLE_OBJECT            = 0x4f;
+    public static final int ID_BOOLEAN_OBJECT_TRUE      = 0x50;
+    public static final int ID_BOOLEAN_OBJECT_FALSE     = 0x51;
 
     private Protocol() {
     }

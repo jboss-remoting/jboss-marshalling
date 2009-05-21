@@ -312,6 +312,102 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case Protocol.ID_CHARACTER_OBJECT: {
                     return objectResolver.readResolve(Character.valueOf(readChar()));
                 }
+                case Protocol.ID_PRIM_BYTE: {
+                    return byte.class;
+                }
+                case Protocol.ID_PRIM_BOOLEAN: {
+                    return boolean.class;
+                }
+                case Protocol.ID_PRIM_CHAR: {
+                    return char.class;
+                }
+                case Protocol.ID_PRIM_DOUBLE: {
+                    return double.class;
+                }
+                case Protocol.ID_PRIM_FLOAT: {
+                    return float.class;
+                }
+                case Protocol.ID_PRIM_INT: {
+                    return int.class;
+                }
+                case Protocol.ID_PRIM_LONG: {
+                    return long.class;
+                }
+                case Protocol.ID_PRIM_SHORT: {
+                    return short.class;
+                }
+
+                case Protocol.ID_VOID: {
+                    return void.class;
+                }
+
+                case Protocol.ID_BYTE_CLASS: {
+                    return Byte.class;
+                }
+                case Protocol.ID_BOOLEAN_CLASS: {
+                    return Boolean.class;
+                }
+                case Protocol.ID_CHARACTER_CLASS: {
+                    return Character.class;
+                }
+                case Protocol.ID_DOUBLE_CLASS: {
+                    return Double.class;
+                }
+                case Protocol.ID_FLOAT_CLASS: {
+                    return Float.class;
+                }
+                case Protocol.ID_INTEGER_CLASS: {
+                    return Integer.class;
+                }
+                case Protocol.ID_LONG_CLASS: {
+                    return Long.class;
+                }
+                case Protocol.ID_SHORT_CLASS: {
+                    return Short.class;
+                }
+
+                case Protocol.ID_VOID_CLASS: {
+                    return Void.class;
+                }
+
+                case Protocol.ID_OBJECT_CLASS: {
+                    return Object.class;
+                }
+                case Protocol.ID_CLASS_CLASS: {
+                    return Class.class;
+                }
+                case Protocol.ID_STRING_CLASS: {
+                    return String.class;
+                }
+                case Protocol.ID_ENUM_CLASS: {
+                    return Enum.class;
+                }
+
+                case Protocol.ID_BYTE_ARRAY_CLASS: {
+                    return byte[].class;
+                }
+                case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+                    return boolean[].class;
+                }
+                case Protocol.ID_CHAR_ARRAY_CLASS: {
+                    return char[].class;
+                }
+                case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+                    return double[].class;
+                }
+                case Protocol.ID_FLOAT_ARRAY_CLASS: {
+                    return float[].class;
+                }
+                case Protocol.ID_INT_ARRAY_CLASS: {
+                    return int[].class;
+                }
+                case Protocol.ID_LONG_ARRAY_CLASS: {
+                    return long[].class;
+                }
+                case Protocol.ID_SHORT_ARRAY_CLASS: {
+                    return short[].class;
+                }
+
                 case Protocol.ID_CLEAR_CLASS_CACHE: {
                     if (depth > 1) {
                         throw new StreamCorruptedException("ID_CLEAR_CLASS_CACHE token in the middle of stream processing");

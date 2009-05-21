@@ -122,7 +122,14 @@ public class RiverMarshaller extends AbstractMarshaller {
                 id = BASIC_CLASSES.get(objClass, -1);
                 // First, non-replaceable classes
                 if (id == Protocol.ID_CLASS_CLASS) {
-                    final Class classObj = (Class) obj;
+                    final Class<?> classObj = (Class<?>) obj;
+                    if (configuredVersion >= 2) {
+                        final int cid = BASIC_CLASSES.get(classObj, -1);
+                        if (cid != -1) {
+                            write(cid);
+                            return;
+                        }
+                    }
                     write(Protocol.ID_NEW_OBJECT);
                     write(Protocol.ID_CLASS_CLASS);
                     writeClassClass(classObj);

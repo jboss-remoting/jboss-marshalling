@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * An efficient identity object map whose keys are objects and whose values are {@code int}s.
  */
-public final class IdentityIntMap<T> {
+public final class IdentityIntMap<T> implements Cloneable {
     private int[] values;
     private Object[] keys;
     private int count;
@@ -56,6 +56,23 @@ public final class IdentityIntMap<T> {
         keys = new Object[initialCapacity];
         values = new int[initialCapacity];
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
+    }
+
+    /**
+     * Clone this map.
+     *
+     * @return a cloned map
+     */
+    @SuppressWarnings({ "unchecked" })
+    public IdentityIntMap<T> clone() {
+        try {
+            final IdentityIntMap<T> clone = (IdentityIntMap<T>) super.clone();
+            clone.values = values.clone();
+            clone.keys = keys.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException();
+        }
     }
 
     /**

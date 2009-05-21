@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * An efficient object map whose keys are objects and whose values are {@code int}s.
  */
-public final class IntMap<T> {
+public final class IntMap<T> implements Cloneable {
     private int[] values;
     private Object[] keys;
     private int count;
@@ -56,6 +56,23 @@ public final class IntMap<T> {
         keys = new Object[initialCapacity];
         values = new int[initialCapacity];
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
+    }
+
+    /**
+     * Clone this map.
+     *
+     * @return a cloned map
+     */
+    @SuppressWarnings({ "unchecked" })
+    public IntMap<T> clone() {
+        try {
+            final IntMap<T> clone = (IntMap<T>) super.clone();
+            clone.values = values.clone();
+            clone.keys = keys.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException();
+        }
     }
 
     /**

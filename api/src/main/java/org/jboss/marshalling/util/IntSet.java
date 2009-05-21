@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * An efficient object set.
  */
-public final class IntSet<T> {
+public final class IntSet<T> implements Cloneable {
     private Object[] keys;
     private int count;
     private int resizeCount;
@@ -54,6 +54,22 @@ public final class IntSet<T> {
         }
         keys = new Object[initialCapacity];
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
+    }
+
+    /**
+     * Clone this set.
+     *
+     * @return a cloned set
+     */
+    @SuppressWarnings({ "unchecked" })
+    public IntSet<T> clone() {
+        try {
+            final IntSet<T> clone = (IntSet<T>) super.clone();
+            clone.keys = keys.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException();
+        }
     }
 
     /**

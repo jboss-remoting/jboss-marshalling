@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * An efficient identity object set.
  */
-public final class IdentityIntSet<T> {
+public final class IdentityIntSet<T> implements Cloneable {
     private Object[] keys;
     private int count;
     private int resizeCount;
@@ -54,6 +54,22 @@ public final class IdentityIntSet<T> {
         }
         keys = new Object[initialCapacity];
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
+    }
+
+    /**
+     * Clone this set.
+     *
+     * @return a cloned set
+     */
+    @SuppressWarnings({ "unchecked" })
+    public IdentityIntSet<T> clone() {
+        try {
+            final IdentityIntSet<T> clone = (IdentityIntSet<T>) super.clone();
+            clone.keys = keys.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException();
+        }
     }
 
     /**

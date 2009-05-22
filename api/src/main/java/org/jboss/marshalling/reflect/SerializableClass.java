@@ -399,16 +399,15 @@ public final class SerializableClass {
             public Method run() {
                 Class<?> foundClass;
                 Method method = null;
-                for (foundClass = subject; foundClass != null; foundClass = foundClass.getSuperclass()) {
+                for (foundClass = subject; method == null; foundClass = foundClass.getSuperclass()) {
                     try {
+                        if (foundClass == null) {
+                            return null;
+                        }
                         method = foundClass.getDeclaredMethod(name);
                     } catch (NoSuchMethodException e) {
                         continue;
                     }
-                }
-                if (method == null) {
-                    // missing
-                    return null;
                 }
                 final int modifiers = method.getModifiers();
                 if ((modifiers & Modifier.STATIC) != 0) {

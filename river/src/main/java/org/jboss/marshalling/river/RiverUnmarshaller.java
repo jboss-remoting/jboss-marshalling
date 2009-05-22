@@ -65,7 +65,108 @@ import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
-import static org.jboss.marshalling.river.Protocol.*;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_EMPTY_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_LARGE_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_MEDIUM_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_SMALL_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_OBJECT_FALSE;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_OBJECT_TRUE;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ARRAY_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASHTABLE;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASH_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_IDENTITY_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_HASH_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_CC_TREE_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_TREE_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CHARACTER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CHARACTER_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_CHAR_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CLASS_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CLEAR_CLASS_CACHE;
+import static org.jboss.marshalling.river.Protocol.ID_CLEAR_INSTANCE_CACHE;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_EMPTY_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_LARGE_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_MEDIUM_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_SMALL_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_LIST_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_MAP_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_SET_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_ENUM_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_ENUM_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_EXTERNALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_EXTERNALIZER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_INTEGER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_INTEGER_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_INT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_NEW_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_NEW_OBJECT_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_NULL;
+import static org.jboss.marshalling.river.Protocol.ID_OBJECT_ARRAY_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_OBJECT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PLAIN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_EXTERNALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_EXTERNALIZER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_PLAIN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_PROXY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_SERIALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_BOOLEAN;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_BYTE;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_CHAR;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_DOUBLE;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_FLOAT;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_INT;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_LONG;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_SHORT;
+import static org.jboss.marshalling.river.Protocol.ID_PROXY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_FAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_NEAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_NEARISH;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_FAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_NEAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_NEARISH;
+import static org.jboss.marshalling.river.Protocol.ID_SERIALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_LIST_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_MAP_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_SET_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_VOID;
+import static org.jboss.marshalling.river.Protocol.ID_VOID_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_WRITE_OBJECT_CLASS;
+import static org.jboss.marshalling.river.Protocol.MAX_VERSION;
 
 /**
  *
@@ -181,34 +282,37 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
+                    final int index = readInt();
                     try {
-                        final Object obj = instanceCache.get(readInt());
+                        final Object obj = instanceCache.get(index);
                         if (obj != null) return obj;
                     } catch (IndexOutOfBoundsException e) {
                     }
-                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
+                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID (absolute " + index + ")");
                 }
                 case ID_REPEAT_OBJECT_NEAR: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
+                    final int index = readByte() | 0xffffff00;
                     try {
-                        final Object obj = instanceCache.get((readByte() | 0xffffff00) + instanceCache.size());
+                        final Object obj = instanceCache.get(index + instanceCache.size());
                         if (obj != null) return obj;
                     } catch (IndexOutOfBoundsException e) {
                     }
-                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
+                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID (relative near " + index + ")");
                 }
                 case ID_REPEAT_OBJECT_NEARISH: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
+                    final int index = readShort() | 0xffff0000;
                     try {
-                        final Object obj = instanceCache.get((readShort() | 0xffff0000) + instanceCache.size());
+                        final Object obj = instanceCache.get(index + instanceCache.size());
                         if (obj != null) return obj;
                     } catch (IndexOutOfBoundsException e) {
                     }
-                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
+                    throw new InvalidObjectException("Attempt to read a backreference with an invalid ID (relative nearish " + index + ")");
                 }
                 case ID_NEW_OBJECT:
                 case ID_NEW_OBJECT_UNSHARED: {
@@ -456,13 +560,34 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
 
                 case ID_SINGLETON_LIST_OBJECT: {
-                    return objectResolver.readResolve(Collections.singletonList(doReadObject(false)));
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.singletonList(doReadObject(false));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
                 case ID_SINGLETON_SET_OBJECT: {
-                    return objectResolver.readResolve(Collections.singleton(doReadObject(false)));
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.singleton(doReadObject(false));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
                 case ID_SINGLETON_MAP_OBJECT: {
-                    return objectResolver.readResolve(Collections.singletonMap(doReadObject(false), doReadObject(false)));
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.singletonMap(doReadObject(false), doReadObject(false));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
 
                 case ID_EMPTY_LIST_OBJECT: {

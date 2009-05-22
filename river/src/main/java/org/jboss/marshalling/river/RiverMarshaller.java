@@ -771,16 +771,24 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 case ID_SINGLETON_MAP_OBJECT: {
+                    instanceCache.put(obj, instanceSeq++);
                     write(id);
                     final Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();
                     doWriteObject(entry.getKey(), false);
                     doWriteObject(entry.getValue(), false);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
                     return;
                 }
                 case ID_SINGLETON_LIST_OBJECT:
                 case ID_SINGLETON_SET_OBJECT: {
+                    instanceCache.put(obj, instanceSeq++);
                     write(id);
                     doWriteObject(((Collection)obj).iterator().next(), false);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
                     return;
                 }
                 case -1: break;

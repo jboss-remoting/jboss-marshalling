@@ -157,7 +157,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     write(ID_NEW_OBJECT);
                     writeClassClass(classObj);
-                    instanceCache.put(classObj, instanceSeq++);
                     return;
                 }
                 isEnum = obj instanceof Enum;

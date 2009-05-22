@@ -97,15 +97,6 @@ public final class SingleObjectMarshallerTests extends TestBase {
         });
     }
 
-    public static void main(String[] args) throws Throwable {
-        final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
-        final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory);
-        final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory);
-        final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setCreator(new SunReflectiveCreator());
-        new SingleObjectMarshallerTests(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2, configuration, EnumSet.noneOf(TimeUnit.class)).test();
-    }
-
     private static String stringOf(Object foo) {
         return foo == null ? "-null-" : "(" + foo.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(foo)) + "[" + Integer.toHexString(foo.hashCode()) + "])";
     }

@@ -87,12 +87,12 @@ public final class SimpleMarshallerTestFactory {
                 // river - v1 writer, v2 reader
                 pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
                 // river - v2 writer, v2 reader
-                pair(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2) /*,
+                pair(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
 
                 // serial
                 pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
                 pair(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
+                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider) /*,
 
                 // reflection java serialization
                 pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),

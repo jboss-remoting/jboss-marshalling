@@ -22,6 +22,8 @@
 
 package org.jboss.marshalling.river;
 
+import java.util.Collections;
+
 /**
  *
  */
@@ -125,6 +127,42 @@ public final class Protocol {
     public static final int ID_DOUBLE_OBJECT            = 0x4f;
     public static final int ID_BOOLEAN_OBJECT_TRUE      = 0x50;
     public static final int ID_BOOLEAN_OBJECT_FALSE     = 0x51;
+    // ++ collection classes and types ++
+    public static final int ID_COLLECTION_EMPTY             = 0x52; // zero members, type follows
+    public static final int ID_COLLECTION_SMALL             = 0x53; // <=0x100 members, count then type follows
+    public static final int ID_COLLECTION_MEDIUM            = 0x54; // <=0x10000 members, count then type follows
+    public static final int ID_COLLECTION_LARGE             = 0x55; // <0x80000000 members, count then type follows
+    public static final int ID_COLLECTION_EMPTY_UNSHARED    = 0x56; // zero members, type follows
+    public static final int ID_COLLECTION_SMALL_UNSHARED    = 0x57; // <=0x100 members, count then type follows
+    public static final int ID_COLLECTION_MEDIUM_UNSHARED   = 0x58; // <=0x10000 members, count then type follows
+    public static final int ID_COLLECTION_LARGE_UNSHARED    = 0x59; // <0x80000000 members, count then type follows
+    // lists
+    public static final int ID_CC_ARRAY_LIST            = 0x5a;
+    public static final int ID_CC_LINKED_LIST           = 0x5b;
+    public static final int ID_SINGLETON_LIST_OBJECT    = 0x5c;
+    public static final int ID_EMPTY_LIST_OBJECT        = 0x5d;
+    // sets
+    public static final int ID_CC_HASH_SET              = 0x5e;
+    public static final int ID_CC_LINKED_HASH_SET       = 0x5f;
+    public static final int ID_CC_TREE_SET              = 0x60;
+    public static final int ID_SINGLETON_SET_OBJECT     = 0x61;
+    public static final int ID_EMPTY_SET_OBJECT         = 0x62;
+    // maps
+    public static final int ID_CC_IDENTITY_HASH_MAP     = 0x63;
+    public static final int ID_CC_HASH_MAP              = 0x64;
+    public static final int ID_CC_HASHTABLE             = 0x65;
+    public static final int ID_CC_LINKED_HASH_MAP       = 0x66;
+    public static final int ID_CC_TREE_MAP              = 0x67;
+    public static final int ID_SINGLETON_MAP_OBJECT     = 0x68;
+    public static final int ID_EMPTY_MAP_OBJECT         = 0x69;
+
+    static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
+    static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
+    static final Class<?> singletonMapClass = Collections.singletonMap(null, null).getClass();
+
+    static final Class<?> emptyListClass = Collections.emptyList().getClass();
+    static final Class<?> emptySetClass = Collections.emptySet().getClass();
+    static final Class<?> emptyMapClass = Collections.emptyMap().getClass();
 
     private Protocol() {
     }

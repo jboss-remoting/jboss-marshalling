@@ -41,8 +41,20 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
@@ -156,6 +168,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return obj;
     }
 
+    @SuppressWarnings({ "unchecked" })
     Object doReadObject(int leadByte, final boolean unshared) throws IOException, ClassNotFoundException {
         depth ++;
         try {
@@ -236,9 +249,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared != (leadByte == Protocol.ID_ARRAY_EMPTY_UNSHARED)) {
                         throw sharedMismatch();
                     }
+                    final ArrayList<Object> instanceCache = this.instanceCache;
                     final int idx = instanceCache.size();
+                    instanceCache.add(null);
                     final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte()).getType(), 0);
-                    instanceCache.add(obj);
+                    instanceCache.set(idx, obj);
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
                         instanceCache.set(idx, null);
@@ -406,6 +421,255 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 case Protocol.ID_SHORT_ARRAY_CLASS: {
                     return short[].class;
+                }
+
+                case Protocol.ID_CC_ARRAY_LIST: {
+                    return ArrayList.class;
+                }
+                case Protocol.ID_CC_HASH_MAP: {
+                    return HashMap.class;
+                }
+                case Protocol.ID_CC_HASH_SET: {
+                    return HashSet.class;
+                }
+                case Protocol.ID_CC_HASHTABLE: {
+                    return Hashtable.class;
+                }
+                case Protocol.ID_CC_IDENTITY_HASH_MAP: {
+                    return HashMap.class;
+                }
+                case Protocol.ID_CC_LINKED_HASH_MAP: {
+                    return LinkedHashMap.class;
+                }
+                case Protocol.ID_CC_LINKED_HASH_SET: {
+                    return LinkedHashSet.class;
+                }
+                case Protocol.ID_CC_LINKED_LIST: {
+                    return LinkedList.class;
+                }
+                case Protocol.ID_CC_TREE_MAP: {
+                    return TreeMap.class;
+                }
+                case Protocol.ID_CC_TREE_SET: {
+                    return TreeSet.class;
+                }
+
+                case Protocol.ID_SINGLETON_LIST_OBJECT: {
+                    return objectResolver.readResolve(Collections.singletonList(doReadObject(false)));
+                }
+                case Protocol.ID_SINGLETON_SET_OBJECT: {
+                    return objectResolver.readResolve(Collections.singleton(doReadObject(false)));
+                }
+                case Protocol.ID_SINGLETON_MAP_OBJECT: {
+                    return objectResolver.readResolve(Collections.singletonMap(doReadObject(false), doReadObject(false)));
+                }
+
+                case Protocol.ID_EMPTY_LIST_OBJECT: {
+                    return Collections.emptyList();
+                }
+                case Protocol.ID_EMPTY_SET_OBJECT: {
+                    return Collections.emptySet();
+                }
+                case Protocol.ID_EMPTY_MAP_OBJECT: {
+                    return Collections.emptyMap();
+                }
+
+                case Protocol.ID_COLLECTION_EMPTY:
+                case Protocol.ID_COLLECTION_EMPTY_UNSHARED:
+                case Protocol.ID_COLLECTION_SMALL:
+                case Protocol.ID_COLLECTION_SMALL_UNSHARED:
+                case Protocol.ID_COLLECTION_MEDIUM:
+                case Protocol.ID_COLLECTION_MEDIUM_UNSHARED:
+                case Protocol.ID_COLLECTION_LARGE:
+                case Protocol.ID_COLLECTION_LARGE_UNSHARED:
+                {
+                    final int len;
+                    switch (leadByte) {
+                        case Protocol.ID_COLLECTION_EMPTY:
+                        case Protocol.ID_COLLECTION_EMPTY_UNSHARED: {
+                            len = 0;
+                            break;
+                        }
+                        case Protocol.ID_COLLECTION_SMALL:
+                        case Protocol.ID_COLLECTION_SMALL_UNSHARED: {
+                            int b = readUnsignedByte();
+                            len = b == 0 ? 0x100 : b;
+                            break;
+                        }
+                        case Protocol.ID_COLLECTION_MEDIUM:
+                        case Protocol.ID_COLLECTION_MEDIUM_UNSHARED: {
+                            int b = readUnsignedShort();
+                            len = b == 0 ? 0x10000 : b;
+                            break;
+                        }
+                        case Protocol.ID_COLLECTION_LARGE:
+                        case Protocol.ID_COLLECTION_LARGE_UNSHARED: {
+                            len = readInt();
+                            break;
+                        }
+                        default: {
+                            throw new IllegalStateException();
+                        }
+                    }
+                    final int id = readUnsignedByte();
+                    final int idx;
+                    final ArrayList<Object> instanceCache = this.instanceCache;
+                    switch (id) {
+                        case Protocol.ID_CC_ARRAY_LIST: {
+                            final Collection target = new ArrayList(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.add(doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_HASH_SET: {
+                            final Collection target = new HashSet(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.add(doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_LINKED_HASH_SET: {
+                            final Collection target = new LinkedHashSet(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.add(doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_LINKED_LIST: {
+                            final Collection target = new LinkedList();
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.add(doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_TREE_SET: {
+                            final Collection target = new TreeSet((Comparator)doReadObject(false));
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.add(doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+
+                        case Protocol.ID_CC_HASH_MAP: {
+                            final Map target = new HashMap(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.put(doReadObject(false), doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_HASHTABLE: {
+                            final Map target = new Hashtable(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.put(doReadObject(false), doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_IDENTITY_HASH_MAP: {
+                            final Map target = new IdentityHashMap(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.put(doReadObject(false), doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_LINKED_HASH_MAP: {
+                            final Map target = new LinkedHashMap(len);
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.put(doReadObject(false), doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        case Protocol.ID_CC_TREE_MAP: {
+                            final Map target = new TreeMap((Comparator)doReadObject(false));
+                            idx = instanceCache.size();
+                            instanceCache.add(target);
+                            for (int i = 0; i < len; i ++) {
+                                target.put(doReadObject(false), doReadObject(false));
+                            }
+                            final Object resolvedObject = objectResolver.readResolve(target);
+                            if (unshared) {
+                                instanceCache.set(idx, null);
+                            } else if (target != resolvedObject) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
+                        }
+                        default: {
+                            throw new StreamCorruptedException("Unexpected byte foudn when reading a collection type: " + leadByte);
+                        }
+                    }
                 }
 
                 case Protocol.ID_CLEAR_CLASS_CACHE: {

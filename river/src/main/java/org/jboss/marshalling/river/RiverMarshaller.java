@@ -22,32 +22,43 @@
 
 package org.jboss.marshalling.river;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutput;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import org.jboss.marshalling.AbstractMarshaller;
+import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.ClassTable;
+import org.jboss.marshalling.Externalizer;
+import org.jboss.marshalling.MarshallerObjectOutput;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.ObjectResolver;
+import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.reflect.SerializableClass;
-import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
-import org.jboss.marshalling.ObjectTable;
-import org.jboss.marshalling.ClassTable;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.ClassExternalizerFactory;
-import org.jboss.marshalling.MarshallerObjectOutput;
 import org.jboss.marshalling.util.IdentityIntMap;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.Externalizable;
-import java.io.NotSerializableException;
-import java.io.InvalidObjectException;
-import java.io.InvalidClassException;
-import java.io.ObjectOutput;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Field;
-import java.util.IdentityHashMap;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 /**
  *
@@ -84,6 +95,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         boolean isArray, isEnum;
         SerializableClass info;
         boolean unreplaced = true;
+        final int configuredVersion = this.configuredVersion;
         try {
             for (;;) {
                 if (obj == null) {
@@ -119,15 +131,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 objClass = obj.getClass();
-                id = BASIC_CLASSES.get(objClass, -1);
+                id = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
                 // First, non-replaceable classes
                 if (id == Protocol.ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
                     if (configuredVersion >= 2) {
-                        final int cid = BASIC_CLASSES.get(classObj, -1);
-                        if (cid != -1) {
-                            write(cid);
-                            return;
+                        final int cid = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(classObj, -1);
+                        switch (cid) {
+                            case -1:
+                            case Protocol.ID_SINGLETON_MAP_OBJECT:
+                            case Protocol.ID_SINGLETON_SET_OBJECT:
+                            case Protocol.ID_SINGLETON_LIST_OBJECT:
+                            case Protocol.ID_EMPTY_MAP_OBJECT:
+                            case Protocol.ID_EMPTY_SET_OBJECT:
+                            case Protocol.ID_EMPTY_LIST_OBJECT: {
+                                 break;
+                            }
+
+                            default: {
+                                write(cid);
+                                return;
+                            }
                         }
                     }
                     write(Protocol.ID_NEW_OBJECT);
@@ -635,6 +659,129 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                case Protocol.ID_CC_HASH_SET:
+                case Protocol.ID_CC_LINKED_HASH_SET:
+                case Protocol.ID_CC_TREE_SET:
+                case Protocol.ID_CC_ARRAY_LIST:
+                case Protocol.ID_CC_LINKED_LIST: {
+                    instanceCache.put(obj, instanceSeq++);
+                    final Collection<?> collection = (Collection<?>) obj;
+                    final int len = collection.size();
+                    if (len == 0) {
+                        write(unshared ? Protocol.ID_COLLECTION_EMPTY_UNSHARED : Protocol.ID_COLLECTION_EMPTY);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_SET) {
+                            doWriteObject(((TreeSet)collection).comparator(), false);
+                        }
+                    } else if (len <= 256) {
+                        write(unshared ? Protocol.ID_COLLECTION_SMALL_UNSHARED : Protocol.ID_COLLECTION_SMALL);
+                        write(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_SET) {
+                            doWriteObject(((TreeSet)collection).comparator(), false);
+                        }
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? Protocol.ID_COLLECTION_MEDIUM_UNSHARED : Protocol.ID_COLLECTION_MEDIUM);
+                        writeShort(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_SET) {
+                            doWriteObject(((TreeSet)collection).comparator(), false);
+                        }
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    } else {
+                        write(unshared ? Protocol.ID_COLLECTION_LARGE_UNSHARED : Protocol.ID_COLLECTION_LARGE);
+                        writeInt(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_SET) {
+                            doWriteObject(((TreeSet)collection).comparator(), false);
+                        }
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case Protocol.ID_CC_HASH_MAP:
+                case Protocol.ID_CC_HASHTABLE:
+                case Protocol.ID_CC_IDENTITY_HASH_MAP:
+                case Protocol.ID_CC_LINKED_HASH_MAP:
+                case Protocol.ID_CC_TREE_MAP: {
+                    instanceCache.put(obj, instanceSeq++);
+                    final Map<?, ?> map = (Map<?, ?>) obj;
+                    final int len = map.size();
+                    if (len == 0) {
+                        write(unshared ? Protocol.ID_COLLECTION_EMPTY_UNSHARED : Protocol.ID_COLLECTION_EMPTY);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_MAP) {
+                            doWriteObject(((TreeMap)map).comparator(), false);
+                        }
+                    } else if (len <= 256) {
+                        write(unshared ? Protocol.ID_COLLECTION_SMALL_UNSHARED : Protocol.ID_COLLECTION_SMALL);
+                        write(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_MAP) {
+                            doWriteObject(((TreeMap)map).comparator(), false);
+                        }
+                        for (Map.Entry<?, ?> entry : map.entrySet()) {
+                            doWriteObject(entry.getKey(), false);
+                            doWriteObject(entry.getValue(), false);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? Protocol.ID_COLLECTION_MEDIUM_UNSHARED : Protocol.ID_COLLECTION_MEDIUM);
+                        writeShort(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_MAP) {
+                            doWriteObject(((TreeMap)map).comparator(), false);
+                        }
+                        for (Map.Entry<?, ?> entry : map.entrySet()) {
+                            doWriteObject(entry.getKey(), false);
+                            doWriteObject(entry.getValue(), false);
+                        }
+                    } else {
+                        write(unshared ? Protocol.ID_COLLECTION_LARGE_UNSHARED : Protocol.ID_COLLECTION_LARGE);
+                        writeInt(len);
+                        write(id);
+                        if (id == Protocol.ID_CC_TREE_MAP) {
+                            doWriteObject(((TreeMap)map).comparator(), false);
+                        }
+                        for (Map.Entry<?, ?> entry : map.entrySet()) {
+                            doWriteObject(entry.getKey(), false);
+                            doWriteObject(entry.getValue(), false);
+                        }
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+
+                case Protocol.ID_EMPTY_MAP_OBJECT:
+                case Protocol.ID_EMPTY_SET_OBJECT:
+                case Protocol.ID_EMPTY_LIST_OBJECT: {
+                    write(id);
+                    return;
+                }
+                case Protocol.ID_SINGLETON_MAP_OBJECT: {
+                    write(id);
+                    final Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();
+                    doWriteObject(entry.getKey(), false);
+                    doWriteObject(entry.getValue(), false);
+                    return;
+                }
+                case Protocol.ID_SINGLETON_LIST_OBJECT:
+                case Protocol.ID_SINGLETON_SET_OBJECT: {
+                    write(id);
+                    doWriteObject(((Collection)obj).iterator().next(), false);
+                    return;
+                }
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }
@@ -961,6 +1108,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES;
+    private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
 
     static {
         final IdentityIntMap<Class<?>> map = new IdentityIntMap<Class<?>>(0x0.6p0f);
@@ -1001,7 +1149,31 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(long[].class, Protocol.ID_LONG_ARRAY_CLASS);
         map.put(short[].class, Protocol.ID_SHORT_ARRAY_CLASS);
 
-        BASIC_CLASSES = map;
+        BASIC_CLASSES = map.clone();
+
+        map.put(ArrayList.class, Protocol.ID_CC_ARRAY_LIST);
+        map.put(LinkedList.class, Protocol.ID_CC_LINKED_LIST);
+
+        map.put(HashSet.class, Protocol.ID_CC_HASH_SET);
+        map.put(LinkedHashSet.class, Protocol.ID_CC_LINKED_HASH_SET);
+        map.put(TreeSet.class, Protocol.ID_CC_TREE_SET);
+
+        map.put(IdentityHashMap.class, Protocol.ID_CC_IDENTITY_HASH_MAP);
+        map.put(HashMap.class, Protocol.ID_CC_HASH_MAP);
+        map.put(Hashtable.class, Protocol.ID_CC_HASHTABLE);
+        map.put(LinkedHashMap.class, Protocol.ID_CC_LINKED_HASH_MAP);
+        map.put(TreeMap.class, Protocol.ID_CC_TREE_MAP);
+
+        map.put(Protocol.emptyListClass, Protocol.ID_EMPTY_LIST_OBJECT); // special case
+        map.put(Protocol.singletonListClass, Protocol.ID_SINGLETON_LIST_OBJECT); // special case
+
+        map.put(Protocol.emptySetClass, Protocol.ID_EMPTY_SET_OBJECT); // special case
+        map.put(Protocol.singletonSetClass, Protocol.ID_SINGLETON_SET_OBJECT); // special case
+
+        map.put(Protocol.emptyMapClass, Protocol.ID_EMPTY_MAP_OBJECT); // special case
+        map.put(Protocol.singletonMapClass, Protocol.ID_SINGLETON_MAP_OBJECT); // special case
+
+        BASIC_CLASSES_V2 = map;
     }
 
     protected void writeNewClass(final Class<?> objClass) throws IOException {
@@ -1042,7 +1214,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected boolean writeKnownClass(final Class<?> objClass) throws IOException {
-        int i = BASIC_CLASSES.get(objClass, -1);
+        int i = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
         if (i != -1) {
             write(i);
             return true;

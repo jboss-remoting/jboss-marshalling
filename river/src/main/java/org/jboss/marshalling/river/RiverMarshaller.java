@@ -137,7 +137,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
                     if (configuredVersion >= 2) {
-                        final int cid = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(classObj, -1);
+                        final int cid = BASIC_CLASSES_V2.get(classObj, -1);
                         switch (cid) {
                             case -1:
                             case ID_SINGLETON_MAP_OBJECT:
@@ -156,7 +156,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         }
                     }
                     write(ID_NEW_OBJECT);
-                    write(ID_CLASS_CLASS);
                     writeClassClass(classObj);
                     instanceCache.put(classObj, instanceSeq++);
                     return;

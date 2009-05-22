@@ -65,6 +65,7 @@ import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
+import static org.jboss.marshalling.river.Protocol.*;
 
 /**
  *
@@ -173,10 +174,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         depth ++;
         try {
             for (;;) switch (leadByte) {
-                case Protocol.ID_NULL: {
+                case ID_NULL: {
                     return null;
                 }
-                case Protocol.ID_REPEAT_OBJECT_FAR: {
+                case ID_REPEAT_OBJECT_FAR: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
@@ -187,7 +188,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
                 }
-                case Protocol.ID_REPEAT_OBJECT_NEAR: {
+                case ID_REPEAT_OBJECT_NEAR: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
@@ -198,7 +199,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
                 }
-                case Protocol.ID_REPEAT_OBJECT_NEARISH: {
+                case ID_REPEAT_OBJECT_NEARISH: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a backreference as unshared");
                     }
@@ -209,32 +210,32 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     throw new InvalidObjectException("Attempt to read a backreference with an invalid ID");
                 }
-                case Protocol.ID_NEW_OBJECT:
-                case Protocol.ID_NEW_OBJECT_UNSHARED: {
-                    if (unshared != (leadByte == Protocol.ID_NEW_OBJECT_UNSHARED)) {
+                case ID_NEW_OBJECT:
+                case ID_NEW_OBJECT_UNSHARED: {
+                    if (unshared != (leadByte == ID_NEW_OBJECT_UNSHARED)) {
                         throw sharedMismatch();
                     }
                     return doReadNewObject(readUnsignedByte(), unshared);
                 }
                 // v2 string types
-                case Protocol.ID_STRING_EMPTY: {
+                case ID_STRING_EMPTY: {
                     return "";
                 }
-                case Protocol.ID_STRING_SMALL: {
+                case ID_STRING_SMALL: {
                     // ignore unshared setting
                     int length = readUnsignedByte();
                     final String s = UTFUtils.readUTFBytes(this, length == 0 ? 0x100 : length);
                     instanceCache.add(s);
                     return s;
                 }
-                case Protocol.ID_STRING_MEDIUM: {
+                case ID_STRING_MEDIUM: {
                     // ignore unshared setting
                     int length = readUnsignedShort();
                     final String s = UTFUtils.readUTFBytes(this, length == 0 ? 0x10000 : length);
                     instanceCache.add(s);
                     return s;
                 }
-                case Protocol.ID_STRING_LARGE: {
+                case ID_STRING_LARGE: {
                     // ignore unshared setting
                     int length = readInt();
                     if (length <= 0) {
@@ -244,9 +245,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     instanceCache.add(s);
                     return s;
                 }
-                case Protocol.ID_ARRAY_EMPTY:
-                case Protocol.ID_ARRAY_EMPTY_UNSHARED: {
-                    if (unshared != (leadByte == Protocol.ID_ARRAY_EMPTY_UNSHARED)) {
+                case ID_ARRAY_EMPTY:
+                case ID_ARRAY_EMPTY_UNSHARED: {
+                    if (unshared != (leadByte == ID_ARRAY_EMPTY_UNSHARED)) {
                         throw sharedMismatch();
                     }
                     final ArrayList<Object> instanceCache = this.instanceCache;
@@ -262,31 +263,31 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     return obj;
                 }
-                case Protocol.ID_ARRAY_SMALL:
-                case Protocol.ID_ARRAY_SMALL_UNSHARED: {
-                    if (unshared != (leadByte == Protocol.ID_ARRAY_SMALL_UNSHARED)) {
+                case ID_ARRAY_SMALL:
+                case ID_ARRAY_SMALL_UNSHARED: {
+                    if (unshared != (leadByte == ID_ARRAY_SMALL_UNSHARED)) {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedByte();
                     return doReadArray(len == 0 ? 0x100 : len, unshared);
                 }
-                case Protocol.ID_ARRAY_MEDIUM:
-                case Protocol.ID_ARRAY_MEDIUM_UNSHARED: {
-                    if (unshared != (leadByte == Protocol.ID_ARRAY_MEDIUM_UNSHARED)) {
+                case ID_ARRAY_MEDIUM:
+                case ID_ARRAY_MEDIUM_UNSHARED: {
+                    if (unshared != (leadByte == ID_ARRAY_MEDIUM_UNSHARED)) {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedShort();
                     return doReadArray(len == 0 ? 0x10000 : len, unshared);
                 }
-                case Protocol.ID_ARRAY_LARGE:
-                case Protocol.ID_ARRAY_LARGE_UNSHARED: {
-                    if (unshared != (leadByte == Protocol.ID_ARRAY_LARGE_UNSHARED)) {
+                case ID_ARRAY_LARGE:
+                case ID_ARRAY_LARGE_UNSHARED: {
+                    if (unshared != (leadByte == ID_ARRAY_LARGE_UNSHARED)) {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedShort();
                     return doReadArray(len, unshared);
                 }
-                case Protocol.ID_PREDEFINED_OBJECT: {
+                case ID_PREDEFINED_OBJECT: {
                     if (unshared) {
                         throw new InvalidObjectException("Attempt to read a predefined object as unshared");
                     }
@@ -300,210 +301,210 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         return objectTable.readObject(this);
                     }
                 }
-                case Protocol.ID_BOOLEAN_OBJECT_TRUE: {
+                case ID_BOOLEAN_OBJECT_TRUE: {
                     return objectResolver.readResolve(Boolean.TRUE);
                 }
-                case Protocol.ID_BOOLEAN_OBJECT_FALSE: {
+                case ID_BOOLEAN_OBJECT_FALSE: {
                     return objectResolver.readResolve(Boolean.FALSE);
                 }
-                case Protocol.ID_BYTE_OBJECT: {
+                case ID_BYTE_OBJECT: {
                     return objectResolver.readResolve(Byte.valueOf(readByte()));
                 }
-                case Protocol.ID_SHORT_OBJECT: {
+                case ID_SHORT_OBJECT: {
                     return objectResolver.readResolve(Short.valueOf(readShort()));
                 }
-                case Protocol.ID_INTEGER_OBJECT: {
+                case ID_INTEGER_OBJECT: {
                     return objectResolver.readResolve(Integer.valueOf(readInt()));
                 }
-                case Protocol.ID_LONG_OBJECT: {
+                case ID_LONG_OBJECT: {
                     return objectResolver.readResolve(Long.valueOf(readLong()));
                 }
-                case Protocol.ID_FLOAT_OBJECT: {
+                case ID_FLOAT_OBJECT: {
                     return objectResolver.readResolve(Float.valueOf(readFloat()));
                 }
-                case Protocol.ID_DOUBLE_OBJECT: {
+                case ID_DOUBLE_OBJECT: {
                     return objectResolver.readResolve(Double.valueOf(readDouble()));
                 }
-                case Protocol.ID_CHARACTER_OBJECT: {
+                case ID_CHARACTER_OBJECT: {
                     return objectResolver.readResolve(Character.valueOf(readChar()));
                 }
-                case Protocol.ID_PRIM_BYTE: {
+                case ID_PRIM_BYTE: {
                     return byte.class;
                 }
-                case Protocol.ID_PRIM_BOOLEAN: {
+                case ID_PRIM_BOOLEAN: {
                     return boolean.class;
                 }
-                case Protocol.ID_PRIM_CHAR: {
+                case ID_PRIM_CHAR: {
                     return char.class;
                 }
-                case Protocol.ID_PRIM_DOUBLE: {
+                case ID_PRIM_DOUBLE: {
                     return double.class;
                 }
-                case Protocol.ID_PRIM_FLOAT: {
+                case ID_PRIM_FLOAT: {
                     return float.class;
                 }
-                case Protocol.ID_PRIM_INT: {
+                case ID_PRIM_INT: {
                     return int.class;
                 }
-                case Protocol.ID_PRIM_LONG: {
+                case ID_PRIM_LONG: {
                     return long.class;
                 }
-                case Protocol.ID_PRIM_SHORT: {
+                case ID_PRIM_SHORT: {
                     return short.class;
                 }
 
-                case Protocol.ID_VOID: {
+                case ID_VOID: {
                     return void.class;
                 }
 
-                case Protocol.ID_BYTE_CLASS: {
+                case ID_BYTE_CLASS: {
                     return Byte.class;
                 }
-                case Protocol.ID_BOOLEAN_CLASS: {
+                case ID_BOOLEAN_CLASS: {
                     return Boolean.class;
                 }
-                case Protocol.ID_CHARACTER_CLASS: {
+                case ID_CHARACTER_CLASS: {
                     return Character.class;
                 }
-                case Protocol.ID_DOUBLE_CLASS: {
+                case ID_DOUBLE_CLASS: {
                     return Double.class;
                 }
-                case Protocol.ID_FLOAT_CLASS: {
+                case ID_FLOAT_CLASS: {
                     return Float.class;
                 }
-                case Protocol.ID_INTEGER_CLASS: {
+                case ID_INTEGER_CLASS: {
                     return Integer.class;
                 }
-                case Protocol.ID_LONG_CLASS: {
+                case ID_LONG_CLASS: {
                     return Long.class;
                 }
-                case Protocol.ID_SHORT_CLASS: {
+                case ID_SHORT_CLASS: {
                     return Short.class;
                 }
 
-                case Protocol.ID_VOID_CLASS: {
+                case ID_VOID_CLASS: {
                     return Void.class;
                 }
 
-                case Protocol.ID_OBJECT_CLASS: {
+                case ID_OBJECT_CLASS: {
                     return Object.class;
                 }
-                case Protocol.ID_CLASS_CLASS: {
+                case ID_CLASS_CLASS: {
                     return Class.class;
                 }
-                case Protocol.ID_STRING_CLASS: {
+                case ID_STRING_CLASS: {
                     return String.class;
                 }
-                case Protocol.ID_ENUM_CLASS: {
+                case ID_ENUM_CLASS: {
                     return Enum.class;
                 }
 
-                case Protocol.ID_BYTE_ARRAY_CLASS: {
+                case ID_BYTE_ARRAY_CLASS: {
                     return byte[].class;
                 }
-                case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+                case ID_BOOLEAN_ARRAY_CLASS: {
                     return boolean[].class;
                 }
-                case Protocol.ID_CHAR_ARRAY_CLASS: {
+                case ID_CHAR_ARRAY_CLASS: {
                     return char[].class;
                 }
-                case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+                case ID_DOUBLE_ARRAY_CLASS: {
                     return double[].class;
                 }
-                case Protocol.ID_FLOAT_ARRAY_CLASS: {
+                case ID_FLOAT_ARRAY_CLASS: {
                     return float[].class;
                 }
-                case Protocol.ID_INT_ARRAY_CLASS: {
+                case ID_INT_ARRAY_CLASS: {
                     return int[].class;
                 }
-                case Protocol.ID_LONG_ARRAY_CLASS: {
+                case ID_LONG_ARRAY_CLASS: {
                     return long[].class;
                 }
-                case Protocol.ID_SHORT_ARRAY_CLASS: {
+                case ID_SHORT_ARRAY_CLASS: {
                     return short[].class;
                 }
 
-                case Protocol.ID_CC_ARRAY_LIST: {
+                case ID_CC_ARRAY_LIST: {
                     return ArrayList.class;
                 }
-                case Protocol.ID_CC_HASH_MAP: {
+                case ID_CC_HASH_MAP: {
                     return HashMap.class;
                 }
-                case Protocol.ID_CC_HASH_SET: {
+                case ID_CC_HASH_SET: {
                     return HashSet.class;
                 }
-                case Protocol.ID_CC_HASHTABLE: {
+                case ID_CC_HASHTABLE: {
                     return Hashtable.class;
                 }
-                case Protocol.ID_CC_IDENTITY_HASH_MAP: {
+                case ID_CC_IDENTITY_HASH_MAP: {
                     return HashMap.class;
                 }
-                case Protocol.ID_CC_LINKED_HASH_MAP: {
+                case ID_CC_LINKED_HASH_MAP: {
                     return LinkedHashMap.class;
                 }
-                case Protocol.ID_CC_LINKED_HASH_SET: {
+                case ID_CC_LINKED_HASH_SET: {
                     return LinkedHashSet.class;
                 }
-                case Protocol.ID_CC_LINKED_LIST: {
+                case ID_CC_LINKED_LIST: {
                     return LinkedList.class;
                 }
-                case Protocol.ID_CC_TREE_MAP: {
+                case ID_CC_TREE_MAP: {
                     return TreeMap.class;
                 }
-                case Protocol.ID_CC_TREE_SET: {
+                case ID_CC_TREE_SET: {
                     return TreeSet.class;
                 }
 
-                case Protocol.ID_SINGLETON_LIST_OBJECT: {
+                case ID_SINGLETON_LIST_OBJECT: {
                     return objectResolver.readResolve(Collections.singletonList(doReadObject(false)));
                 }
-                case Protocol.ID_SINGLETON_SET_OBJECT: {
+                case ID_SINGLETON_SET_OBJECT: {
                     return objectResolver.readResolve(Collections.singleton(doReadObject(false)));
                 }
-                case Protocol.ID_SINGLETON_MAP_OBJECT: {
+                case ID_SINGLETON_MAP_OBJECT: {
                     return objectResolver.readResolve(Collections.singletonMap(doReadObject(false), doReadObject(false)));
                 }
 
-                case Protocol.ID_EMPTY_LIST_OBJECT: {
+                case ID_EMPTY_LIST_OBJECT: {
                     return Collections.emptyList();
                 }
-                case Protocol.ID_EMPTY_SET_OBJECT: {
+                case ID_EMPTY_SET_OBJECT: {
                     return Collections.emptySet();
                 }
-                case Protocol.ID_EMPTY_MAP_OBJECT: {
+                case ID_EMPTY_MAP_OBJECT: {
                     return Collections.emptyMap();
                 }
 
-                case Protocol.ID_COLLECTION_EMPTY:
-                case Protocol.ID_COLLECTION_EMPTY_UNSHARED:
-                case Protocol.ID_COLLECTION_SMALL:
-                case Protocol.ID_COLLECTION_SMALL_UNSHARED:
-                case Protocol.ID_COLLECTION_MEDIUM:
-                case Protocol.ID_COLLECTION_MEDIUM_UNSHARED:
-                case Protocol.ID_COLLECTION_LARGE:
-                case Protocol.ID_COLLECTION_LARGE_UNSHARED:
+                case ID_COLLECTION_EMPTY:
+                case ID_COLLECTION_EMPTY_UNSHARED:
+                case ID_COLLECTION_SMALL:
+                case ID_COLLECTION_SMALL_UNSHARED:
+                case ID_COLLECTION_MEDIUM:
+                case ID_COLLECTION_MEDIUM_UNSHARED:
+                case ID_COLLECTION_LARGE:
+                case ID_COLLECTION_LARGE_UNSHARED:
                 {
                     final int len;
                     switch (leadByte) {
-                        case Protocol.ID_COLLECTION_EMPTY:
-                        case Protocol.ID_COLLECTION_EMPTY_UNSHARED: {
+                        case ID_COLLECTION_EMPTY:
+                        case ID_COLLECTION_EMPTY_UNSHARED: {
                             len = 0;
                             break;
                         }
-                        case Protocol.ID_COLLECTION_SMALL:
-                        case Protocol.ID_COLLECTION_SMALL_UNSHARED: {
+                        case ID_COLLECTION_SMALL:
+                        case ID_COLLECTION_SMALL_UNSHARED: {
                             int b = readUnsignedByte();
                             len = b == 0 ? 0x100 : b;
                             break;
                         }
-                        case Protocol.ID_COLLECTION_MEDIUM:
-                        case Protocol.ID_COLLECTION_MEDIUM_UNSHARED: {
+                        case ID_COLLECTION_MEDIUM:
+                        case ID_COLLECTION_MEDIUM_UNSHARED: {
                             int b = readUnsignedShort();
                             len = b == 0 ? 0x10000 : b;
                             break;
                         }
-                        case Protocol.ID_COLLECTION_LARGE:
-                        case Protocol.ID_COLLECTION_LARGE_UNSHARED: {
+                        case ID_COLLECTION_LARGE:
+                        case ID_COLLECTION_LARGE_UNSHARED: {
                             len = readInt();
                             break;
                         }
@@ -515,7 +516,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int idx;
                     final ArrayList<Object> instanceCache = this.instanceCache;
                     switch (id) {
-                        case Protocol.ID_CC_ARRAY_LIST: {
+                        case ID_CC_ARRAY_LIST: {
                             final Collection target = new ArrayList(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -530,7 +531,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_HASH_SET: {
+                        case ID_CC_HASH_SET: {
                             final Collection target = new HashSet(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -545,7 +546,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_LINKED_HASH_SET: {
+                        case ID_CC_LINKED_HASH_SET: {
                             final Collection target = new LinkedHashSet(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -560,7 +561,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_LINKED_LIST: {
+                        case ID_CC_LINKED_LIST: {
                             final Collection target = new LinkedList();
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -575,7 +576,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_TREE_SET: {
+                        case ID_CC_TREE_SET: {
                             final Collection target = new TreeSet((Comparator)doReadObject(false));
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -591,7 +592,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return resolvedObject;
                         }
 
-                        case Protocol.ID_CC_HASH_MAP: {
+                        case ID_CC_HASH_MAP: {
                             final Map target = new HashMap(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -606,7 +607,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_HASHTABLE: {
+                        case ID_CC_HASHTABLE: {
                             final Map target = new Hashtable(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -621,7 +622,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_IDENTITY_HASH_MAP: {
+                        case ID_CC_IDENTITY_HASH_MAP: {
                             final Map target = new IdentityHashMap(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -636,7 +637,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_LINKED_HASH_MAP: {
+                        case ID_CC_LINKED_HASH_MAP: {
                             final Map target = new LinkedHashMap(len);
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -651,7 +652,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             }
                             return resolvedObject;
                         }
-                        case Protocol.ID_CC_TREE_MAP: {
+                        case ID_CC_TREE_MAP: {
                             final Map target = new TreeMap((Comparator)doReadObject(false));
                             idx = instanceCache.size();
                             instanceCache.add(target);
@@ -672,7 +673,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                 }
 
-                case Protocol.ID_CLEAR_CLASS_CACHE: {
+                case ID_CLEAR_CLASS_CACHE: {
                     if (depth > 1) {
                         throw new StreamCorruptedException("ID_CLEAR_CLASS_CACHE token in the middle of stream processing");
                     }
@@ -681,7 +682,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     leadByte = readUnsignedByte();
                     continue;
                 }
-                case Protocol.ID_CLEAR_INSTANCE_CACHE: {
+                case ID_CLEAR_INSTANCE_CACHE: {
                     if (depth > 1) {
                         throw new StreamCorruptedException("ID_CLEAR_INSTANCE_CACHE token in the middle of stream processing");
                     }
@@ -704,32 +705,32 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
         final ArrayList<ClassDescriptor> classCache = this.classCache;
         switch (classType) {
-            case Protocol.ID_REPEAT_CLASS_FAR: {
+            case ID_REPEAT_CLASS_FAR: {
                 return classCache.get(readInt());
             }
-            case Protocol.ID_REPEAT_CLASS_NEAR: {
+            case ID_REPEAT_CLASS_NEAR: {
                 return classCache.get((readByte() | 0xffffff00) + classCache.size());
             }
-            case Protocol.ID_REPEAT_CLASS_NEARISH: {
+            case ID_REPEAT_CLASS_NEARISH: {
                 return classCache.get((readShort() | 0xffff0000) + classCache.size());
             }
-            case Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS: {
+            case ID_PREDEFINED_ENUM_TYPE_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, Protocol.ID_ENUM_TYPE_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_ENUM_TYPE_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PREDEFINED_EXTERNALIZABLE_CLASS: {
+            case ID_PREDEFINED_EXTERNALIZABLE_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, Protocol.ID_EXTERNALIZABLE_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_EXTERNALIZABLE_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PREDEFINED_EXTERNALIZER_CLASS: {
+            case ID_PREDEFINED_EXTERNALIZER_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
@@ -738,40 +739,40 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PREDEFINED_PLAIN_CLASS: {
+            case ID_PREDEFINED_PLAIN_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, Protocol.ID_PLAIN_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_PLAIN_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PREDEFINED_PROXY_CLASS: {
+            case ID_PREDEFINED_PROXY_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, Protocol.ID_PROXY_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_PROXY_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PREDEFINED_SERIALIZABLE_CLASS: {
+            case ID_PREDEFINED_SERIALIZABLE_CLASS: {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
                 final SerializableClass serializableClass = registry.lookup(type);
-                int descType = version > 0 && serializableClass.hasWriteObject() ? Protocol.ID_WRITE_OBJECT_CLASS : Protocol.ID_SERIALIZABLE_CLASS;
+                int descType = version > 0 && serializableClass.hasWriteObject() ? ID_WRITE_OBJECT_CLASS : ID_SERIALIZABLE_CLASS;
                 final ClassDescriptor descriptor = new SerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte()), serializableClass.getFields(), descType);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PLAIN_CLASS: {
+            case ID_PLAIN_CLASS: {
                 final String className = readString();
                 final Class<?> clazz = doResolveClass(className, 0L);
-                final ClassDescriptor descriptor = new ClassDescriptor(clazz, Protocol.ID_PLAIN_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(clazz, ID_PLAIN_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
-            case Protocol.ID_PROXY_CLASS: {
+            case ID_PROXY_CLASS: {
                 String[] interfaces = new String[readInt()];
                 for (int i = 0; i < interfaces.length; i ++) {
                     interfaces[i] = readString();
@@ -779,17 +780,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final ClassDescriptor descriptor;
                 if (version == 1) {
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(blockUnmarshaller, interfaces), Protocol.ID_PROXY_CLASS);
+                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(blockUnmarshaller, interfaces), ID_PROXY_CLASS);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
                 } else {
-                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(this, interfaces), Protocol.ID_PROXY_CLASS);
+                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(this, interfaces), ID_PROXY_CLASS);
                 }
                 classCache.add(descriptor);
                 return descriptor;
             }
-            case Protocol.ID_WRITE_OBJECT_CLASS:
-            case Protocol.ID_SERIALIZABLE_CLASS: {
+            case ID_WRITE_OBJECT_CLASS:
+            case ID_SERIALIZABLE_CLASS: {
                 int idx = classCache.size();
                 classCache.add(null);
                 final String className = readString();
@@ -833,15 +834,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
-            case Protocol.ID_EXTERNALIZABLE_CLASS: {
+            case ID_EXTERNALIZABLE_CLASS: {
                 final String className = readString();
                 final long uid = readLong();
                 final Class<?> clazz = doResolveClass(className, uid);
-                final ClassDescriptor descriptor = new ClassDescriptor(clazz, Protocol.ID_EXTERNALIZABLE_CLASS);
+                final ClassDescriptor descriptor = new ClassDescriptor(clazz, ID_EXTERNALIZABLE_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
-            case Protocol.ID_EXTERNALIZER_CLASS: {
+            case ID_EXTERNALIZER_CLASS: {
                 final String className = readString();
                 int idx = classCache.size();
                 classCache.add(null);
@@ -852,111 +853,111 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return descriptor;
             }
 
-            case Protocol.ID_ENUM_TYPE_CLASS: {
-                final ClassDescriptor descriptor = new ClassDescriptor(doResolveClass(readString(), 0L), Protocol.ID_ENUM_TYPE_CLASS);
+            case ID_ENUM_TYPE_CLASS: {
+                final ClassDescriptor descriptor = new ClassDescriptor(doResolveClass(readString(), 0L), ID_ENUM_TYPE_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
-            case Protocol.ID_OBJECT_ARRAY_TYPE_CLASS: {
+            case ID_OBJECT_ARRAY_TYPE_CLASS: {
                 final ClassDescriptor elementType = doReadClassDescriptor(readUnsignedByte());
-                final ClassDescriptor arrayDescriptor = new ClassDescriptor(Array.newInstance(elementType.getType(), 0).getClass(), Protocol.ID_OBJECT_ARRAY_TYPE_CLASS);
+                final ClassDescriptor arrayDescriptor = new ClassDescriptor(Array.newInstance(elementType.getType(), 0).getClass(), ID_OBJECT_ARRAY_TYPE_CLASS);
                 classCache.add(arrayDescriptor);
                 return arrayDescriptor;
             }
 
-            case Protocol.ID_STRING_CLASS: {
+            case ID_STRING_CLASS: {
                 return ClassDescriptor.STRING_DESCRIPTOR;
             }
-            case Protocol.ID_OBJECT_CLASS: {
+            case ID_OBJECT_CLASS: {
                 return ClassDescriptor.OBJECT_DESCRIPTOR;
             }
-            case Protocol.ID_CLASS_CLASS: {
+            case ID_CLASS_CLASS: {
                 return ClassDescriptor.CLASS_DESCRIPTOR;
             }
-            case Protocol.ID_ENUM_CLASS: {
+            case ID_ENUM_CLASS: {
                 return ClassDescriptor.ENUM_DESCRIPTOR;
             }
 
-            case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+            case ID_BOOLEAN_ARRAY_CLASS: {
                 return ClassDescriptor.BOOLEAN_ARRAY;
             }
-            case Protocol.ID_BYTE_ARRAY_CLASS: {
+            case ID_BYTE_ARRAY_CLASS: {
                 return ClassDescriptor.BYTE_ARRAY;
             }
-            case Protocol.ID_SHORT_ARRAY_CLASS: {
+            case ID_SHORT_ARRAY_CLASS: {
                 return ClassDescriptor.SHORT_ARRAY;
             }
-            case Protocol.ID_INT_ARRAY_CLASS: {
+            case ID_INT_ARRAY_CLASS: {
                 return ClassDescriptor.INT_ARRAY;
             }
-            case Protocol.ID_LONG_ARRAY_CLASS: {
+            case ID_LONG_ARRAY_CLASS: {
                 return ClassDescriptor.LONG_ARRAY;
             }
-            case Protocol.ID_CHAR_ARRAY_CLASS: {
+            case ID_CHAR_ARRAY_CLASS: {
                 return ClassDescriptor.CHAR_ARRAY;
             }
-            case Protocol.ID_FLOAT_ARRAY_CLASS: {
+            case ID_FLOAT_ARRAY_CLASS: {
                 return ClassDescriptor.FLOAT_ARRAY;
             }
-            case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+            case ID_DOUBLE_ARRAY_CLASS: {
                 return ClassDescriptor.DOUBLE_ARRAY;
             }
 
-            case Protocol.ID_PRIM_BOOLEAN: {
+            case ID_PRIM_BOOLEAN: {
                 return ClassDescriptor.BOOLEAN;
             }
-            case Protocol.ID_PRIM_BYTE: {
+            case ID_PRIM_BYTE: {
                 return ClassDescriptor.BYTE;
             }
-            case Protocol.ID_PRIM_CHAR: {
+            case ID_PRIM_CHAR: {
                 return ClassDescriptor.CHAR;
             }
-            case Protocol.ID_PRIM_DOUBLE: {
+            case ID_PRIM_DOUBLE: {
                 return ClassDescriptor.DOUBLE;
             }
-            case Protocol.ID_PRIM_FLOAT: {
+            case ID_PRIM_FLOAT: {
                 return ClassDescriptor.FLOAT;
             }
-            case Protocol.ID_PRIM_INT: {
+            case ID_PRIM_INT: {
                 return ClassDescriptor.INT;
             }
-            case Protocol.ID_PRIM_LONG: {
+            case ID_PRIM_LONG: {
                 return ClassDescriptor.LONG;
             }
-            case Protocol.ID_PRIM_SHORT: {
+            case ID_PRIM_SHORT: {
                 return ClassDescriptor.SHORT;
             }
 
-            case Protocol.ID_VOID: {
+            case ID_VOID: {
                 return ClassDescriptor.VOID;
             }
 
-            case Protocol.ID_BOOLEAN_CLASS: {
+            case ID_BOOLEAN_CLASS: {
                 return ClassDescriptor.BOOLEAN_OBJ;
             }
-            case Protocol.ID_BYTE_CLASS: {
+            case ID_BYTE_CLASS: {
                 return ClassDescriptor.BYTE_OBJ;
             }
-            case Protocol.ID_SHORT_CLASS: {
+            case ID_SHORT_CLASS: {
                 return ClassDescriptor.SHORT_OBJ;
             }
-            case Protocol.ID_INTEGER_CLASS: {
+            case ID_INTEGER_CLASS: {
                 return ClassDescriptor.INTEGER_OBJ;
             }
-            case Protocol.ID_LONG_CLASS: {
+            case ID_LONG_CLASS: {
                 return ClassDescriptor.LONG_OBJ;
             }
-            case Protocol.ID_CHARACTER_CLASS: {
+            case ID_CHARACTER_CLASS: {
                 return ClassDescriptor.CHARACTER_OBJ;
             }
-            case Protocol.ID_FLOAT_CLASS: {
+            case ID_FLOAT_CLASS: {
                 return ClassDescriptor.FLOAT_OBJ;
             }
-            case Protocol.ID_DOUBLE_CLASS: {
+            case ID_DOUBLE_CLASS: {
                 return ClassDescriptor.DOUBLE_OBJ;
             }
 
-            case Protocol.ID_VOID_CLASS: {
+            case ID_VOID_CLASS: {
                 return ClassDescriptor.VOID_OBJ;
             }
 
@@ -1005,7 +1006,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         super.doStart();
         if (configuredVersion > 0) {
             int version = readUnsignedByte();
-            if (version > Protocol.MAX_VERSION) {
+            if (version > MAX_VERSION) {
                 throw new IOException("Unsupported protocol version " + version);
             }
             this.version = version;
@@ -1029,7 +1030,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final int classType = descriptor.getTypeID();
         final List<Object> instanceCache = this.instanceCache;
         switch (classType) {
-            case Protocol.ID_PROXY_CLASS: {
+            case ID_PROXY_CLASS: {
                 final Class<?> type = descriptor.getType();
                 final Object obj = createProxyInstance(creator, type);
                 final int idx = instanceCache.size();
@@ -1047,8 +1048,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 return resolvedObject;
             }
-            case Protocol.ID_WRITE_OBJECT_CLASS:
-            case Protocol.ID_SERIALIZABLE_CLASS: {
+            case ID_WRITE_OBJECT_CLASS:
+            case ID_SERIALIZABLE_CLASS: {
                 final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                 final Class<?> type = descriptor.getType();
                 final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
@@ -1064,7 +1065,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 return resolvedObject;
             }
-            case Protocol.ID_EXTERNALIZABLE_CLASS: {
+            case ID_EXTERNALIZABLE_CLASS: {
                 final Class<?> type = descriptor.getType();
                 final SerializableClass serializableClass = registry.lookup(type);
                 final Externalizable obj = (Externalizable) creator.create(type);
@@ -1086,7 +1087,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 return resolvedObject;
             }
-            case Protocol.ID_EXTERNALIZER_CLASS: {
+            case ID_EXTERNALIZER_CLASS: {
                 final int idx = instanceCache.size();
                 instanceCache.add(null);
                 Externalizer externalizer = ((ExternalizerClassDescriptor) descriptor).getExternalizer();
@@ -1113,7 +1114,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 return resolvedObject;
             }
-            case Protocol.ID_ENUM_TYPE_CLASS: {
+            case ID_ENUM_TYPE_CLASS: {
                 final String name = readString();
                 final Enum obj = resolveEnumConstant(descriptor, name);
                 final int idx = instanceCache.size();
@@ -1126,72 +1127,72 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 return resolvedObject;
             }
-            case Protocol.ID_OBJECT_ARRAY_TYPE_CLASS: {
+            case ID_OBJECT_ARRAY_TYPE_CLASS: {
                 return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared);
             }
-            case Protocol.ID_STRING_CLASS: {
+            case ID_STRING_CLASS: {
                 // v1 string
                 final String obj = readString();
                 final Object resolvedObject = objectResolver.readResolve(obj);
                 instanceCache.add(unshared ? null : resolvedObject);
                 return resolvedObject;
             }
-            case Protocol.ID_CLASS_CLASS: {
+            case ID_CLASS_CLASS: {
                 final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                 // Classes are not resolved and may not be unshared!
                 final Class<?> obj = nestedDescriptor.getType();
                 return obj;
             }
-            case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+            case ID_BOOLEAN_ARRAY_CLASS: {
                 return doReadBooleanArray(readInt(), unshared);
             }
-            case Protocol.ID_BYTE_ARRAY_CLASS: {
+            case ID_BYTE_ARRAY_CLASS: {
                 return doReadByteArray(readInt(), unshared);
             }
-            case Protocol.ID_SHORT_ARRAY_CLASS: {
+            case ID_SHORT_ARRAY_CLASS: {
                 return doReadShortArray(readInt(), unshared);
             }
-            case Protocol.ID_INT_ARRAY_CLASS: {
+            case ID_INT_ARRAY_CLASS: {
                 return doReadIntArray(readInt(), unshared);
             }
-            case Protocol.ID_LONG_ARRAY_CLASS: {
+            case ID_LONG_ARRAY_CLASS: {
                 return doReadLongArray(readInt(), unshared);
             }
-            case Protocol.ID_CHAR_ARRAY_CLASS: {
+            case ID_CHAR_ARRAY_CLASS: {
                 return doReadCharArray(readInt(), unshared);
             }
-            case Protocol.ID_FLOAT_ARRAY_CLASS: {
+            case ID_FLOAT_ARRAY_CLASS: {
                 return doReadFloatArray(readInt(), unshared);
             }
-            case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+            case ID_DOUBLE_ARRAY_CLASS: {
                 return doReadDoubleArray(readInt(), unshared);
             }
-            case Protocol.ID_BOOLEAN_CLASS: {
+            case ID_BOOLEAN_CLASS: {
                 return objectResolver.readResolve(Boolean.valueOf(readBoolean()));
             }
-            case Protocol.ID_BYTE_CLASS: {
+            case ID_BYTE_CLASS: {
                 return objectResolver.readResolve(Byte.valueOf(readByte()));
             }
-            case Protocol.ID_SHORT_CLASS: {
+            case ID_SHORT_CLASS: {
                 return objectResolver.readResolve(Short.valueOf(readShort()));
             }
-            case Protocol.ID_INTEGER_CLASS: {
+            case ID_INTEGER_CLASS: {
                 return objectResolver.readResolve(Integer.valueOf(readInt()));
             }
-            case Protocol.ID_LONG_CLASS: {
+            case ID_LONG_CLASS: {
                 return objectResolver.readResolve(Long.valueOf(readLong()));
             }
-            case Protocol.ID_CHARACTER_CLASS: {
+            case ID_CHARACTER_CLASS: {
                 return objectResolver.readResolve(Character.valueOf(readChar()));
             }
-            case Protocol.ID_FLOAT_CLASS: {
+            case ID_FLOAT_CLASS: {
                 return objectResolver.readResolve(Float.valueOf(readFloat()));
             }
-            case Protocol.ID_DOUBLE_CLASS: {
+            case ID_DOUBLE_CLASS: {
                 return objectResolver.readResolve(Double.valueOf(readDouble()));
             }
-            case Protocol.ID_OBJECT_CLASS:
-            case Protocol.ID_PLAIN_CLASS: {
+            case ID_OBJECT_CLASS:
+            case ID_PLAIN_CLASS: {
                 throw new NotSerializableException("(remote)" + descriptor.getType().getName());
             }
             default: {
@@ -1326,28 +1327,28 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private Object doReadArray(final int cnt, final boolean unshared) throws ClassNotFoundException, IOException {
         final int leadByte = readUnsignedByte();
         switch (leadByte) {
-            case Protocol.ID_PRIM_BOOLEAN: {
+            case ID_PRIM_BOOLEAN: {
                 return doReadBooleanArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_BYTE: {
+            case ID_PRIM_BYTE: {
                 return doReadByteArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_CHAR: {
+            case ID_PRIM_CHAR: {
                 return doReadCharArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_DOUBLE: {
+            case ID_PRIM_DOUBLE: {
                 return doReadDoubleArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_FLOAT: {
+            case ID_PRIM_FLOAT: {
                 return doReadFloatArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_INT: {
+            case ID_PRIM_INT: {
                 return doReadIntArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_LONG: {
+            case ID_PRIM_LONG: {
                 return doReadLongArray(cnt, unshared);
             }
-            case Protocol.ID_PRIM_SHORT: {
+            case ID_PRIM_SHORT: {
                 return doReadShortArray(cnt, unshared);
             }
             default: {
@@ -1381,7 +1382,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             final RiverObjectInputStream.State restoreState = objectInputStream.start();
             boolean ok = false;
             try {
-                if (typeId == Protocol.ID_WRITE_OBJECT_CLASS) {
+                if (typeId == ID_WRITE_OBJECT_CLASS) {
                     // protocol version >= 1; read fields
                     info.callReadObject(obj, objectInputStream);
                     blockUnmarshaller.readToEndBlockData();
@@ -1407,7 +1408,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
         } else {
             readFields(obj, descriptor);
-            if (typeId == Protocol.ID_WRITE_OBJECT_CLASS) {
+            if (typeId == ID_WRITE_OBJECT_CLASS) {
                 // protocol version >= 1 with useless user data
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();

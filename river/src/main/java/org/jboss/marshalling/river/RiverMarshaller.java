@@ -59,6 +59,7 @@ import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.IdentityIntMap;
+import static org.jboss.marshalling.river.Protocol.*;
 
 /**
  *
@@ -76,7 +77,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
-        if (configuredVersion > Protocol.MAX_VERSION) {
+        if (configuredVersion > MAX_VERSION) {
             throw new IOException("Unsupported protocol version " + configuredVersion);
         }
         this.registry = registry;
@@ -99,7 +100,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         try {
             for (;;) {
                 if (obj == null) {
-                    write(Protocol.ID_NULL);
+                    write(ID_NULL);
                     return;
                 }
                 final int rid;
@@ -107,21 +108,21 @@ public class RiverMarshaller extends AbstractMarshaller {
                     if (configuredVersion >= 2) {
                         final int diff = rid - instanceSeq;
                         if (diff >= -256) {
-                            write(Protocol.ID_REPEAT_OBJECT_NEAR);
+                            write(ID_REPEAT_OBJECT_NEAR);
                             write(diff);
                         } else if (diff >= -65536) {
-                            write(Protocol.ID_REPEAT_OBJECT_NEARISH);
+                            write(ID_REPEAT_OBJECT_NEARISH);
                             writeShort(diff);
                         }
                         return;
                     }
-                    write(Protocol.ID_REPEAT_OBJECT_FAR);
+                    write(ID_REPEAT_OBJECT_FAR);
                     writeInt(rid);
                     return;
                 }
                 final ObjectTable.Writer objectTableWriter;
                 if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
-                    write(Protocol.ID_PREDEFINED_OBJECT);
+                    write(ID_PREDEFINED_OBJECT);
                     if (configuredVersion == 1) {
                         objectTableWriter.writeObject(getBlockMarshaller(), obj);
                         writeEndBlock();
@@ -133,18 +134,18 @@ public class RiverMarshaller extends AbstractMarshaller {
                 objClass = obj.getClass();
                 id = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
                 // First, non-replaceable classes
-                if (id == Protocol.ID_CLASS_CLASS) {
+                if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
                     if (configuredVersion >= 2) {
                         final int cid = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(classObj, -1);
                         switch (cid) {
                             case -1:
-                            case Protocol.ID_SINGLETON_MAP_OBJECT:
-                            case Protocol.ID_SINGLETON_SET_OBJECT:
-                            case Protocol.ID_SINGLETON_LIST_OBJECT:
-                            case Protocol.ID_EMPTY_MAP_OBJECT:
-                            case Protocol.ID_EMPTY_SET_OBJECT:
-                            case Protocol.ID_EMPTY_LIST_OBJECT: {
+                            case ID_SINGLETON_MAP_OBJECT:
+                            case ID_SINGLETON_SET_OBJECT:
+                            case ID_SINGLETON_LIST_OBJECT:
+                            case ID_EMPTY_MAP_OBJECT:
+                            case ID_EMPTY_SET_OBJECT:
+                            case ID_EMPTY_LIST_OBJECT: {
                                  break;
                             }
 
@@ -154,8 +155,8 @@ public class RiverMarshaller extends AbstractMarshaller {
                             }
                         }
                     }
-                    write(Protocol.ID_NEW_OBJECT);
-                    write(Protocol.ID_CLASS_CLASS);
+                    write(ID_NEW_OBJECT);
+                    write(ID_CLASS_CLASS);
                     writeClassClass(classObj);
                     instanceCache.put(classObj, instanceSeq++);
                     return;
@@ -189,7 +190,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 // objClass cannot equal Enum.class because it is abstract
                 final Enum<?> theEnum = (Enum<?>) obj;
                 // enums are always shared
-                write(Protocol.ID_NEW_OBJECT);
+                write(ID_NEW_OBJECT);
                 writeEnumClass(theEnum.getDeclaringClass());
                 writeString(theEnum.name());
                 instanceCache.put(obj, instanceSeq++);
@@ -197,116 +198,116 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             // Now replaceable classes
             switch (id) {
-                case Protocol.ID_BYTE_CLASS: {
+                case ID_BYTE_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_BYTE_OBJECT);
+                        write(ID_BYTE_OBJECT);
                         writeByte(((Byte) obj).byteValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_BYTE_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_BYTE_CLASS);
                         writeByte(((Byte) obj).byteValue());
                     }
                     return;
                 }
-                case Protocol.ID_BOOLEAN_CLASS: {
+                case ID_BOOLEAN_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(((Boolean) obj).booleanValue() ? Protocol.ID_BOOLEAN_OBJECT_TRUE : Protocol.ID_BOOLEAN_OBJECT_FALSE);
+                        write(((Boolean) obj).booleanValue() ? ID_BOOLEAN_OBJECT_TRUE : ID_BOOLEAN_OBJECT_FALSE);
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_BOOLEAN_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_BOOLEAN_CLASS);
                         writeBoolean(((Boolean) obj).booleanValue());
                     }
                     return;
                 }
-                case Protocol.ID_CHARACTER_CLASS: {
+                case ID_CHARACTER_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_CHARACTER_OBJECT);
+                        write(ID_CHARACTER_OBJECT);
                         writeChar(((Character) obj).charValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_CHARACTER_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_CHARACTER_CLASS);
                         writeChar(((Character) obj).charValue());
                     }
                     return;
                 }
-                case Protocol.ID_DOUBLE_CLASS: {
+                case ID_DOUBLE_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_DOUBLE_OBJECT);
+                        write(ID_DOUBLE_OBJECT);
                         writeDouble(((Double) obj).doubleValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_DOUBLE_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_DOUBLE_CLASS);
                         writeDouble(((Double) obj).doubleValue());
                     }
                     return;
                 }
-                case Protocol.ID_FLOAT_CLASS: {
+                case ID_FLOAT_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_FLOAT_OBJECT);
+                        write(ID_FLOAT_OBJECT);
                         writeFloat(((Float) obj).floatValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_FLOAT_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_FLOAT_CLASS);
                         writeFloat(((Float) obj).floatValue());
                     }
                     return;
                 }
-                case Protocol.ID_INTEGER_CLASS: {
+                case ID_INTEGER_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_INTEGER_OBJECT);
+                        write(ID_INTEGER_OBJECT);
                         writeInt(((Integer) obj).intValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_INTEGER_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_INTEGER_CLASS);
                         writeInt(((Integer) obj).intValue());
                     }
                     return;
                 }
-                case Protocol.ID_LONG_CLASS: {
+                case ID_LONG_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_LONG_OBJECT);
+                        write(ID_LONG_OBJECT);
                         writeLong(((Long) obj).longValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_LONG_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_LONG_CLASS);
                         writeLong(((Long) obj).longValue());
                     }
                     return;
                 }
-                case Protocol.ID_SHORT_CLASS: {
+                case ID_SHORT_CLASS: {
                     if (configuredVersion >= 2) {
-                        write(Protocol.ID_SHORT_OBJECT);
+                        write(ID_SHORT_OBJECT);
                         writeShort(((Short) obj).shortValue());
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_SHORT_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_SHORT_CLASS);
                         writeShort(((Short) obj).shortValue());
                     }
                     return;
                 }
-                case Protocol.ID_STRING_CLASS: {
+                case ID_STRING_CLASS: {
                     final String string = (String) obj;
                     if (configuredVersion >= 2) {
                         final int len = string.length();
                         if (len == 0) {
-                            write(Protocol.ID_STRING_EMPTY);
+                            write(ID_STRING_EMPTY);
                             // don't cache empty strings
                             return;
                         } else if (len <= 256) {
-                            write(Protocol.ID_STRING_SMALL);
+                            write(ID_STRING_SMALL);
                             write(len);
                         } else if (len <= 65336) {
-                            write(Protocol.ID_STRING_MEDIUM);
+                            write(ID_STRING_MEDIUM);
                             writeShort(len);
                         } else {
-                            write(Protocol.ID_STRING_LARGE);
+                            write(ID_STRING_LARGE);
                             writeInt(len);
                         }
                         flush();
                         UTFUtils.writeUTFBytes(byteOutput, string);
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_STRING_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_STRING_CLASS);
                         writeString(string);
                     }
                     if (unshared) {
@@ -317,7 +318,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_BYTE_ARRAY_CLASS: {
+                case ID_BYTE_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -325,27 +326,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = bytes.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_BYTE);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_BYTE);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_BYTE);
+                            write(ID_PRIM_BYTE);
                             write(bytes, 0, len);
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_BYTE);
+                            write(ID_PRIM_BYTE);
                             write(bytes, 0, len);
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_BYTE);
+                            write(ID_PRIM_BYTE);
                             write(bytes, 0, len);
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_BYTE_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_BYTE_ARRAY_CLASS);
                         writeInt(len);
                         write(bytes, 0, len);
                     }
@@ -354,7 +355,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_BOOLEAN_ARRAY_CLASS: {
+                case ID_BOOLEAN_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -362,27 +363,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = booleans.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_BOOLEAN);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_BOOLEAN);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_BOOLEAN);
+                            write(ID_PRIM_BOOLEAN);
                             writeBooleanArray(booleans);
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_BOOLEAN);
+                            write(ID_PRIM_BOOLEAN);
                             writeBooleanArray(booleans);
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_BOOLEAN);
+                            write(ID_PRIM_BOOLEAN);
                             writeBooleanArray(booleans);
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_BOOLEAN_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_BOOLEAN_ARRAY_CLASS);
                         writeInt(len);
                         writeBooleanArray(booleans);
                     }
@@ -391,7 +392,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_CHAR_ARRAY_CLASS: {
+                case ID_CHAR_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -399,33 +400,33 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = chars.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_CHAR);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_CHAR);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_CHAR);
+                            write(ID_PRIM_CHAR);
                             for (int i = 0; i < len; i ++) {
                                 writeChar(chars[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_CHAR);
+                            write(ID_PRIM_CHAR);
                             for (int i = 0; i < len; i ++) {
                                 writeChar(chars[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_CHAR);
+                            write(ID_PRIM_CHAR);
                             for (int i = 0; i < len; i ++) {
                                 writeChar(chars[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_CHAR_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_CHAR_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeChar(chars[i]);
@@ -436,7 +437,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_SHORT_ARRAY_CLASS: {
+                case ID_SHORT_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -444,33 +445,33 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = shorts.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_SHORT);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_SHORT);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_SHORT);
+                            write(ID_PRIM_SHORT);
                             for (int i = 0; i < len; i ++) {
                                 writeShort(shorts[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_SHORT);
+                            write(ID_PRIM_SHORT);
                             for (int i = 0; i < len; i ++) {
                                 writeShort(shorts[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_SHORT);
+                            write(ID_PRIM_SHORT);
                             for (int i = 0; i < len; i ++) {
                                 writeShort(shorts[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_SHORT_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_SHORT_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeShort(shorts[i]);
@@ -481,7 +482,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_INT_ARRAY_CLASS: {
+                case ID_INT_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -489,33 +490,33 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = ints.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_INT);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_INT);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_INT);
+                            write(ID_PRIM_INT);
                             for (int i = 0; i < len; i ++) {
                                 writeInt(ints[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_INT);
+                            write(ID_PRIM_INT);
                             for (int i = 0; i < len; i ++) {
                                 writeInt(ints[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_INT);
+                            write(ID_PRIM_INT);
                             for (int i = 0; i < len; i ++) {
                                 writeInt(ints[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_INT_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_INT_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeInt(ints[i]);
@@ -526,7 +527,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_LONG_ARRAY_CLASS: {
+                case ID_LONG_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -534,33 +535,33 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = longs.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_LONG);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_LONG);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_LONG);
+                            write(ID_PRIM_LONG);
                             for (int i = 0; i < len; i ++) {
                                 writeLong(longs[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_LONG);
+                            write(ID_PRIM_LONG);
                             for (int i = 0; i < len; i ++) {
                                 writeLong(longs[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_LONG);
+                            write(ID_PRIM_LONG);
                             for (int i = 0; i < len; i ++) {
                                 writeLong(longs[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_LONG_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_LONG_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeLong(longs[i]);
@@ -571,7 +572,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_FLOAT_ARRAY_CLASS: {
+                case ID_FLOAT_ARRAY_CLASS: {
                     if (! unshared) {
                         instanceCache.put(obj, instanceSeq++);
                     }
@@ -579,33 +580,33 @@ public class RiverMarshaller extends AbstractMarshaller {
                     final int len = floats.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_FLOAT);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_FLOAT);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_FLOAT);
+                            write(ID_PRIM_FLOAT);
                             for (int i = 0; i < len; i ++) {
                                 writeFloat(floats[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_FLOAT);
+                            write(ID_PRIM_FLOAT);
                             for (int i = 0; i < len; i ++) {
                                 writeFloat(floats[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_FLOAT);
+                            write(ID_PRIM_FLOAT);
                             for (int i = 0; i < len; i ++) {
                                 writeFloat(floats[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_FLOAT_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_FLOAT_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeFloat(floats[i]);
@@ -616,39 +617,39 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_DOUBLE_ARRAY_CLASS: {
+                case ID_DOUBLE_ARRAY_CLASS: {
                     instanceCache.put(obj, instanceSeq++);
                     final double[] doubles = (double[]) obj;
                     final int len = doubles.length;
                     if (configuredVersion >= 2) {
                         if (len == 0) {
-                            write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
-                            write(Protocol.ID_PRIM_DOUBLE);
+                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                            write(ID_PRIM_DOUBLE);
                         } else if (len <= 256) {
-                            write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                             write(len);
-                            write(Protocol.ID_PRIM_DOUBLE);
+                            write(ID_PRIM_DOUBLE);
                             for (int i = 0; i < len; i ++) {
                                 writeDouble(doubles[i]);
                             }
                         } else if (len <= 65536) {
-                            write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                             writeShort(len);
-                            write(Protocol.ID_PRIM_DOUBLE);
+                            write(ID_PRIM_DOUBLE);
                             for (int i = 0; i < len; i ++) {
                                 writeDouble(doubles[i]);
                             }
                         } else {
-                            write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                             writeInt(len);
-                            write(Protocol.ID_PRIM_DOUBLE);
+                            write(ID_PRIM_DOUBLE);
                             for (int i = 0; i < len; i ++) {
                                 writeDouble(doubles[i]);
                             }
                         }
                     } else {
-                        write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
-                        write(Protocol.ID_DOUBLE_ARRAY_CLASS);
+                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+                        write(ID_DOUBLE_ARRAY_CLASS);
                         writeInt(len);
                         for (int i = 0; i < len; i ++) {
                             writeDouble(doubles[i]);
@@ -659,45 +660,45 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_CC_HASH_SET:
-                case Protocol.ID_CC_LINKED_HASH_SET:
-                case Protocol.ID_CC_TREE_SET:
-                case Protocol.ID_CC_ARRAY_LIST:
-                case Protocol.ID_CC_LINKED_LIST: {
+                case ID_CC_HASH_SET:
+                case ID_CC_LINKED_HASH_SET:
+                case ID_CC_TREE_SET:
+                case ID_CC_ARRAY_LIST:
+                case ID_CC_LINKED_LIST: {
                     instanceCache.put(obj, instanceSeq++);
                     final Collection<?> collection = (Collection<?>) obj;
                     final int len = collection.size();
                     if (len == 0) {
-                        write(unshared ? Protocol.ID_COLLECTION_EMPTY_UNSHARED : Protocol.ID_COLLECTION_EMPTY);
+                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_SET) {
+                        if (id == ID_CC_TREE_SET) {
                             doWriteObject(((TreeSet)collection).comparator(), false);
                         }
                     } else if (len <= 256) {
-                        write(unshared ? Protocol.ID_COLLECTION_SMALL_UNSHARED : Protocol.ID_COLLECTION_SMALL);
+                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
                         write(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_SET) {
+                        if (id == ID_CC_TREE_SET) {
                             doWriteObject(((TreeSet)collection).comparator(), false);
                         }
                         for (Object o : collection) {
                             doWriteObject(o, false);
                         }
                     } else if (len <= 65536) {
-                        write(unshared ? Protocol.ID_COLLECTION_MEDIUM_UNSHARED : Protocol.ID_COLLECTION_MEDIUM);
+                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
                         writeShort(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_SET) {
+                        if (id == ID_CC_TREE_SET) {
                             doWriteObject(((TreeSet)collection).comparator(), false);
                         }
                         for (Object o : collection) {
                             doWriteObject(o, false);
                         }
                     } else {
-                        write(unshared ? Protocol.ID_COLLECTION_LARGE_UNSHARED : Protocol.ID_COLLECTION_LARGE);
+                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
                         writeInt(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_SET) {
+                        if (id == ID_CC_TREE_SET) {
                             doWriteObject(((TreeSet)collection).comparator(), false);
                         }
                         for (Object o : collection) {
@@ -709,25 +710,25 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case Protocol.ID_CC_HASH_MAP:
-                case Protocol.ID_CC_HASHTABLE:
-                case Protocol.ID_CC_IDENTITY_HASH_MAP:
-                case Protocol.ID_CC_LINKED_HASH_MAP:
-                case Protocol.ID_CC_TREE_MAP: {
+                case ID_CC_HASH_MAP:
+                case ID_CC_HASHTABLE:
+                case ID_CC_IDENTITY_HASH_MAP:
+                case ID_CC_LINKED_HASH_MAP:
+                case ID_CC_TREE_MAP: {
                     instanceCache.put(obj, instanceSeq++);
                     final Map<?, ?> map = (Map<?, ?>) obj;
                     final int len = map.size();
                     if (len == 0) {
-                        write(unshared ? Protocol.ID_COLLECTION_EMPTY_UNSHARED : Protocol.ID_COLLECTION_EMPTY);
+                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_MAP) {
+                        if (id == ID_CC_TREE_MAP) {
                             doWriteObject(((TreeMap)map).comparator(), false);
                         }
                     } else if (len <= 256) {
-                        write(unshared ? Protocol.ID_COLLECTION_SMALL_UNSHARED : Protocol.ID_COLLECTION_SMALL);
+                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
                         write(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_MAP) {
+                        if (id == ID_CC_TREE_MAP) {
                             doWriteObject(((TreeMap)map).comparator(), false);
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -735,10 +736,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                             doWriteObject(entry.getValue(), false);
                         }
                     } else if (len <= 65536) {
-                        write(unshared ? Protocol.ID_COLLECTION_MEDIUM_UNSHARED : Protocol.ID_COLLECTION_MEDIUM);
+                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
                         writeShort(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_MAP) {
+                        if (id == ID_CC_TREE_MAP) {
                             doWriteObject(((TreeMap)map).comparator(), false);
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -746,10 +747,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                             doWriteObject(entry.getValue(), false);
                         }
                     } else {
-                        write(unshared ? Protocol.ID_COLLECTION_LARGE_UNSHARED : Protocol.ID_COLLECTION_LARGE);
+                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
                         writeInt(len);
                         write(id);
-                        if (id == Protocol.ID_CC_TREE_MAP) {
+                        if (id == ID_CC_TREE_MAP) {
                             doWriteObject(((TreeMap)map).comparator(), false);
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -763,21 +764,21 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
 
-                case Protocol.ID_EMPTY_MAP_OBJECT:
-                case Protocol.ID_EMPTY_SET_OBJECT:
-                case Protocol.ID_EMPTY_LIST_OBJECT: {
+                case ID_EMPTY_MAP_OBJECT:
+                case ID_EMPTY_SET_OBJECT:
+                case ID_EMPTY_LIST_OBJECT: {
                     write(id);
                     return;
                 }
-                case Protocol.ID_SINGLETON_MAP_OBJECT: {
+                case ID_SINGLETON_MAP_OBJECT: {
                     write(id);
                     final Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();
                     doWriteObject(entry.getKey(), false);
                     doWriteObject(entry.getValue(), false);
                     return;
                 }
-                case Protocol.ID_SINGLETON_LIST_OBJECT:
-                case Protocol.ID_SINGLETON_SET_OBJECT: {
+                case ID_SINGLETON_LIST_OBJECT:
+                case ID_SINGLETON_SET_OBJECT: {
                     write(id);
                     doWriteObject(((Collection)obj).iterator().next(), false);
                     return;
@@ -791,24 +792,24 @@ public class RiverMarshaller extends AbstractMarshaller {
                 final int len = objects.length;
                 if (configuredVersion >= 2) {
                     if (len == 0) {
-                        write(unshared ? Protocol.ID_ARRAY_EMPTY_UNSHARED : Protocol.ID_ARRAY_EMPTY);
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
                         writeClass(objClass.getComponentType());
                     } else if (len <= 256) {
-                        write(unshared ? Protocol.ID_ARRAY_SMALL_UNSHARED : Protocol.ID_ARRAY_SMALL);
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                         write(len);
                         writeClass(objClass.getComponentType());
                         for (int i = 0; i < len; i++) {
                             doWriteObject(objects[i], unshared);
                         }
                     } else if (len <= 65536) {
-                        write(unshared ? Protocol.ID_ARRAY_MEDIUM_UNSHARED : Protocol.ID_ARRAY_MEDIUM);
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                         writeShort(len);
                         writeClass(objClass.getComponentType());
                         for (int i = 0; i < len; i++) {
                             doWriteObject(objects[i], unshared);
                         }
                     } else {
-                        write(unshared ? Protocol.ID_ARRAY_LARGE_UNSHARED : Protocol.ID_ARRAY_LARGE);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
                         writeClass(objClass.getComponentType());
                         for (int i = 0; i < len; i++) {
@@ -816,7 +817,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                         }
                     }
                 } else {
-                    write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                    write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                     writeObjectArrayClass(objClass);
                     writeInt(len);
                     for (int i = 0; i < len; i++) {
@@ -830,7 +831,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             // serialize proxies efficiently
             if (Proxy.isProxyClass(objClass)) {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 instanceCache.put(obj, instanceSeq++);
                 writeProxyClass(objClass);
                 doWriteObject(Proxy.getInvocationHandler(obj), false);
@@ -849,7 +850,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 externalizers.put(objClass, externalizer);
             }
             if (externalizer != null) {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 writeExternalizerClass(objClass, externalizer);
                 instanceCache.put(obj, instanceSeq++);
                 final ObjectOutput objectOutput;
@@ -863,7 +864,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             // user type #2: externalizable
             if (obj instanceof Externalizable) {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 instanceCache.put(obj, instanceSeq++);
                 final Externalizable ext = (Externalizable) obj;
                 final ObjectOutput objectOutput = getObjectOutput();
@@ -877,7 +878,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             // user type #3: serializable
             if (obj instanceof Serializable) {
-                write(unshared ? Protocol.ID_NEW_OBJECT_UNSHARED : Protocol.ID_NEW_OBJECT);
+                write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 writeSerializableClass(objClass);
                 instanceCache.put(obj, instanceSeq++);
                 doWriteSerializableObject(info, obj, objClass);
@@ -927,7 +928,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         final BlockMarshaller blockMarshaller = this.blockMarshaller;
         if (blockMarshaller != null) {
             blockMarshaller.flush();
-            writeByte(Protocol.ID_END_BLOCK_DATA);
+            writeByte(ID_END_BLOCK_DATA);
         }
     }
 
@@ -1048,11 +1049,11 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewProxyClass(final Class<?> objClass) throws IOException {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
-            write(Protocol.ID_PREDEFINED_PROXY_CLASS);
+            write(ID_PREDEFINED_PROXY_CLASS);
             classCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
-            write(Protocol.ID_PROXY_CLASS);
+            write(ID_PROXY_CLASS);
             final String[] names = classResolver.getProxyInterfaces(objClass);
             writeInt(names.length);
             for (String name : names) {
@@ -1078,11 +1079,11 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewEnumClass(final Class<? extends Enum> objClass) throws IOException {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
-            write(Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS);
+            write(ID_PREDEFINED_ENUM_TYPE_CLASS);
             classCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
-            write(Protocol.ID_ENUM_TYPE_CLASS);
+            write(ID_ENUM_TYPE_CLASS);
             writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
@@ -1090,13 +1091,13 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void writeClassClass(final Class<?> classObj) throws IOException {
-        write(Protocol.ID_CLASS_CLASS);
+        write(ID_CLASS_CLASS);
         writeClass(classObj);
         // not cached
     }
 
     protected void writeObjectArrayClass(final Class<?> objClass) throws IOException {
-        write(Protocol.ID_OBJECT_ARRAY_TYPE_CLASS);
+        write(ID_OBJECT_ARRAY_TYPE_CLASS);
         writeClass(objClass.getComponentType());
         classCache.put(objClass, classSeq++);
     }
@@ -1113,65 +1114,65 @@ public class RiverMarshaller extends AbstractMarshaller {
     static {
         final IdentityIntMap<Class<?>> map = new IdentityIntMap<Class<?>>(0x0.6p0f);
 
-        map.put(byte.class, Protocol.ID_PRIM_BYTE);
-        map.put(boolean.class, Protocol.ID_PRIM_BOOLEAN);
-        map.put(char.class, Protocol.ID_PRIM_CHAR);
-        map.put(double.class, Protocol.ID_PRIM_DOUBLE);
-        map.put(float.class, Protocol.ID_PRIM_FLOAT);
-        map.put(int.class, Protocol.ID_PRIM_INT);
-        map.put(long.class, Protocol.ID_PRIM_LONG);
-        map.put(short.class, Protocol.ID_PRIM_SHORT);
+        map.put(byte.class, ID_PRIM_BYTE);
+        map.put(boolean.class, ID_PRIM_BOOLEAN);
+        map.put(char.class, ID_PRIM_CHAR);
+        map.put(double.class, ID_PRIM_DOUBLE);
+        map.put(float.class, ID_PRIM_FLOAT);
+        map.put(int.class, ID_PRIM_INT);
+        map.put(long.class, ID_PRIM_LONG);
+        map.put(short.class, ID_PRIM_SHORT);
 
-        map.put(void.class, Protocol.ID_VOID);
+        map.put(void.class, ID_VOID);
 
-        map.put(Byte.class, Protocol.ID_BYTE_CLASS);
-        map.put(Boolean.class, Protocol.ID_BOOLEAN_CLASS);
-        map.put(Character.class, Protocol.ID_CHARACTER_CLASS);
-        map.put(Double.class, Protocol.ID_DOUBLE_CLASS);
-        map.put(Float.class, Protocol.ID_FLOAT_CLASS);
-        map.put(Integer.class, Protocol.ID_INTEGER_CLASS);
-        map.put(Long.class, Protocol.ID_LONG_CLASS);
-        map.put(Short.class, Protocol.ID_SHORT_CLASS);
+        map.put(Byte.class, ID_BYTE_CLASS);
+        map.put(Boolean.class, ID_BOOLEAN_CLASS);
+        map.put(Character.class, ID_CHARACTER_CLASS);
+        map.put(Double.class, ID_DOUBLE_CLASS);
+        map.put(Float.class, ID_FLOAT_CLASS);
+        map.put(Integer.class, ID_INTEGER_CLASS);
+        map.put(Long.class, ID_LONG_CLASS);
+        map.put(Short.class, ID_SHORT_CLASS);
 
-        map.put(Void.class, Protocol.ID_VOID_CLASS);
+        map.put(Void.class, ID_VOID_CLASS);
 
-        map.put(Object.class, Protocol.ID_OBJECT_CLASS);
-        map.put(Class.class, Protocol.ID_CLASS_CLASS);
-        map.put(String.class, Protocol.ID_STRING_CLASS);
-        map.put(Enum.class, Protocol.ID_ENUM_CLASS);
+        map.put(Object.class, ID_OBJECT_CLASS);
+        map.put(Class.class, ID_CLASS_CLASS);
+        map.put(String.class, ID_STRING_CLASS);
+        map.put(Enum.class, ID_ENUM_CLASS);
 
-        map.put(byte[].class, Protocol.ID_BYTE_ARRAY_CLASS);
-        map.put(boolean[].class, Protocol.ID_BOOLEAN_ARRAY_CLASS);
-        map.put(char[].class, Protocol.ID_CHAR_ARRAY_CLASS);
-        map.put(double[].class, Protocol.ID_DOUBLE_ARRAY_CLASS);
-        map.put(float[].class, Protocol.ID_FLOAT_ARRAY_CLASS);
-        map.put(int[].class, Protocol.ID_INT_ARRAY_CLASS);
-        map.put(long[].class, Protocol.ID_LONG_ARRAY_CLASS);
-        map.put(short[].class, Protocol.ID_SHORT_ARRAY_CLASS);
+        map.put(byte[].class, ID_BYTE_ARRAY_CLASS);
+        map.put(boolean[].class, ID_BOOLEAN_ARRAY_CLASS);
+        map.put(char[].class, ID_CHAR_ARRAY_CLASS);
+        map.put(double[].class, ID_DOUBLE_ARRAY_CLASS);
+        map.put(float[].class, ID_FLOAT_ARRAY_CLASS);
+        map.put(int[].class, ID_INT_ARRAY_CLASS);
+        map.put(long[].class, ID_LONG_ARRAY_CLASS);
+        map.put(short[].class, ID_SHORT_ARRAY_CLASS);
 
         BASIC_CLASSES = map.clone();
 
-        map.put(ArrayList.class, Protocol.ID_CC_ARRAY_LIST);
-        map.put(LinkedList.class, Protocol.ID_CC_LINKED_LIST);
+        map.put(ArrayList.class, ID_CC_ARRAY_LIST);
+        map.put(LinkedList.class, ID_CC_LINKED_LIST);
 
-        map.put(HashSet.class, Protocol.ID_CC_HASH_SET);
-        map.put(LinkedHashSet.class, Protocol.ID_CC_LINKED_HASH_SET);
-        map.put(TreeSet.class, Protocol.ID_CC_TREE_SET);
+        map.put(HashSet.class, ID_CC_HASH_SET);
+        map.put(LinkedHashSet.class, ID_CC_LINKED_HASH_SET);
+        map.put(TreeSet.class, ID_CC_TREE_SET);
 
-        map.put(IdentityHashMap.class, Protocol.ID_CC_IDENTITY_HASH_MAP);
-        map.put(HashMap.class, Protocol.ID_CC_HASH_MAP);
-        map.put(Hashtable.class, Protocol.ID_CC_HASHTABLE);
-        map.put(LinkedHashMap.class, Protocol.ID_CC_LINKED_HASH_MAP);
-        map.put(TreeMap.class, Protocol.ID_CC_TREE_MAP);
+        map.put(IdentityHashMap.class, ID_CC_IDENTITY_HASH_MAP);
+        map.put(HashMap.class, ID_CC_HASH_MAP);
+        map.put(Hashtable.class, ID_CC_HASHTABLE);
+        map.put(LinkedHashMap.class, ID_CC_LINKED_HASH_MAP);
+        map.put(TreeMap.class, ID_CC_TREE_MAP);
 
-        map.put(Protocol.emptyListClass, Protocol.ID_EMPTY_LIST_OBJECT); // special case
-        map.put(Protocol.singletonListClass, Protocol.ID_SINGLETON_LIST_OBJECT); // special case
+        map.put(emptyListClass, ID_EMPTY_LIST_OBJECT); // special case
+        map.put(singletonListClass, ID_SINGLETON_LIST_OBJECT); // special case
 
-        map.put(Protocol.emptySetClass, Protocol.ID_EMPTY_SET_OBJECT); // special case
-        map.put(Protocol.singletonSetClass, Protocol.ID_SINGLETON_SET_OBJECT); // special case
+        map.put(emptySetClass, ID_EMPTY_SET_OBJECT); // special case
+        map.put(singletonSetClass, ID_SINGLETON_SET_OBJECT); // special case
 
-        map.put(Protocol.emptyMapClass, Protocol.ID_EMPTY_MAP_OBJECT); // special case
-        map.put(Protocol.singletonMapClass, Protocol.ID_SINGLETON_MAP_OBJECT); // special case
+        map.put(emptyMapClass, ID_EMPTY_MAP_OBJECT); // special case
+        map.put(singletonMapClass, ID_SINGLETON_MAP_OBJECT); // special case
 
         BASIC_CLASSES_V2 = map;
     }
@@ -1192,11 +1193,11 @@ public class RiverMarshaller extends AbstractMarshaller {
         } else {
             ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
             if (classTableWriter != null) {
-                write(Protocol.ID_PREDEFINED_PLAIN_CLASS);
+                write(ID_PREDEFINED_PLAIN_CLASS);
                 classCache.put(objClass, classSeq++);
                 writeClassTableData(objClass, classTableWriter);
             } else {
-                write(Protocol.ID_PLAIN_CLASS);
+                write(ID_PLAIN_CLASS);
                 writeString(classResolver.getClassName(objClass));
                 doAnnotateClass(objClass);
                 classCache.put(objClass, classSeq++);
@@ -1224,15 +1225,15 @@ public class RiverMarshaller extends AbstractMarshaller {
             if (configuredVersion >= 2) {
                 final int diff = i - classSeq;
                 if (diff >= -256) {
-                    write(Protocol.ID_REPEAT_CLASS_NEAR);
+                    write(ID_REPEAT_CLASS_NEAR);
                     write(diff);
                 } else if (diff >= -65536) {
-                    write(Protocol.ID_REPEAT_CLASS_NEARISH);
+                    write(ID_REPEAT_CLASS_NEARISH);
                     writeShort(diff);
                 }
                 return true;
             }
-            write(Protocol.ID_REPEAT_CLASS_FAR);
+            write(ID_REPEAT_CLASS_FAR);
             writeInt(i);
             return true;
         }
@@ -1248,15 +1249,15 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewSerializableClass(final Class<?> objClass) throws IOException {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
-            write(Protocol.ID_PREDEFINED_SERIALIZABLE_CLASS);
+            write(ID_PREDEFINED_SERIALIZABLE_CLASS);
             classCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
             final SerializableClass info = registry.lookup(objClass);
             if (configuredVersion > 0 && info.hasWriteObject()) {
-                write(Protocol.ID_WRITE_OBJECT_CLASS);
+                write(ID_WRITE_OBJECT_CLASS);
             } else {
-                write(Protocol.ID_SERIALIZABLE_CLASS);
+                write(ID_SERIALIZABLE_CLASS);
             }
             writeString(classResolver.getClassName(objClass));
             writeLong(info.getEffectiveSerialVersionUID());
@@ -1288,11 +1289,11 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewExternalizableClass(final Class<?> objClass) throws IOException {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
-            write(Protocol.ID_PREDEFINED_EXTERNALIZABLE_CLASS);
+            write(ID_PREDEFINED_EXTERNALIZABLE_CLASS);
             classCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
-            write(Protocol.ID_EXTERNALIZABLE_CLASS);
+            write(ID_EXTERNALIZABLE_CLASS);
             writeString(classResolver.getClassName(objClass));
             writeLong(registry.lookup(objClass).getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
@@ -1309,11 +1310,11 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewExternalizerClass(final Class<?> objClass, final Externalizer externalizer) throws IOException {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
-            write(Protocol.ID_PREDEFINED_EXTERNALIZER_CLASS);
+            write(ID_PREDEFINED_EXTERNALIZER_CLASS);
             classCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
-            write(Protocol.ID_EXTERNALIZER_CLASS);
+            write(ID_EXTERNALIZER_CLASS);
             writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
             doAnnotateClass(objClass);
@@ -1334,7 +1335,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         instanceCache.clear();
         instanceSeq = 0;
         if (byteOutput != null) {
-            write(Protocol.ID_CLEAR_INSTANCE_CACHE);
+            write(ID_CLEAR_INSTANCE_CACHE);
         }
     }
 
@@ -1345,7 +1346,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         instanceCache.clear();
         instanceSeq = 0;
         if (byteOutput != null) {
-            write(Protocol.ID_CLEAR_CLASS_CACHE);
+            write(ID_CLEAR_CLASS_CACHE);
         }
     }
 

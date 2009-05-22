@@ -22,11 +22,19 @@
 
 package org.jboss.test.marshalling;
 
-import org.jboss.marshalling.MarshallingConfiguration;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.reflect.SunReflectiveCreator;
+import org.jboss.marshalling.river.RiverMarshallerFactory;
+import static org.testng.AssertJUnit.assertEquals;
 import org.testng.annotations.Test;
-import static org.testng.AssertJUnit.*;
 
 /**
  * A template for running tests on a single object.
@@ -40,6 +48,15 @@ public final class SingleObjectMarshallerTests extends TestBase {
         this.subject = subject;
     }
 
+    private static final Set<Class<?>> noEqualsClasses;
+
+    static {
+        Set<Class<?>> set = new HashSet<Class<?>>();
+        set.add(IdentityHashMap.class);
+        set.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
+        noEqualsClasses = set;
+    }
+
     @Test
     public void test() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
@@ -49,11 +66,47 @@ public final class SingleObjectMarshallerTests extends TestBase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                final Object readSubject = unmarshaller.readObject();
-                assertEquals(subject, readSubject);
-                assertEqualsOrSame(readSubject, unmarshaller.readObject());
-                assertEOF(unmarshaller);
+                Object readSubject = null;
+                Object second = null;
+                try {
+                    readSubject = unmarshaller.readObject();
+                    // IHM can't be compared for equality :|
+                    final Class<? extends Object> subjectClass = subject == null ? null : subject.getClass();
+                    if (! noEqualsClasses.contains(subjectClass)) assertEquals(subject, readSubject);
+                    second = unmarshaller.readObject();
+                    assertEqualsOrSame(readSubject, second);
+                    assertEOF(unmarshaller);
+                } catch (AssertionError e) {
+                    final AssertionError e2 = new AssertionError(String.format("Assertion error occurred.\n\t-- Subject is %s\n\t-- Read Subject is %s\n\t-- Second object is %s\n\t-- Unmarshaller is %s\n\t-- Config is %s",
+                            stringOf(subject),
+                            stringOf(readSubject),
+                            stringOf(second),
+                            stringOf(unmarshaller),
+                            configuration));
+                    e2.setStackTrace(e.getStackTrace());
+                    throw e2;
+                } catch (Throwable t) {
+                    throw new RuntimeException(String.format("Throwable occurred.\n\t-- Subject is %s\n\t-- Read Subject is %s\n\t-- Second object is %s\n\t-- Unmarshaller is %s\n\t-- Config is %s",
+                            stringOf(subject),
+                            stringOf(readSubject),
+                            stringOf(second),
+                            stringOf(unmarshaller),
+                            configuration), t);
+                }
             }
         });
+    }
+
+    public static void main(String[] args) throws Throwable {
+        final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
+        final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory);
+        final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory);
+        final MarshallingConfiguration configuration = new MarshallingConfiguration();
+        configuration.setCreator(new SunReflectiveCreator());
+        new SingleObjectMarshallerTests(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2, configuration, EnumSet.noneOf(TimeUnit.class)).test();
+    }
+
+    private static String stringOf(Object foo) {
+        return foo == null ? "-null-" : "(" + foo.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(foo)) + "[" + Integer.toHexString(foo.hashCode()) + "])";
     }
 }

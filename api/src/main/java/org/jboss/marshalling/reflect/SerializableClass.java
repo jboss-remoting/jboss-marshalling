@@ -397,15 +397,19 @@ public final class SerializableClass {
     private static Method lookupInheritableMethod(final Class<?> subject, final String name) {
         return AccessController.doPrivileged(new PrivilegedAction<Method>() {
             public Method run() {
-                Class<?> foundClass;
+                Class<?> foundClass = subject;
                 Method method = null;
-                for (foundClass = subject; method == null; foundClass = foundClass.getSuperclass()) {
+                while (method == null) {
                     try {
                         if (foundClass == null) {
                             return null;
                         }
                         method = foundClass.getDeclaredMethod(name);
+                        if (method == null) {
+                            foundClass = foundClass.getSuperclass();
+                        }
                     } catch (NoSuchMethodException e) {
+                        foundClass = foundClass.getSuperclass();
                         continue;
                     }
                 }

@@ -219,6 +219,7 @@ public final class SerialObjectOutputStream extends MarshallerObjectOutputStream
                     find(name).setObject(val);
                 }
 
+                @Deprecated
                 public void write(final ObjectOutput out) throws IOException {
                     throw new UnsupportedOperationException("write(ObjectOutput)");
                 }

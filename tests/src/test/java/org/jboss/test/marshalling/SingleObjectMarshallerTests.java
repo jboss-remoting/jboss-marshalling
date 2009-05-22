@@ -23,16 +23,12 @@
 package org.jboss.test.marshalling;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
-import org.jboss.marshalling.river.RiverMarshallerFactory;
 import static org.testng.AssertJUnit.assertEquals;
 import org.testng.annotations.Test;
 

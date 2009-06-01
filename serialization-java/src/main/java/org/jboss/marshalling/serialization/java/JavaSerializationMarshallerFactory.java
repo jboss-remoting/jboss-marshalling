@@ -14,12 +14,14 @@ import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.ClassExternalizerFactory;
 
 /**
+ * @deprecated This implementation has been superceded by {@link org.jboss.marshalling.serial.SerialMarshallerFactory SerialMarshallerFactory}.
  * @author <a href="ron.sigal@jboss.com">Ron Sigal</a>
  * @version $Revision: 1.1 $
  * <p>
  * Copyright Sep 19, 2008
  * </p>
  */
+@Deprecated
 public final class JavaSerializationMarshallerFactory extends AbstractMarshallerFactory {
 
    public JavaSerializationMarshallerFactory() {

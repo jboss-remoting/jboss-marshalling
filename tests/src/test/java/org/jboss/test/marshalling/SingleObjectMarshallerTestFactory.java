@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
@@ -148,6 +149,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(EnumSet.noneOf(Thread.State.class));
         list.add(EnumSet.allOf(Thread.State.class));
         list.add(new EnumMap<TimeUnit, String>(TimeUnit.class));
+        list.add(new TimeoutException());
     }
 
     @Factory(dataProvider = "singleObjectProvider")

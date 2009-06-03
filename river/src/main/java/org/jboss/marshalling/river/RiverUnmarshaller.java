@@ -1395,6 +1395,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             doInitSerializable(obj, serializableSuperDescriptor);
         }
         final int typeId = descriptor.getTypeID();
+        final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
         if (descriptor.isGap()) {
             if (info.hasReadObjectNoData()) {
                 info.callReadObjectNoData(obj);

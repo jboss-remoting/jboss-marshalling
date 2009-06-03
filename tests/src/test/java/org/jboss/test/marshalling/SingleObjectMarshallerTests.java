@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Unmarshaller;
@@ -49,6 +50,7 @@ public final class SingleObjectMarshallerTests extends TestBase {
     static {
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(IdentityHashMap.class);
+        set.add(TimeoutException.class);
         set.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
         noEqualsClasses = set;
     }

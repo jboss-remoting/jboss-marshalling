@@ -7,38 +7,38 @@
     <parent>
         <relativePath>../pom.xml</relativePath>
         <groupId>org.jboss.marshalling</groupId>
-        <version>1.2.0.CR2</version>
+        <version>1.2.0-SNAPSHOT</version>
         <artifactId>jboss-marshalling</artifactId>
     </parent>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>tests</artifactId>
-    <version>1.2.0.CR2</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>marshalling-api</artifactId>
-            <version>1.2.0.CR2</version>
+            <version>1.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>river</artifactId>
-            <version>1.2.0.CR2</version>
+            <version>1.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serial</artifactId>
-            <version>1.2.0.CR2</version>
+            <version>1.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serialization-java</artifactId>
-            <version>1.2.0.CR2</version>
+            <version>1.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serialization-jboss</artifactId>
-            <version>1.2.0.CR2</version>
+            <version>1.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

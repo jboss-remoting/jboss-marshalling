@@ -28,13 +28,13 @@
 
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>serial</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0.CR2</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>marshalling-api</artifactId>
-            <version>1.2.0-SNAPSHOT</version>
+            <version>1.2.0.CR2</version>
         </dependency>
     </dependencies>
     <build>

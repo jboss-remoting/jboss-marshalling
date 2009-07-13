@@ -52,6 +52,7 @@ public final class SingleObjectMarshallerTests extends TestBase {
         set.add(IdentityHashMap.class);
         set.add(TimeoutException.class);
         set.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
+        set.add(TestCollectionHolder.class);
         noEqualsClasses = set;
     }
 

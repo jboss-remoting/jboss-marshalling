@@ -889,6 +889,39 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return arrayDescriptor;
             }
 
+            case ID_CC_ARRAY_LIST: {
+                return ClassDescriptor.CC_ARRAY_LIST;
+            }
+            case ID_CC_LINKED_LIST: {
+                return ClassDescriptor.CC_LINKED_LIST;
+            }
+
+            case ID_CC_HASH_SET: {
+                return ClassDescriptor.CC_HASH_SET;
+            }
+            case ID_CC_LINKED_HASH_SET: {
+                return ClassDescriptor.CC_LINKED_HASH_SET;
+            }
+            case ID_CC_TREE_SET: {
+                return ClassDescriptor.CC_TREE_SET;
+            }
+
+            case ID_CC_IDENTITY_HASH_MAP: {
+                return ClassDescriptor.CC_IDENTITY_HASH_MAP;
+            }
+            case ID_CC_HASH_MAP: {
+                return ClassDescriptor.CC_HASH_MAP;
+            }
+            case ID_CC_HASHTABLE: {
+                return ClassDescriptor.CC_HASHTABLE;
+            }
+            case ID_CC_LINKED_HASH_MAP: {
+                return ClassDescriptor.CC_LINKED_HASH_MAP;
+            }
+            case ID_CC_TREE_MAP: {
+                return ClassDescriptor.CC_TREE_MAP;
+            }
+
             case ID_STRING_CLASS: {
                 return ClassDescriptor.STRING_DESCRIPTOR;
             }

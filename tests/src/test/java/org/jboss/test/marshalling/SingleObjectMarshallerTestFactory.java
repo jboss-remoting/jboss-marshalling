@@ -150,6 +150,8 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(EnumSet.allOf(Thread.State.class));
         list.add(new EnumMap<TimeUnit, String>(TimeUnit.class));
         list.add(new TimeoutException());
+        list.add(new TestArrayList());
+        list.add(new TestCollectionHolder());
     }
 
     @Factory(dataProvider = "singleObjectProvider")

@@ -22,6 +22,23 @@
 
 package org.jboss.marshalling.river;
 
+import org.jboss.marshalling.reflect.SerializableClass;
+import org.jboss.marshalling.reflect.SerializableClassRegistry;
+import org.jboss.marshalling.reflect.SerializableField;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.TreeSet;
+import java.util.IdentityHashMap;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.TreeMap;
+import java.io.Externalizable;
+
 /**
  *
  */
@@ -62,6 +79,36 @@ public class ClassDescriptor {
     public static final ClassDescriptor CHAR_ARRAY = new ClassDescriptor(char[].class, Protocol.ID_CHAR_ARRAY_CLASS);
     public static final ClassDescriptor FLOAT_ARRAY = new ClassDescriptor(float[].class, Protocol.ID_FLOAT_ARRAY_CLASS);
     public static final ClassDescriptor DOUBLE_ARRAY = new ClassDescriptor(double[].class, Protocol.ID_DOUBLE_ARRAY_CLASS);
+
+    // non-public (due to security)
+
+    static final ClassDescriptor CC_ARRAY_LIST = getSerializableClassDescriptor(ArrayList.class);
+    static final ClassDescriptor CC_LINKED_LIST = getSerializableClassDescriptor(LinkedList.class);
+
+    static final ClassDescriptor CC_HASH_SET = getSerializableClassDescriptor(HashSet.class);
+    static final ClassDescriptor CC_LINKED_HASH_SET = getSerializableClassDescriptor(LinkedHashSet.class);
+    static final ClassDescriptor CC_TREE_SET = getSerializableClassDescriptor(TreeSet.class);
+
+    static final ClassDescriptor CC_IDENTITY_HASH_MAP = getSerializableClassDescriptor(IdentityHashMap.class);
+    static final ClassDescriptor CC_HASH_MAP = getSerializableClassDescriptor(HashMap.class);
+    static final ClassDescriptor CC_HASHTABLE = getSerializableClassDescriptor(Hashtable.class);
+    static final ClassDescriptor CC_LINKED_HASH_MAP = getSerializableClassDescriptor(LinkedHashMap.class);
+    static final ClassDescriptor CC_TREE_MAP = getSerializableClassDescriptor(TreeMap.class);
+
+    private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject) {
+        return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {
+            public SerializableClassDescriptor run() {
+                final SerializableClassRegistry reg = SerializableClassRegistry.getInstance();
+                final SerializableClass serializableClass = reg.lookup(subject);
+                final SerializableField[] fields = serializableClass.getFields();
+                try {
+                    return new SerializableClassDescriptor(serializableClass, null, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
+                } catch (ClassNotFoundException e) {
+                    throw new NoClassDefFoundError(e.getMessage());
+                }
+            }
+        });
+    }
 
     public ClassDescriptor(final Class<?> type, final int typeID) {
         this.type = type;

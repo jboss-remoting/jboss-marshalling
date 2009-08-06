@@ -195,14 +195,16 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
             if (remaining > 0) {
                 System.arraycopy(buffer, position, b, off, remaining);
                 limit = position = 0;
-            }
-            do {
                 off += remaining;
                 len -= remaining;
+            }
+            do {
                 remaining = byteInput.read(b, off, len);
                 if (remaining == -1) {
                     throw eofOnRead();
                 }
+                off += remaining;
+                len -= remaining;
             } while (len != 0);
         } else try {
             System.arraycopy(buffer, position, b, off, len);

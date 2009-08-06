@@ -287,7 +287,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared != (leadByte == ID_ARRAY_LARGE_UNSHARED)) {
                         throw sharedMismatch();
                     }
-                    final int len = readUnsignedShort();
+                    final int len = readInt();
+                    if (len <= 0) {
+                        throw new StreamCorruptedException("Invalid length value for array in stream (" + len + ")");
+                    }
                     return doReadArray(len, unshared);
                 }
                 case ID_PREDEFINED_OBJECT: {

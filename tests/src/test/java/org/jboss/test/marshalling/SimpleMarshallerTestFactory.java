@@ -28,7 +28,6 @@ import org.testng.annotations.Test;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
-import org.jboss.marshalling.serialization.jboss.JBossSerializationMarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import static org.jboss.test.marshalling.Pair.pair;
@@ -70,16 +69,6 @@ public final class SimpleMarshallerTestFactory {
         final TestMarshallerProvider oosTestMarshallerProvider = new ObjectOutputStreamTestMarshallerProvider();
         final TestUnmarshallerProvider oisTestUnmarshallerProvider = new ObjectInputStreamTestUnmarshallerProvider();
 
-        final JBossSerializationMarshallerFactory jbossSerializationMarshallerFactory = new JBossSerializationMarshallerFactory();
-        final TestMarshallerProvider jbossTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(jbossSerializationMarshallerFactory);
-        final TestUnmarshallerProvider jbossTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(jbossSerializationMarshallerFactory);
-        
-        final TestMarshallerProvider jbossCompatibilityMarshallerProvider = new JBossCompatibilityMarshallerFactoryTestMarshallerProvider(jbossSerializationMarshallerFactory);
-        final TestUnmarshallerProvider jbossCompatibilityUnmarshallerProvider = new JBossCompatibilityMarshallerFactoryTestUnmarshallerProvider(jbossSerializationMarshallerFactory);
-        
-        final TestMarshallerProvider jbosTestMarshallerProvider = new JBossObjectOutputStreamTestMarshallerProvider();
-        final TestUnmarshallerProvider jbisTestUnmarshallerProvider = new JBossObjectInputStreamTestUnmarshallerProvider();
-        
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
                 // river - v1 writer, v1 reader
@@ -97,12 +86,7 @@ public final class SimpleMarshallerTestFactory {
                 // reflection java serialization
                 pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
                 pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
-
-                // JBossSerialization
-                pair(jbossTestMarshallerProvider, jbossTestUnmarshallerProvider),
-                pair(jbossCompatibilityMarshallerProvider, jbisTestUnmarshallerProvider),
-                pair(jbosTestMarshallerProvider, jbossCompatibilityUnmarshallerProvider)*/
+                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),*/
         );
 
         final Collection<Object[]> c = new ArrayList<Object[]>();

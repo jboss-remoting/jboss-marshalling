@@ -35,7 +35,6 @@
         <module>river</module>
         <module>serial</module>
         <module>serialization-java</module>
-        <module>serialization-jboss</module>
         <module>tests</module>
     </modules>
 

@@ -42,8 +42,6 @@ import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
-import org.jboss.marshalling.serialization.jboss.JBossSerializationMarshaller;
-import org.jboss.marshalling.serialization.jboss.JBossSerializationUnmarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
@@ -102,9 +100,6 @@ public final class SimpleMarshallerTests extends TestBase {
         try {
             runReadWriteTest(new ReadWriteTest() {
                public void runWrite(final Marshaller marshaller) throws Throwable {
-                  if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
-                     throw new SkipException("JBossSerialization does not require objects to implement Serializable");
-                  }
                   marshaller.writeObject(new Object());
                }
 
@@ -133,9 +128,6 @@ public final class SimpleMarshallerTests extends TestBase {
     public void testSerializableWithFinalFields() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if ((marshaller instanceof JBossSerializationMarshaller)) {
-                   throw new SkipException("JBossSerializationMarshaller does not support Marshaller.writeObjectUnshared()");
-                }
                 final SerializableWithFinalFields obj = new SerializableWithFinalFields();
                 marshaller.writeObject(obj);
                 marshaller.writeObject(obj);
@@ -144,9 +136,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if (unmarshaller instanceof JBossSerializationUnmarshaller) {
-                   throw new SkipException("JBossSerializationUnmarshaller does not support Unmarshaller.readObjectUnshared()");
-                }
                 final SerializableWithFinalFields obj = (SerializableWithFinalFields) unmarshaller.readObject();
                 assertSame(obj, unmarshaller.readObject());
                 final SerializableWithFinalFields obj2 = (SerializableWithFinalFields) unmarshaller.readObjectUnshared();
@@ -258,9 +247,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if ((unmarshaller instanceof JBossSerializationUnmarshaller || unmarshaller instanceof JBossObjectInputStreamUnmarshaller)) {
-                    throw new SkipException("JBossSerialization does not support asymmetric readObject() with GetField");
-                }
                 assertEquals(serializable, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
@@ -334,9 +320,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if ((unmarshaller instanceof JBossSerializationUnmarshaller || unmarshaller instanceof JBossObjectInputStreamUnmarshaller)) {
-                    throw new SkipException("JBossSerialization does not support asymmetric readObject() with GetField");
-                }
                 assertEquals(serializable, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
@@ -360,9 +343,6 @@ public final class SimpleMarshallerTests extends TestBase {
         
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
-                    throw new SkipException("JBossSerialization does not support asymmetric writeObject() with PutField");
-                }
                 marshaller.writeObject(serializable);
             }
 
@@ -387,9 +367,6 @@ public final class SimpleMarshallerTests extends TestBase {
         final Serializable serializable = new TestSerializablePutFieldsWriteObjectDefaultReadObject();
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
-                    throw new SkipException("JBossSerialization does not support asymmetric writeObject() with PutField");
-                }
                 marshaller.writeObject(serializable);
             }
 
@@ -640,18 +617,12 @@ public final class SimpleMarshallerTests extends TestBase {
     public void testMultiWrite2() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if ((marshaller instanceof JBossSerializationMarshaller)) {
-                   throw new SkipException("JBossSerializationMarshaller does not support Marshaller.writeObjectUnshared()");
-                }
                 final TestSerializable obj = new TestSerializable();
                 marshaller.writeObjectUnshared(obj);
                 marshaller.writeObject(obj);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if (unmarshaller instanceof JBossSerializationUnmarshaller) {
-                   throw new SkipException("JBossSerializationUnmarshaller does not support Unmarshaller.readObjectUnshared()");
-                }
                 assertNotSame(unmarshaller.readObjectUnshared(), unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
@@ -1535,9 +1506,6 @@ public final class SimpleMarshallerTests extends TestBase {
     public void testValidation() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if ((marshaller instanceof JBossSerializationMarshaller || marshaller instanceof JBossObjectOutputStreamMarshaller)) {
-                   throw new SkipException("JBossSerialization does not support verification");
-                }
                 marshaller.writeObject(new VerifyingTestObject(1234, "1234"));
                 marshaller.writeObject(new VerifyingTestObject(1234, "4321"));
             }

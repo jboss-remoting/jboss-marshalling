@@ -26,10 +26,14 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <properties>
+        <version>1.2.0.CR3-SNAPSHOT</version>
+    </properties>
+
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>${version}</version>
     <modules>
         <module>api</module>
         <module>river</module>

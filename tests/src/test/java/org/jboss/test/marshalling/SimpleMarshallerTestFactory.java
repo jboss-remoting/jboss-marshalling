@@ -71,6 +71,13 @@ public final class SimpleMarshallerTestFactory {
 
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
+                // river - v0 writer, v0 reader
+                pair(riverTestMarshallerProviderV0, riverTestUnmarshallerProviderV0),
+                // river - v0 writer, v1 reader
+                pair(riverTestMarshallerProviderV0Special, riverTestUnmarshallerProviderV1),
+                // river - v0 writer, v2 reader
+                pair(riverTestMarshallerProviderV0Special, riverTestUnmarshallerProviderV2),
+
                 // river - v1 writer, v1 reader
                 pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
                 // river - v1 writer, v2 reader
@@ -81,18 +88,19 @@ public final class SimpleMarshallerTestFactory {
                 // serial
                 pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
                 pair(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider) /*,
-
+                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
                 // reflection java serialization
                 pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
                 pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),*/
+                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
+                null
         );
 
         final Collection<Object[]> c = new ArrayList<Object[]>();
         final MarshallingConfiguration configuration = new MarshallingConfiguration();
         configuration.setCreator(new SunReflectiveCreator());
         for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
+            if (pair == null) continue;
             // Add this combination
             c.add(new Object[] { pair.getA(), pair.getB(), configuration.clone() });
         }

@@ -30,8 +30,10 @@ import java.util.concurrent.TimeoutException;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.river.RiverMarshaller;
 import static org.testng.AssertJUnit.assertEquals;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 /**
  * A template for running tests on a single object.
@@ -60,6 +62,9 @@ public final class SingleObjectMarshallerTests extends TestBase {
     public void test() throws Throwable {
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (subject instanceof TestArrayList && marshaller instanceof RiverMarshaller && configuration.getVersion() == -1) {
+                    throw new SkipException("TODO Known Issue - JBMAR-61");
+                }
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
             }

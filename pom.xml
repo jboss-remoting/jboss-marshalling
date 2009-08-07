@@ -41,14 +41,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.0-beta-7</version>
-                <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions>
                     <execution>
@@ -66,7 +58,7 @@
         <repository>
             <id>repository.jboss.org</id>
             <name>JBoss Maven2 Repository</name>
-            <url>${repository.url}</url>
+            <url>http://repository.jboss.org/repos/maven2</url>
         </repository>
     </distributionManagement>
 </project>

@@ -27,13 +27,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <version>1.2.0.CR4-SNAPSHOT</version>
+        <jbmar.version>1.2.0.CR4-SNAPSHOT</jbmar.version>
     </properties>
 
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling</artifactId>
     <packaging>pom</packaging>
-    <version>${version}</version>
+    <version>${jbmar.version}</version>
     <modules>
         <module>api</module>
         <module>river</module>

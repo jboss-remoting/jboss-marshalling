@@ -27,33 +27,33 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <version>1.2.0.CR4-SNAPSHOT</version>
+        <jbmar.version>1.2.0.CR4-SNAPSHOT</jbmar.version>
     </properties>
 
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>tests</artifactId>
-    <version>${version}</version>
+    <version>${jbmar.version}</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>marshalling-api</artifactId>
-            <version>${version}</version>
+            <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>river</artifactId>
-            <version>${version}</version>
+            <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serial</artifactId>
-            <version>${version}</version>
+            <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serialization-java</artifactId>
-            <version>${version}</version>
+            <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

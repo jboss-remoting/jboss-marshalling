@@ -301,6 +301,87 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+    
+    public static final class TestSerializableThatReferencesSerializableOverridenReadObject implements Serializable {
+       private static final long serialVersionUID = 3131360863878480344L;
+       TestSerializableOverridenReadObject anSerializableOverridenReadObject;
+       Integer balance;
+       
+       public boolean equals(Object obj) {
+          if (obj == this) return true;
+          if (!(obj instanceof TestSerializableThatReferencesSerializableOverridenReadObject)) return false;
+          TestSerializableThatReferencesSerializableOverridenReadObject that = (TestSerializableThatReferencesSerializableOverridenReadObject) obj;
+          if (!safeEquals(balance, that.balance)) return false;
+          if (!safeEquals(anSerializableOverridenReadObject, that.anSerializableOverridenReadObject)) return false;
+          return true;
+       }
+
+       public int hashCode() {
+          int result = 17;
+          result = result * 31 + safeHashCode(balance);
+          result = result * 31 + safeHashCode(anSerializableOverridenReadObject);
+          return result;
+       }
+       
+       private static int safeHashCode(Object obj) {
+          return obj == null ? 0 : obj.hashCode();
+       }
+
+       private static boolean safeEquals(Object a, Object b) {
+          return (a == b || (a != null && a.equals(b)));
+       }
+    }
+    
+    public static final class TestSerializableOverridenReadObject implements Serializable {
+       private static final long serialVersionUID = 3141360863878480344L;
+       String name;
+       String ssn;
+       transient boolean deserialized;
+
+       public TestSerializableOverridenReadObject() {
+          this.name = "Zamarreno";
+          this.ssn = "234-567-8901";
+       }
+       
+       @Override
+       public boolean equals(Object obj) {
+          if (obj == this) return true;
+          if (!(obj instanceof TestSerializableOverridenReadObject)) return false;
+          TestSerializableOverridenReadObject that = (TestSerializableOverridenReadObject) obj;
+          if (!name.equals(that.name)) return false;
+          if (!ssn.equals(that.ssn)) return false;          
+          return true;
+       }
+
+       @Override
+       public int hashCode( ) {
+          int result = 17;
+          result = result * 31 + name.hashCode();
+          result = result * 31 + ssn.hashCode();
+          return result;
+       }
+
+       private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+          ois.defaultReadObject();
+          deserialized = true;
+       }
+    }
+    
+    @Test
+    public void testSerializableThatReferencesSerializableOverridenReadObject() throws Throwable {
+        final TestSerializableThatReferencesSerializableOverridenReadObject serializable = new TestSerializableThatReferencesSerializableOverridenReadObject();
+        serializable.anSerializableOverridenReadObject = new TestSerializableOverridenReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
 
     public static final class TestSerializableDefaultWriteObjectGetFieldsReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
         private static final long serialVersionUID = 3121360863878480344L;

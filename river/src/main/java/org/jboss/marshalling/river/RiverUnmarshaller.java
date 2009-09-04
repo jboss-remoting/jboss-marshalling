@@ -1452,8 +1452,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     // protocol version >= 1 but no fields to read
                     blockUnmarshaller.endOfStream();
                     info.callReadObject(obj, objectInputStream);
-                    blockUnmarshaller.readToEndBlockData();
-                    blockUnmarshaller.unblock();
                 } else {
                     // protocol version 0
                     info.callReadObject(obj, objectInputStream);

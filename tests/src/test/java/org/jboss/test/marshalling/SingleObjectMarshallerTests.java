@@ -67,6 +67,7 @@ public final class SingleObjectMarshallerTests extends TestBase {
                 }
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
+                marshaller.writeObject("Test follower");
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
@@ -79,6 +80,7 @@ public final class SingleObjectMarshallerTests extends TestBase {
                     if (! noEqualsClasses.contains(subjectClass)) assertEquals(subject, readSubject);
                     second = unmarshaller.readObject();
                     assertEqualsOrSame(readSubject, second);
+                    assertEquals("Test follower", unmarshaller.readObject());
                     assertEOF(unmarshaller);
                 } catch (AssertionError e) {
                     final AssertionError e2 = new AssertionError(String.format("Assertion error occurred.\n\t-- Subject is %s\n\t-- Read Subject is %s\n\t-- Second object is %s\n\t-- Unmarshaller is %s\n\t-- Config is %s",

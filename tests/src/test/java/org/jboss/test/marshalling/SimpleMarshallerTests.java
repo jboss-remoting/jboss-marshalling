@@ -2156,7 +2156,6 @@ public final class SimpleMarshallerTests extends TestBase {
      */
     @Test
     public void testExternalizableWithFollowingObjects() throws Throwable {
-        if (true) throw new SkipException("Test Fails!");
         final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
         final TestExternalizableWithSerializableFields ext2 = new TestExternalizableWithSerializableFields();
         final TestExternalizableWithSerializableFields ext3 = new TestExternalizableWithSerializableFields();
@@ -2167,6 +2166,7 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof SerialMarshaller || marshaller instanceof ObjectOutputStreamMarshaller) throw new SkipException("TODO Known Issue - see JBMAR-50");
                 marshaller.writeObject(ext1);
                 marshaller.writeObject(ext2);
                 marshaller.writeObject(ext3);
@@ -2195,7 +2195,6 @@ public final class SimpleMarshallerTests extends TestBase {
 
     @Test
     public void testExternalizablePlusExternalizer() throws Throwable {
-        if (true) throw new SkipException("Test Fails!");
         final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
         final TestExternalizableWithSerializableFields ext2 = new TestExternalizableWithSerializableFields();
         final TestExternalizableWithSerializableFields ext3 = new TestExternalizableWithSerializableFields();
@@ -2220,6 +2219,7 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof SerialMarshaller) throw new SkipException("TODO Known Issue - see JBMAR-50");
                 if (marshaller instanceof JavaSerializationMarshaller) {
                     javaSerializationMarshaller.set(true);
                 }

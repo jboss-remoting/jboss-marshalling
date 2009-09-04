@@ -107,6 +107,7 @@ public final class SingleObjectMarshallerTestFactory {
 
     private static void populateAllMaps(List<Object> list) {
         populateAllMapSizes(list, hashMapMaker);
+        populateAllMapSizes(list, concurrentHashMapMaker);
         populateAllMapSizes(list, linkedHashMapMaker);
         populateAllMapSizes(list, identityHashMapMaker);
         populateAllMapSizes(list, treeMapMaker);
@@ -160,6 +161,12 @@ public final class SingleObjectMarshallerTestFactory {
     }
 
     private static final Maker<Map<Integer,Object>> hashMapMaker = new Maker<Map<Integer,Object>>() {
+        public Map<Integer, Object> make() {
+            return new HashMap<Integer, Object>();
+        }
+    };
+
+    private static final Maker<Map<Integer,Object>> concurrentHashMapMaker = new Maker<Map<Integer,Object>>() {
         public Map<Integer, Object> make() {
             return new HashMap<Integer, Object>();
         }

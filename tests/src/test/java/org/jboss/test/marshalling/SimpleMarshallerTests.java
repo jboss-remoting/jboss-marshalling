@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.NotSerializableException;
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -1012,6 +1013,30 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    @Test
+    public void testConcurrentHashMap() throws Throwable {
+        final Map<String, String> map = new ConcurrentHashMap<String, String>();
+        map.put("kejlwqewq", "qwejwqioprjweqiorjpofd");
+        map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
+        map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
+        map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(map);
+                marshaller.writeObject(map);
+            }
+
+            @SuppressWarnings({"unchecked"})
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Map<String, String> map2 = (Map<String, String>) unmarshaller.readObject();
+                assertEquals(map, map2);
+                assertSame(map2, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
 
     private static final class HashMapExternalizer implements Externalizer {
         private static final long serialVersionUID = 4923778660953773530L;

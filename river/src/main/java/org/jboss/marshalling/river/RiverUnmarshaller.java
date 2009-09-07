@@ -58,6 +58,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.EnumSet;
 import java.util.EnumMap;
+import java.util.AbstractCollection;
+import java.util.AbstractList;
+import java.util.AbstractQueue;
+import java.util.AbstractSequentialList;
+import java.util.AbstractSet;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
@@ -462,6 +467,21 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_CC_TREE_SET: {
                     return TreeSet.class;
                 }
+                case ID_ABSTRACT_COLLECTION: {
+                    return AbstractCollection.class;
+                }
+                case ID_ABSTRACT_LIST: {
+                    return AbstractList.class;
+                }
+                case ID_ABSTRACT_QUEUE: {
+                    return AbstractQueue.class;
+                }
+                case ID_ABSTRACT_SEQUENTIAL_LIST: {
+                    return AbstractSequentialList.class;
+                }
+                case ID_ABSTRACT_SET: {
+                    return AbstractSet.class;
+                }
 
                 case ID_SINGLETON_LIST_OBJECT: {
                     final int idx = instanceCache.size();
@@ -856,6 +876,22 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_ENUM_MAP: {
                 return ClassDescriptor.CC_ENUM_MAP;
+            }
+
+            case ID_ABSTRACT_COLLECTION: {
+                return ClassDescriptor.ABSTRACT_COLLECTION;
+            }
+            case ID_ABSTRACT_LIST: {
+                return ClassDescriptor.ABSTRACT_LIST;
+            }
+            case ID_ABSTRACT_QUEUE: {
+                return ClassDescriptor.ABSTRACT_QUEUE;
+            }
+            case ID_ABSTRACT_SEQUENTIAL_LIST: {
+                return ClassDescriptor.ABSTRACT_SEQUENTIAL_LIST;
+            }
+            case ID_ABSTRACT_SET: {
+                return ClassDescriptor.ABSTRACT_SET;
             }
 
             case ID_STRING_CLASS: {

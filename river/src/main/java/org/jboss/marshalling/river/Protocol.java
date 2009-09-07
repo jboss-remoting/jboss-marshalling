@@ -159,6 +159,12 @@ public final class Protocol {
     public static final int ID_CC_ENUM_SET_PROXY        = 0x6a;
     public static final int ID_CC_ENUM_SET              = 0x6b;
     public static final int ID_CC_ENUM_MAP              = 0x6c;
+    // collection/map base classes
+    public static final int ID_ABSTRACT_COLLECTION      = 0x6d;
+    public static final int ID_ABSTRACT_SET             = 0x6e;
+    public static final int ID_ABSTRACT_LIST            = 0x6f;
+    public static final int ID_ABSTRACT_QUEUE           = 0x70;
+    public static final int ID_ABSTRACT_SEQUENTIAL_LIST = 0x71;
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();

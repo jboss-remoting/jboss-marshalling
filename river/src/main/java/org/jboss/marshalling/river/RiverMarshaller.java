@@ -49,6 +49,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.AbstractCollection;
+import java.util.AbstractList;
+import java.util.AbstractQueue;
+import java.util.AbstractSequentialList;
+import java.util.AbstractSet;
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
@@ -1246,6 +1251,12 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(Hashtable.class, ID_CC_HASHTABLE);
         map.put(LinkedHashMap.class, ID_CC_LINKED_HASH_MAP);
         map.put(TreeMap.class, ID_CC_TREE_MAP);
+
+        map.put(AbstractCollection.class, ID_ABSTRACT_COLLECTION);
+        map.put(AbstractList.class, ID_ABSTRACT_LIST);
+        map.put(AbstractQueue.class, ID_ABSTRACT_QUEUE);
+        map.put(AbstractSequentialList.class, ID_ABSTRACT_SEQUENTIAL_LIST);
+        map.put(AbstractSet.class, ID_ABSTRACT_SET);
 
         map.put(emptyListClass, ID_EMPTY_LIST_OBJECT); // special case
         map.put(singletonListClass, ID_SINGLETON_LIST_OBJECT); // special case

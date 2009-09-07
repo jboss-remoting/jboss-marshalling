@@ -39,6 +39,11 @@ import java.util.LinkedHashMap;
 import java.util.TreeMap;
 import java.util.EnumSet;
 import java.util.EnumMap;
+import java.util.AbstractCollection;
+import java.util.AbstractList;
+import java.util.AbstractQueue;
+import java.util.AbstractSequentialList;
+import java.util.AbstractSet;
 import java.io.Externalizable;
 
 /**
@@ -81,6 +86,12 @@ public class ClassDescriptor {
     public static final ClassDescriptor CHAR_ARRAY = new ClassDescriptor(char[].class, Protocol.ID_CHAR_ARRAY_CLASS);
     public static final ClassDescriptor FLOAT_ARRAY = new ClassDescriptor(float[].class, Protocol.ID_FLOAT_ARRAY_CLASS);
     public static final ClassDescriptor DOUBLE_ARRAY = new ClassDescriptor(double[].class, Protocol.ID_DOUBLE_ARRAY_CLASS);
+
+    public static final ClassDescriptor ABSTRACT_COLLECTION = new ClassDescriptor(AbstractCollection.class, Protocol.ID_ABSTRACT_COLLECTION);
+    public static final ClassDescriptor ABSTRACT_LIST = new ClassDescriptor(AbstractList.class, Protocol.ID_ABSTRACT_LIST);
+    public static final ClassDescriptor ABSTRACT_QUEUE = new ClassDescriptor(AbstractQueue.class, Protocol.ID_ABSTRACT_QUEUE);
+    public static final ClassDescriptor ABSTRACT_SEQUENTIAL_LIST = new ClassDescriptor(AbstractSequentialList.class, Protocol.ID_ABSTRACT_SEQUENTIAL_LIST);
+    public static final ClassDescriptor ABSTRACT_SET = new ClassDescriptor(AbstractSet.class, Protocol.ID_ABSTRACT_SET);
 
     // non-public (due to security)
 

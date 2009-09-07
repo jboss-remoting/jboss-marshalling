@@ -128,8 +128,9 @@ public class ClassDescriptor {
                 final SerializableClassRegistry reg = SerializableClassRegistry.getInstance();
                 final SerializableClass serializableClass = reg.lookup(subject);
                 final SerializableField[] fields = serializableClass.getFields();
+                final boolean hasWriteObject = serializableClass.hasWriteObject();
                 try {
-                    return new SerializableClassDescriptor(serializableClass, null, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
+                    return new SerializableClassDescriptor(serializableClass, null, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : hasWriteObject ? Protocol.ID_WRITE_OBJECT_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
                 } catch (ClassNotFoundException e) {
                     throw new NoClassDefFoundError(e.getMessage());
                 }

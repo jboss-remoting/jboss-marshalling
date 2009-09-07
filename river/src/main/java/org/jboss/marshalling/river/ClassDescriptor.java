@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.TreeMap;
+import java.util.EnumSet;
+import java.util.EnumMap;
 import java.io.Externalizable;
 
 /**
@@ -94,6 +96,9 @@ public class ClassDescriptor {
     static final ClassDescriptor CC_HASHTABLE = getSerializableClassDescriptor(Hashtable.class);
     static final ClassDescriptor CC_LINKED_HASH_MAP = getSerializableClassDescriptor(LinkedHashMap.class);
     static final ClassDescriptor CC_TREE_MAP = getSerializableClassDescriptor(TreeMap.class);
+
+    static final ClassDescriptor CC_ENUM_SET = getSerializableClassDescriptor(EnumSet.class);
+    static final ClassDescriptor CC_ENUM_MAP = getSerializableClassDescriptor(EnumMap.class);
 
     private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject) {
         return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {

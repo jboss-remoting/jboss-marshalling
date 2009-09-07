@@ -56,6 +56,8 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.EnumSet;
+import java.util.EnumMap;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
@@ -540,159 +542,47 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         }
                     }
                     final int id = readUnsignedByte();
-                    final int idx;
-                    final ArrayList<Object> instanceCache = this.instanceCache;
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
-                            final Collection target = new ArrayList(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.add(doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readCollectionData(unshared, len, new ArrayList(len));
                         }
                         case ID_CC_HASH_SET: {
-                            final Collection target = new HashSet(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.add(doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readCollectionData(unshared, len, new HashSet(len));
                         }
                         case ID_CC_LINKED_HASH_SET: {
-                            final Collection target = new LinkedHashSet(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.add(doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readCollectionData(unshared, len, new LinkedHashSet(len));
                         }
                         case ID_CC_LINKED_LIST: {
-                            final Collection target = new LinkedList();
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.add(doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readCollectionData(unshared, len, new LinkedList());
                         }
                         case ID_CC_TREE_SET: {
-                            final Collection target = new TreeSet((Comparator)doReadObject(false));
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.add(doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readCollectionData(unshared, len, new TreeSet((Comparator)doReadObject(false)));
+                        }
+                        case ID_CC_ENUM_SET_PROXY: {
+                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                            final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
+                            return readCollectionData(unshared, len, EnumSet.noneOf(elementType));
                         }
 
                         case ID_CC_HASH_MAP: {
-                            final Map target = new HashMap(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.put(doReadObject(false), doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readMapData(unshared, len, new HashMap(len));
                         }
                         case ID_CC_HASHTABLE: {
-                            final Map target = new Hashtable(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.put(doReadObject(false), doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readMapData(unshared, len, new Hashtable(len));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
-                            final Map target = new IdentityHashMap(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.put(doReadObject(false), doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readMapData(unshared, len, new IdentityHashMap(len));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
-                            final Map target = new LinkedHashMap(len);
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.put(doReadObject(false), doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readMapData(unshared, len, new LinkedHashMap(len));
                         }
                         case ID_CC_TREE_MAP: {
-                            final Map target = new TreeMap((Comparator)doReadObject(false));
-                            idx = instanceCache.size();
-                            instanceCache.add(target);
-                            for (int i = 0; i < len; i ++) {
-                                target.put(doReadObject(false), doReadObject(false));
-                            }
-                            final Object resolvedObject = objectResolver.readResolve(target);
-                            if (unshared) {
-                                instanceCache.set(idx, null);
-                            } else if (target != resolvedObject) {
-                                instanceCache.set(idx, resolvedObject);
-                            }
-                            return resolvedObject;
+                            return readMapData(unshared, len, new TreeMap((Comparator)doReadObject(false)));
+                        }
+                        case ID_CC_ENUM_MAP: {
+                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                            final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
+                            return readMapData(unshared, len, new EnumMap(elementType));
                         }
                         default: {
                             throw new StreamCorruptedException("Unexpected byte foudn when reading a collection type: " + leadByte);
@@ -723,6 +613,42 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } finally {
             depth --;
         }
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private Object readCollectionData(final boolean unshared, final int len, final Collection target) throws ClassNotFoundException, IOException {
+        final ArrayList<Object> instanceCache = this.instanceCache;
+        final int idx;
+        idx = instanceCache.size();
+        instanceCache.add(target);
+        for (int i = 0; i < len; i ++) {
+            target.add(doReadObject(false));
+        }
+        final Object resolvedObject = objectResolver.readResolve(target);
+        if (unshared) {
+            instanceCache.set(idx, null);
+        } else if (target != resolvedObject) {
+            instanceCache.set(idx, resolvedObject);
+        }
+        return resolvedObject;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private Object readMapData(final boolean unshared, final int len, final Map target) throws ClassNotFoundException, IOException {
+        final ArrayList<Object> instanceCache = this.instanceCache;
+        final int idx;
+        idx = instanceCache.size();
+        instanceCache.add(target);
+        for (int i = 0; i < len; i ++) {
+            target.put(doReadObject(false), doReadObject(false));
+        }
+        final Object resolvedObject = objectResolver.readResolve(target);
+        if (unshared) {
+            instanceCache.set(idx, null);
+        } else if (target != resolvedObject) {
+            instanceCache.set(idx, resolvedObject);
+        }
+        return resolvedObject;
     }
 
     private static InvalidObjectException sharedMismatch() {
@@ -923,6 +849,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_TREE_MAP: {
                 return ClassDescriptor.CC_TREE_MAP;
+            }
+
+            case ID_CC_ENUM_SET: {
+                return ClassDescriptor.CC_ENUM_SET;
+            }
+            case ID_CC_ENUM_MAP: {
+                return ClassDescriptor.CC_ENUM_MAP;
             }
 
             case ID_STRING_CLASS: {

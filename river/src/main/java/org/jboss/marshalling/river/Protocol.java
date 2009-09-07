@@ -155,6 +155,10 @@ public final class Protocol {
     public static final int ID_CC_TREE_MAP              = 0x67;
     public static final int ID_SINGLETON_MAP_OBJECT     = 0x68;
     public static final int ID_EMPTY_MAP_OBJECT         = 0x69;
+    // enum holders
+    public static final int ID_CC_ENUM_SET_PROXY        = 0x6a;
+    public static final int ID_CC_ENUM_SET              = 0x6b;
+    public static final int ID_CC_ENUM_MAP              = 0x6c;
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();

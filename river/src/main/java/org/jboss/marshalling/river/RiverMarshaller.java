@@ -34,6 +34,7 @@ import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,6 +47,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
@@ -708,26 +711,67 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                case ID_CC_ENUM_SET_PROXY: {
+                    instanceCache.put(obj, instanceSeq++);
+                    final Enum[] elements = getEnumSetElements(obj);
+                    final int len = elements.length;
+                    if (len == 0) {
+                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                        write(id);
+                        writeClass(getEnumSetElementType(obj));
+                    } else if (len <= 256) {
+                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                        write(len);
+                        write(id);
+                        writeClass(getEnumSetElementType(obj));
+                        for (Object o : elements) {
+                            doWriteObject(o, false);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                        writeShort(len);
+                        write(id);
+                        writeClass(getEnumSetElementType(obj));
+                        for (Object o : elements) {
+                            doWriteObject(o, false);
+                        }
+                    } else {
+                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                        writeInt(len);
+                        write(id);
+                        writeClass(getEnumSetElementType(obj));
+                        for (Object o : elements) {
+                            doWriteObject(o, false);
+                        }
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
                 case ID_CC_HASH_MAP:
                 case ID_CC_HASHTABLE:
                 case ID_CC_IDENTITY_HASH_MAP:
                 case ID_CC_LINKED_HASH_MAP:
-                case ID_CC_TREE_MAP: {
+                case ID_CC_TREE_MAP:
+                case ID_CC_ENUM_MAP: {
                     instanceCache.put(obj, instanceSeq++);
                     final Map<?, ?> map = (Map<?, ?>) obj;
                     final int len = map.size();
                     if (len == 0) {
                         write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
-                        if (id == ID_CC_TREE_MAP) {
-                            doWriteObject(((TreeMap)map).comparator(), false);
+                        switch (id) {
+                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
+                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                     } else if (len <= 256) {
                         write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
                         write(len);
                         write(id);
-                        if (id == ID_CC_TREE_MAP) {
-                            doWriteObject(((TreeMap)map).comparator(), false);
+                        switch (id) {
+                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
+                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
                             doWriteObject(entry.getKey(), false);
@@ -737,8 +781,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
                         writeShort(len);
                         write(id);
-                        if (id == ID_CC_TREE_MAP) {
-                            doWriteObject(((TreeMap)map).comparator(), false);
+                        switch (id) {
+                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
+                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
                             doWriteObject(entry.getKey(), false);
@@ -748,8 +793,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
                         writeInt(len);
                         write(id);
-                        if (id == ID_CC_TREE_MAP) {
-                            doWriteObject(((TreeMap)map).comparator(), false);
+                        switch (id) {
+                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
+                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
                             doWriteObject(entry.getKey(), false);
@@ -901,6 +947,32 @@ public class RiverMarshaller extends AbstractMarshaller {
                     instanceCache.put(original, replId);
                 }
             }
+        }
+    }
+
+    private static Class<? extends Enum> getEnumMapKeyType(final Object obj) {
+        return getAccessableEnumFieldValue(ENUM_MAP_KEY_TYPE_FIELD, obj);
+    }
+
+    private static Class<? extends Enum> getEnumSetElementType(final Object obj) {
+        return getAccessableEnumFieldValue(ENUM_SET_ELEMENT_TYPE_FIELD, obj);
+    }
+
+    private static Enum[] getEnumSetElements(final Object obj) {
+        try {
+            return (Enum[]) ENUM_SET_VALUES_FIELD.get(obj);
+        } catch (IllegalAccessException e) {
+            // should not happen
+            throw new IllegalStateException("Unexpected state", e);
+        }
+    }
+
+    private static Class<? extends Enum> getAccessableEnumFieldValue(final Field field, final Object obj) {
+        try {
+            return ((Class<?>) field.get(obj)).asSubclass(Enum.class);
+        } catch (IllegalAccessException e) {
+            // should not happen
+            throw new IllegalStateException("Unexpected state", e);
         }
     }
 
@@ -1117,6 +1189,10 @@ public class RiverMarshaller extends AbstractMarshaller {
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
 
+    private static final Field ENUM_SET_ELEMENT_TYPE_FIELD;
+    private static final Field ENUM_SET_VALUES_FIELD;
+    private static final Field ENUM_MAP_KEY_TYPE_FIELD;
+
     static {
         final IdentityIntMap<Class<?>> map = new IdentityIntMap<Class<?>>(0x0.6p0f);
 
@@ -1179,6 +1255,50 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         map.put(emptyMapClass, ID_EMPTY_MAP_OBJECT); // special case
         map.put(singletonMapClass, ID_SINGLETON_MAP_OBJECT); // special case
+
+        map.put(EnumMap.class, ID_CC_ENUM_MAP);
+        map.put(EnumSet.class, ID_CC_ENUM_SET);
+
+        final Class<?> enumSetProxyClass;
+        try {
+            enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
+            map.put(enumSetProxyClass, ID_CC_ENUM_SET_PROXY); // special case...
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("No standard serialization proxy found for enum set!");
+        }
+        ENUM_SET_VALUES_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            public Field run() {
+                try {
+                    final Field field = enumSetProxyClass.getDeclaredField("elements");
+                    field.setAccessible(true);
+                    return field;
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("Cannot locate the elements field on EnumSet's serialization proxy!");
+                }
+            }
+        });
+        ENUM_SET_ELEMENT_TYPE_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            public Field run() {
+                try {
+                    final Field field = enumSetProxyClass.getDeclaredField("elementType");
+                    field.setAccessible(true);
+                    return field;
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("Cannot locate the elementType field on EnumSet's serialization proxy!");
+                }
+            }
+        });
+        ENUM_MAP_KEY_TYPE_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            public Field run() {
+                try {
+                    final Field field = EnumMap.class.getDeclaredField("keyType");
+                    field.setAccessible(true);
+                    return field;
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("Cannot locate the keyType field on EnumMap!");
+                }
+            }
+        });
 
         BASIC_CLASSES_V2 = map;
     }

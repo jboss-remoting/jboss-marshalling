@@ -849,7 +849,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 case ID_CC_CONCURRENT_HASH_MAP:
                 case ID_CC_COPY_ON_WRITE_ARRAY_LIST:
-                case ID_CC_COPY_ON_WRITE_ARRAY_SET:
+                case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
+                    info = registry.lookup(objClass);
+                    break;
+                }
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }

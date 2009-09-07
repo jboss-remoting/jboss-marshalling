@@ -54,6 +54,11 @@ import java.util.AbstractList;
 import java.util.AbstractQueue;
 import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
+import java.util.Vector;
+import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
@@ -670,7 +675,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                 case ID_CC_LINKED_HASH_SET:
                 case ID_CC_TREE_SET:
                 case ID_CC_ARRAY_LIST:
-                case ID_CC_LINKED_LIST: {
+                case ID_CC_LINKED_LIST:
+                case ID_CC_VECTOR:
+                case ID_CC_STACK: {
                     instanceCache.put(obj, instanceSeq++);
                     final Collection<?> collection = (Collection<?>) obj;
                     final int len = collection.size();
@@ -840,6 +847,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                case ID_CC_CONCURRENT_HASH_MAP:
+                case ID_CC_COPY_ON_WRITE_ARRAY_LIST:
+                case ID_CC_COPY_ON_WRITE_ARRAY_SET:
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }
@@ -1257,6 +1267,12 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(AbstractQueue.class, ID_ABSTRACT_QUEUE);
         map.put(AbstractSequentialList.class, ID_ABSTRACT_SEQUENTIAL_LIST);
         map.put(AbstractSet.class, ID_ABSTRACT_SET);
+
+        map.put(ConcurrentHashMap.class, ID_CC_CONCURRENT_HASH_MAP);
+        map.put(CopyOnWriteArrayList.class, ID_CC_COPY_ON_WRITE_ARRAY_LIST);
+        map.put(CopyOnWriteArraySet.class, ID_CC_COPY_ON_WRITE_ARRAY_SET);
+        map.put(Vector.class, ID_CC_VECTOR);
+        map.put(Stack.class, ID_CC_STACK);
 
         map.put(emptyListClass, ID_EMPTY_LIST_OBJECT); // special case
         map.put(singletonListClass, ID_SINGLETON_LIST_OBJECT); // special case

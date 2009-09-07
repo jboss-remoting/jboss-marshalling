@@ -63,6 +63,8 @@ import java.util.AbstractList;
 import java.util.AbstractQueue;
 import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
+import java.util.Vector;
+import java.util.Stack;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
@@ -583,6 +585,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
                             return readCollectionData(unshared, len, EnumSet.noneOf(elementType));
                         }
+                        case ID_CC_VECTOR: {
+                            return readCollectionData(unshared, len, new Vector(len));
+                        }
+                        case ID_CC_STACK: {
+                            return readCollectionData(unshared, len, new Stack());
+                        }
 
                         case ID_CC_HASH_MAP: {
                             return readMapData(unshared, len, new HashMap(len));
@@ -892,6 +900,22 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_ABSTRACT_SET: {
                 return ClassDescriptor.ABSTRACT_SET;
+            }
+
+            case ID_CC_CONCURRENT_HASH_MAP: {
+                return ClassDescriptor.CONCURRENT_HASH_MAP;
+            }
+            case ID_CC_COPY_ON_WRITE_ARRAY_LIST: {
+                return ClassDescriptor.COPY_ON_WRITE_ARRAY_LIST;
+            }
+            case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
+                return ClassDescriptor.COPY_ON_WRITE_ARRAY_SET;
+            }
+            case ID_CC_VECTOR: {
+                return ClassDescriptor.VECTOR;
+            }
+            case ID_CC_STACK: {
+                return ClassDescriptor.STACK;
             }
 
             case ID_STRING_CLASS: {

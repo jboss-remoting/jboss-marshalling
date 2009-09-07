@@ -44,6 +44,11 @@ import java.util.AbstractList;
 import java.util.AbstractQueue;
 import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
+import java.util.Vector;
+import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.io.Externalizable;
 
 /**
@@ -110,6 +115,12 @@ public class ClassDescriptor {
 
     static final ClassDescriptor CC_ENUM_SET = getSerializableClassDescriptor(EnumSet.class);
     static final ClassDescriptor CC_ENUM_MAP = getSerializableClassDescriptor(EnumMap.class);
+
+    static final ClassDescriptor CONCURRENT_HASH_MAP = getSerializableClassDescriptor(ConcurrentHashMap.class);
+    static final ClassDescriptor COPY_ON_WRITE_ARRAY_LIST = getSerializableClassDescriptor(CopyOnWriteArrayList.class);
+    static final ClassDescriptor COPY_ON_WRITE_ARRAY_SET = getSerializableClassDescriptor(CopyOnWriteArraySet.class);
+    static final ClassDescriptor VECTOR = getSerializableClassDescriptor(Vector.class);
+    static final ClassDescriptor STACK = getSerializableClassDescriptor(Stack.class);
 
     private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject) {
         return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {

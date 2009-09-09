@@ -136,7 +136,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private ObjectInput getObjectInput() {
         final ObjectInput objectInput = this.objectInput;
-        return objectInput == null ? (this.objectInput = (version > 0 ? getBlockUnmarshaller() : new MarshallerObjectInput(this))) : objectInput;
+        return objectInput == null ? (this.objectInput = getBlockUnmarshaller()) : objectInput;
     }
 
     private BlockUnmarshaller getBlockUnmarshaller() {
@@ -146,7 +146,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private final PrivilegedExceptionAction<RiverObjectInputStream> createObjectInputStreamAction = new PrivilegedExceptionAction<RiverObjectInputStream>() {
         public RiverObjectInputStream run() throws IOException {
-            return new RiverObjectInputStream(RiverUnmarshaller.this, version > 0 ? getBlockUnmarshaller() : RiverUnmarshaller.this);
+            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
         }
     };
 
@@ -313,6 +313,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         blockUnmarshaller.unblock();
                         return obj;
                     } else {
+                        // v2 does not require a block for this
                         return objectTable.readObject(this);
                     }
                 }
@@ -741,7 +742,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
                 final SerializableClass serializableClass = registry.lookup(type);
-                int descType = version > 0 && serializableClass.hasWriteObject() ? ID_WRITE_OBJECT_CLASS : ID_SERIALIZABLE_CLASS;
+                int descType = serializableClass.hasWriteObject() ? ID_WRITE_OBJECT_CLASS : ID_SERIALIZABLE_CLASS;
                 final ClassDescriptor descriptor = new SerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte()), serializableClass.getFields(), descType);
                 classCache.set(idx, descriptor);
                 return descriptor;
@@ -765,6 +766,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
                 } else {
+                    // v2 does not require a block for this
                     descriptor = new ClassDescriptor(classResolver.resolveProxyClass(this, interfaces), ID_PROXY_CLASS);
                 }
                 classCache.add(descriptor);
@@ -1028,6 +1030,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             blockUnmarshaller.unblock();
             return type;
         } else {
+            // v2 does not require a block for this
             return classTable.readClass(this);
         }
     }
@@ -1040,6 +1043,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             blockUnmarshaller.unblock();
             return resolvedClass;
         } else {
+            // v2 does not require a block for this
             return classResolver.resolveClass(this, className, uid);
         }
     }
@@ -1057,15 +1061,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     protected void doStart() throws IOException {
         super.doStart();
-        if (configuredVersion > 0) {
-            int version = readUnsignedByte();
-            if (version > MAX_VERSION) {
-                throw new IOException("Unsupported protocol version " + version);
-            }
-            this.version = version;
-        } else {
-            version = 0;
+        int version = readUnsignedByte();
+        if (version < MIN_VERSION || version > configuredVersion || version > MAX_VERSION) {
+            throw new IOException("Unsupported protocol version " + version);
         }
+        this.version = version;
     }
 
     private static final InvocationHandler DUMMY_HANDLER = new DummyInvocationHandler();
@@ -1124,14 +1124,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final Externalizable obj = (Externalizable) creator.create(type);
                 final int idx = instanceCache.size();
                 instanceCache.add(obj);
-                if (version > 0) {
-                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj.readExternal(blockUnmarshaller);
-                    blockUnmarshaller.readToEndBlockData();
-                    blockUnmarshaller.unblock();
-                } else {
-                    obj.readExternal(getObjectInput());
-                }
+                final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                obj.readExternal(blockUnmarshaller);
+                blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
                 final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
                 if (unshared) {
                     instanceCache.set(idx, null);
@@ -1147,18 +1143,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final Class<?> type = descriptor.getType();
                 final SerializableClass serializableClass = registry.lookup(type);
                 final Object obj;
-                if (version > 0) {
-                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj = externalizer.createExternal(type, blockUnmarshaller, creator);
-                    instanceCache.set(idx, obj);
-                    externalizer.readExternal(obj, blockUnmarshaller);
-                    blockUnmarshaller.readToEndBlockData();
-                    blockUnmarshaller.unblock();
-                } else {
-                    obj = externalizer.createExternal(type, this, creator);
-                    instanceCache.set(idx, obj);
-                    externalizer.readExternal(obj, getObjectInput());
-                }
+                final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                obj = externalizer.createExternal(type, blockUnmarshaller, creator);
+                instanceCache.set(idx, obj);
+                externalizer.readExternal(obj, blockUnmarshaller);
+                blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
                 final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
                 if (unshared) {
                     instanceCache.set(idx, null);
@@ -1437,16 +1427,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             boolean ok = false;
             try {
                 if (typeId == ID_WRITE_OBJECT_CLASS) {
-                    // protocol version >= 1; read fields
+                    // read fields
                     info.callReadObject(obj, objectInputStream);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
-                } else if (version >= 1) {
-                    // protocol version >= 1 but no fields to read
-                    blockUnmarshaller.endOfStream();
-                    info.callReadObject(obj, objectInputStream);
                 } else {
-                    // protocol version 0
+                    // no fields to read
+                    blockUnmarshaller.endOfStream();
                     info.callReadObject(obj, objectInputStream);
                 }
                 objectInputStream.finish(restoreState);
@@ -1461,7 +1448,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } else {
             readFields(obj, descriptor);
             if (typeId == ID_WRITE_OBJECT_CLASS) {
-                // protocol version >= 1 with useless user data
+                // useless user data
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();
             }
@@ -1503,11 +1490,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         break;
                     }
                     case OBJECT: {
-                        if (serializableField.isUnshared()) {
-                            readObjectUnshared();
-                        } else {
-                            readObject();
-                        }
+                        doReadObject(serializableField.isUnshared());
                         break;
                     }
                     case SHORT: {
@@ -1546,13 +1529,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         break;
                     }
                     case OBJECT: {
-                        final Object robj;
-                        if (serializableField.isUnshared()) {
-                            robj = readObjectUnshared();
-                        } else {
-                            robj = readObject();
-                        }
-                        field.set(obj, robj);
+                        field.set(obj, doReadObject(serializableField.isUnshared()));
                         break;
                     }
                     case SHORT: {

@@ -63,7 +63,6 @@ import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.MarshallerObjectOutput;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
@@ -90,7 +89,8 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected RiverMarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) throws IOException {
         super(marshallerFactory, configuration);
-        if (configuredVersion > MAX_VERSION) {
+        final int configuredVersion = this.configuredVersion;
+        if (configuredVersion < MIN_VERSION || configuredVersion > MAX_VERSION) {
             throw new IOException("Unsupported protocol version " + configuredVersion);
         }
         this.registry = registry;
@@ -1030,7 +1030,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected ObjectOutput getObjectOutput() {
         final ObjectOutput output = objectOutput;
-        return output == null ? configuredVersion == 0 ? (objectOutput = new MarshallerObjectOutput(this)) : (objectOutput = getBlockMarshaller()) : output;
+        return output == null ? (objectOutput = getBlockMarshaller()) : output;
     }
 
     protected BlockMarshaller getBlockMarshaller() {
@@ -1045,7 +1045,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     private final PrivilegedExceptionAction<RiverObjectOutputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<RiverObjectOutputStream>() {
         public RiverObjectOutputStream run() throws IOException {
-            return new RiverObjectOutputStream(configuredVersion == 0 ? RiverMarshaller.this : getBlockMarshaller(), RiverMarshaller.this);
+            return new RiverObjectOutputStream(getBlockMarshaller(), RiverMarshaller.this);
         }
     };
 
@@ -1410,7 +1410,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeClassTableData(objClass, classTableWriter);
         } else {
             final SerializableClass info = registry.lookup(objClass);
-            if (configuredVersion > 0 && info.hasWriteObject()) {
+            if (info.hasWriteObject()) {
                 write(ID_WRITE_OBJECT_CLASS);
             } else {
                 write(ID_SERIALIZABLE_CLASS);
@@ -1508,10 +1508,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected void doStart() throws IOException {
         super.doStart();
-        final int configuredVersion = this.configuredVersion;
-        if (configuredVersion > 0) {
-            writeByte(configuredVersion);
-        }
+        writeByte(configuredVersion);
     }
 
     private void writeString(String string) throws IOException {

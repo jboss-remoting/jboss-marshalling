@@ -384,12 +384,28 @@ public abstract class AbstractMarshaller implements Marshaller {
 
     /** {@inheritDoc} */
     public final void writeObjectUnshared(final Object obj) throws IOException {
-        doWriteObject(obj, true);
+        try {
+            doWriteObject(obj, true);
+        } catch (IOException e) {
+            MarshallingException.addObjectInformation(e, obj);
+            throw e;
+        } catch (RuntimeException e) {
+            MarshallingException.addObjectInformation(e, obj);
+            throw e;
+        }
     }
 
     /** {@inheritDoc} */
     public final void writeObject(final Object obj) throws IOException {
-        doWriteObject(obj, false);
+        try {
+            doWriteObject(obj, false);
+        } catch (IOException e) {
+            MarshallingException.addObjectInformation(e, obj);
+            throw e;
+        } catch (RuntimeException e) {
+            MarshallingException.addObjectInformation(e, obj);
+            throw e;
+        }
     }
 
     /**

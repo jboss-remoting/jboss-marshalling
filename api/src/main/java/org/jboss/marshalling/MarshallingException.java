@@ -33,19 +33,33 @@ public final class MarshallingException extends Throwable {
 
     private Info info = null;
 
-    public static void addInformation(Throwable t, Object targetObject, String fieldName) {
+    public static void addFieldInformation(Throwable t, String fieldName) {
         if (t instanceof MarshallingException) {
             final MarshallingException me = (MarshallingException) t;
-            final String targetClassName = targetObject.getClass().getName();
-            final int targetHashCode = targetObject.hashCode();
             final Info oldInfo = me.info;
-            me.info = new Info(oldInfo, targetClassName, targetHashCode, fieldName);
+            me.info = new FieldInfo(oldInfo, fieldName);
         } else {
             Throwable c = t.getCause();
             if (c == null) {
                 t.initCause(c = new MarshallingException());
             }
-            addInformation(c, targetObject, fieldName);
+            addObjectInformation(c, fieldName);
+        }
+    }
+
+    public static void addObjectInformation(Throwable t, Object targetObject) {
+        if (t instanceof MarshallingException) {
+            final MarshallingException me = (MarshallingException) t;
+            final String targetClassName = targetObject.getClass().getName();
+            final int targetHashCode = targetObject.hashCode();
+            final Info oldInfo = me.info;
+            me.info = new ObjectInfo(oldInfo, targetClassName, targetHashCode);
+        } else {
+            Throwable c = t.getCause();
+            if (c == null) {
+                t.initCause(c = new MarshallingException());
+            }
+            addObjectInformation(c, targetObject);
         }
     }
 
@@ -66,26 +80,45 @@ public final class MarshallingException extends Throwable {
     }
 
     /**
-     * Information of an object which was being marshalled at the time an exception occurred.
+     * Information about the circumstances surrounding marshalling.
      */
-    public static final class Info implements Serializable {
+    public static abstract class Info implements Serializable {
 
-        private static final long serialVersionUID = -8580895864558204394L;
+        private static final long serialVersionUID = -5600603940887712730L;
 
         private final Info cause;
-        private final String targetClassName;
-        private final int targetHashCode;
-        private final String targetFieldName;
 
-        public Info(final Info cause, final String targetClassName, final int targetHashCode, final String targetFieldName) {
+        private Info(final Info cause) {
             this.cause = cause;
-            this.targetClassName = targetClassName;
-            this.targetHashCode = targetHashCode;
-            this.targetFieldName = targetFieldName;
         }
 
         public Info getCause() {
             return cause;
+        }
+
+        abstract void toString(StringBuilder builder);
+
+        public final String toString() {
+            final StringBuilder builder = new StringBuilder(256);
+            toString(builder);
+            return builder.toString();
+        }
+    }
+
+    /**
+     * Information of an object which was being marshalled at the time an exception occurred.
+     */
+    public static final class ObjectInfo extends Info implements Serializable {
+
+        private static final long serialVersionUID = -8580895864558204394L;
+
+        private final String targetClassName;
+        private final int targetHashCode;
+
+        public ObjectInfo(final Info cause, final String targetClassName, final int targetHashCode) {
+            super(cause);
+            this.targetClassName = targetClassName;
+            this.targetHashCode = targetHashCode;
         }
 
         public String getTargetClassName() {
@@ -96,26 +129,35 @@ public final class MarshallingException extends Throwable {
             return targetHashCode;
         }
 
-        public String getTargetFieldName() {
-            return targetFieldName;
-        }
-
-        public String toString() {
-            final StringBuilder builder = new StringBuilder(256);
-            toString(builder);
-            return builder.toString();
-        }
-
-        private void toString(StringBuilder builder) {
+        void toString(StringBuilder builder) {
             final Info cause = this.cause;
             if (cause != null) {
                 cause.toString(builder);
             }
             builder.append("\n\tfrom object ").append(targetClassName).append('@').append(Integer.toHexString(targetHashCode));
-            final String fieldName = targetFieldName;
-            if (fieldName != null) {
-                builder.append(" (field ").append(fieldName).append(')');
+        }
+    }
+
+    /**
+     * Information of a field which was being marshalled at the time an exception occurred.
+     */
+    public static final class FieldInfo extends Info implements Serializable {
+
+        private static final long serialVersionUID = -7502908990208699055L;
+
+        private final String fieldName;
+
+        public FieldInfo(final Info cause, final String fieldName) {
+            super(cause);
+            this.fieldName = fieldName;
+        }
+
+        void toString(final StringBuilder builder) {
+            final Info cause = this.cause;
+            if (cause != null) {
+                cause.toString(builder);
             }
+            builder.append("\n\t\tfield ").append(fieldName);
         }
     }
 }

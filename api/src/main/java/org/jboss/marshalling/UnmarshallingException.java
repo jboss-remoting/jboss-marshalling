@@ -49,7 +49,7 @@ public final class UnmarshallingException extends Throwable {
             if (c == null) {
                 t.initCause(c = new UnmarshallingException());
             }
-            addObjectInformation(c, fieldName);
+            addFieldInformation(c, fieldName);
         }
     }
 

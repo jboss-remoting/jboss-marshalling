@@ -130,7 +130,7 @@ public final class MarshallingException extends Throwable {
         }
 
         void toString(StringBuilder builder) {
-            final Info cause = this.cause;
+            final Info cause = this.getCause();
             if (cause != null) {
                 cause.toString(builder);
             }
@@ -153,7 +153,7 @@ public final class MarshallingException extends Throwable {
         }
 
         void toString(final StringBuilder builder) {
-            final Info cause = this.cause;
+            final Info cause = this.getCause();
             if (cause != null) {
                 cause.toString(builder);
             }

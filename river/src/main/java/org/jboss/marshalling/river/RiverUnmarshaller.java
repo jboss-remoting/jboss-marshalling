@@ -162,16 +162,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
             UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            UnmarshallingException.addFieldInformation(e, field.getName());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
             UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            UnmarshallingException.addFieldInformation(e, field.getName());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
             UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            UnmarshallingException.addFieldInformation(e, field.getName());
             throw e;
         }
     }

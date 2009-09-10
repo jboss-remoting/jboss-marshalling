@@ -49,7 +49,7 @@ public final class MarshallingException extends Throwable {
             if (c == null) {
                 t.initCause(c = new MarshallingException());
             }
-            addObjectInformation(c, fieldName);
+            addFieldInformation(c, fieldName);
         }
     }
 
@@ -83,7 +83,8 @@ public final class MarshallingException extends Throwable {
     public String toString() {
         final StringBuilder builder = new StringBuilder(256);
         builder.append("Marshalling exception occurred:");
-        info.toString(builder);
+        final Info info = this.info;
+        if (info != null) info.toString(builder);
         return builder.toString();
     }
 
@@ -141,7 +142,7 @@ public final class MarshallingException extends Throwable {
             return targetHashCode;
         }
 
-        void toString(StringBuilder builder) {
+        void toString(final StringBuilder builder) {
             final Info cause = getCause();
             if (cause != null) {
                 cause.toString(builder);

@@ -80,7 +80,7 @@ public final class UnmarshallingException extends Throwable {
 
     public String toString() {
         final StringBuilder builder = new StringBuilder(256);
-        builder.append("Marshalling exception occurred:");
+        builder.append("Unmarshalling exception occurred:");
         final Info info = this.info;
         if (info != null) info.toString(builder);
         return builder.toString();

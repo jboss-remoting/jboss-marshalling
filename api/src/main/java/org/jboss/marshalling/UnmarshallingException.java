@@ -80,7 +80,7 @@ public final class UnmarshallingException extends Throwable {
 
     public String toString() {
         final StringBuilder builder = new StringBuilder(256);
-        builder.append("Unmarshalling exception occurred:");
+        builder.append("an exception while unmarshalling...");
         final Info info = this.info;
         if (info != null) info.toString(builder);
         return builder.toString();
@@ -139,7 +139,7 @@ public final class UnmarshallingException extends Throwable {
             if (cause != null) {
                 cause.toString(builder);
             }
-            builder.append("\n\tto object ").append(targetClassName);
+            builder.append("\n\tin object class ").append(targetClassName);
         }
     }
 
@@ -162,7 +162,7 @@ public final class UnmarshallingException extends Throwable {
             if (cause != null) {
                 cause.toString(builder);
             }
-            builder.append("\n\t\tfield ").append(fieldName);
+            builder.append("\n\tin field \"").append(fieldName).append('"');
         }
     }
 }

@@ -68,9 +68,9 @@ import java.util.Stack;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.MarshallerObjectInput;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.UTFUtils;
+import org.jboss.marshalling.UnmarshallingException;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -134,11 +134,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         objectInputStream = null;
     }
 
-    private ObjectInput getObjectInput() {
-        final ObjectInput objectInput = this.objectInput;
-        return objectInput == null ? (this.objectInput = getBlockUnmarshaller()) : objectInput;
-    }
-
     private BlockUnmarshaller getBlockUnmarshaller() {
         final BlockUnmarshaller blockUnmarshaller = this.blockUnmarshaller;
         return blockUnmarshaller == null ? this.blockUnmarshaller = new BlockUnmarshaller(this) : blockUnmarshaller;
@@ -161,6 +156,88 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } catch (PrivilegedActionException e) {
             throw (IOException) e.getCause();
         }
+    }
+
+    private Object doReadNestedField(final boolean unshared, final Object subject, final Field field) throws ClassNotFoundException, IOException {
+        try {
+            return doReadObject(unshared);
+        } catch (IOException e) {
+            UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            throw e;
+        } catch (ClassNotFoundException e) {
+            UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            throw e;
+        } catch (RuntimeException e) {
+            UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
+            throw e;
+        }
+    }
+
+    private Object doReadNestedObject(final boolean unshared, final String enclosingClassName) throws ClassNotFoundException, IOException {
+        try {
+            return doReadObject(unshared);
+        } catch (IOException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClassName);
+            throw e;
+        } catch (ClassNotFoundException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClassName);
+            throw e;
+        } catch (RuntimeException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClassName);
+            throw e;
+        }
+    }
+
+    private Object doReadNestedObject(final boolean unshared, final Class<?> enclosingClass) throws ClassNotFoundException, IOException {
+        try {
+            return doReadObject(unshared);
+        } catch (IOException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
+            throw e;
+        } catch (ClassNotFoundException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
+            throw e;
+        } catch (RuntimeException e) {
+            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
+            throw e;
+        }
+    }
+
+    private Object doReadCollectionObject(final boolean unshared, final Object collection, final int idx, final int size) throws ClassNotFoundException, IOException {
+        try {
+            return doReadObject(unshared);
+        } catch (IOException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            throw e;
+        } catch (ClassNotFoundException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            throw e;
+        } catch (RuntimeException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            throw e;
+        }
+    }
+
+    private Object doReadMapObject(final boolean unshared, final Object collection, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
+        try {
+            return doReadObject(unshared);
+        } catch (IOException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            throw e;
+        } catch (ClassNotFoundException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            throw e;
+        } catch (RuntimeException e) {
+            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            throw e;
+        }
+    }
+
+    private static String getCollectionString(final Object collection, final int idx, final int size) {
+        return collection.getClass().getName() + " (size is " + size + ", index " + idx + ")";
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
@@ -489,7 +566,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SINGLETON_LIST_OBJECT: {
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
-                    final Object obj = Collections.singletonList(doReadObject(false));
+                    final Object obj = Collections.singletonList(doReadNestedObject(false, "Collections#singletonList()"));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
@@ -499,7 +576,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SINGLETON_SET_OBJECT: {
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
-                    final Object obj = Collections.singleton(doReadObject(false));
+                    final Object obj = Collections.singleton(doReadNestedObject(false, "Collections#singleton()"));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
@@ -509,7 +586,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SINGLETON_MAP_OBJECT: {
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
-                    final Object obj = Collections.singletonMap(doReadObject(false), doReadObject(false));
+                    final Object obj = Collections.singletonMap(doReadNestedObject(false, "Collections#singletonMap() [key]"), doReadNestedObject(false, "Collections#singletonMap() [value]"));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
@@ -579,7 +656,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return readCollectionData(unshared, len, new LinkedList());
                         }
                         case ID_CC_TREE_SET: {
-                            return readCollectionData(unshared, len, new TreeSet((Comparator)doReadObject(false)));
+                            return readCollectionData(unshared, len, new TreeSet((Comparator)doReadNestedObject(false, "java.util.TreeSet comparator")));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
@@ -606,7 +683,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return readMapData(unshared, len, new LinkedHashMap(len));
                         }
                         case ID_CC_TREE_MAP: {
-                            return readMapData(unshared, len, new TreeMap((Comparator)doReadObject(false)));
+                            return readMapData(unshared, len, new TreeMap((Comparator)doReadNestedObject(false, "java.util.TreeMap comparator")));
                         }
                         case ID_CC_ENUM_MAP: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
@@ -651,7 +728,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         idx = instanceCache.size();
         instanceCache.add(target);
         for (int i = 0; i < len; i ++) {
-            target.add(doReadObject(false));
+            target.add(doReadCollectionObject(false, target, idx, len));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         if (unshared) {
@@ -669,7 +746,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         idx = instanceCache.size();
         instanceCache.add(target);
         for (int i = 0; i < len; i ++) {
-            target.put(doReadObject(false), doReadObject(false));
+            target.put(doReadMapObject(false, target, idx, len, true), doReadMapObject(false, target, idx, len, false));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         if (unshared) {
@@ -1089,7 +1166,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final int idx = instanceCache.size();
                 instanceCache.add(obj);
                 try {
-                    proxyInvocationHandler.set(obj, doReadObject(unshared));
+                    proxyInvocationHandler.set(obj, doReadNestedObject(unshared, "[proxy invocation handler]"));
                 } catch (IllegalAccessException e) {
                     throw new InvalidClassException(type.getName(), "Unable to set proxy invocation handler");
                 }
@@ -1356,7 +1433,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final int idx = instanceCache.size();
         instanceCache.add(array);
         for (int i = 0; i < cnt; i ++) {
-            array[i] = doReadObject(unshared);
+            array[i] = doReadCollectionObject(unshared, array, i, cnt);
         }
         final Object resolvedObject = objectResolver.readResolve(array);
         if (unshared) {
@@ -1490,7 +1567,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         break;
                     }
                     case OBJECT: {
-                        doReadObject(serializableField.isUnshared());
+                        doReadNestedField(serializableField.isUnshared(), obj, field);
                         break;
                     }
                     case SHORT: {
@@ -1529,7 +1606,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         break;
                     }
                     case OBJECT: {
-                        field.set(obj, doReadObject(serializableField.isUnshared()));
+                        field.set(obj, doReadNestedField(serializableField.isUnshared(), obj, field));
                         break;
                     }
                     case SHORT: {

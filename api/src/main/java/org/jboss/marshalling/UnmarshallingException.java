@@ -25,53 +25,51 @@ package org.jboss.marshalling;
 import java.io.Serializable;
 
 /**
- * A special {@code Throwable} which holds information about the cause of a marshalling problem.
+ * A special {@code Throwable} which holds information about the cause of an unmarshalling problem.
  */
-public final class MarshallingException extends Throwable {
+public final class UnmarshallingException extends Throwable {
 
     private static final long serialVersionUID = 7163010203765763875L;
 
     private Info info = null;
 
     /**
-     * Add information about a field which was being marshalled.
+     * Add information about a field which was being unmarshalled.
      *
      * @param t the throwable to update
-     * @param fieldName the field name being marshalled
+     * @param fieldName the field name being unmarshalled
      */
     public static void addFieldInformation(Throwable t, String fieldName) {
-        if (t instanceof MarshallingException) {
-            final MarshallingException me = (MarshallingException) t;
+        if (t instanceof UnmarshallingException) {
+            final UnmarshallingException me = (UnmarshallingException) t;
             final Info oldInfo = me.info;
             me.info = new FieldInfo(oldInfo, fieldName);
         } else {
             Throwable c = t.getCause();
             if (c == null) {
-                t.initCause(c = new MarshallingException());
+                t.initCause(c = new UnmarshallingException());
             }
             addObjectInformation(c, fieldName);
         }
     }
 
     /**
-     * Add information about an object which was being marshalled.
+     * Add information about an object which was being unmarshalled.
      *
      * @param t the throwable to update
-     * @param targetObject the target object which was being marshalled
+     * @param targetClassName the name of the target class which was being unmarshalled
      */
-    public static void addObjectInformation(Throwable t, Object targetObject) {
-        if (t instanceof MarshallingException) {
-            final MarshallingException me = (MarshallingException) t;
-            final String targetClassName = targetObject.getClass().getName();
-            final int targetHashCode = targetObject.hashCode();
+    public static void addObjectInformation(Throwable t, String targetClassName) {
+        if (t instanceof UnmarshallingException) {
+            final UnmarshallingException me = (UnmarshallingException) t;
             final Info oldInfo = me.info;
-            me.info = new ObjectInfo(oldInfo, targetClassName, targetHashCode);
+            me.info = new ObjectInfo(oldInfo, targetClassName);
         } else {
             Throwable c = t.getCause();
             if (c == null) {
-                t.initCause(c = new MarshallingException());
+                t.initCause(c = new UnmarshallingException());
             }
-            addObjectInformation(c, targetObject);
+            addObjectInformation(c, targetClassName);
         }
     }
 
@@ -125,20 +123,14 @@ public final class MarshallingException extends Throwable {
         private static final long serialVersionUID = -8580895864558204394L;
 
         private final String targetClassName;
-        private final int targetHashCode;
 
-        public ObjectInfo(final Info cause, final String targetClassName, final int targetHashCode) {
+        public ObjectInfo(final Info cause, final String targetClassName) {
             super(cause);
             this.targetClassName = targetClassName;
-            this.targetHashCode = targetHashCode;
         }
 
         public String getTargetClassName() {
             return targetClassName;
-        }
-
-        public int getTargetHashCode() {
-            return targetHashCode;
         }
 
         void toString(StringBuilder builder) {
@@ -146,7 +138,7 @@ public final class MarshallingException extends Throwable {
             if (cause != null) {
                 cause.toString(builder);
             }
-            builder.append("\n\tfrom object ").append(targetClassName).append('@').append(Integer.toHexString(targetHashCode));
+            builder.append("\n\tto object ").append(targetClassName);
         }
     }
 

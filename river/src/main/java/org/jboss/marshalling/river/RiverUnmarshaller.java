@@ -207,13 +207,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size));
+            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         }
     }
@@ -222,19 +225,18 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addObjectInformation(e, getCollectionString(collection, idx, size) + (key ? " [key]" : " [value]"));
+            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
+            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
             throw e;
         }
-    }
-
-    private static String getCollectionString(final Object collection, final int idx, final int size) {
-        return collection.getClass().getName() + " (size is " + size + ", index " + idx + ")";
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {

@@ -34,6 +34,28 @@ public final class UnmarshallingException extends Throwable {
     private Info info = null;
 
     /**
+     * Add information about an index in an array or collection which was being unmarshalled.
+     *
+     * @param t the throwable to update
+     * @param index the index to log
+     * @param size the size, or -1 if unknown
+     * @param kind
+     */
+    public static void addIndexInformation(Throwable t, int index, int size, final IndexInfo.Kind kind) {
+        if (t instanceof UnmarshallingException) {
+            final UnmarshallingException me = (UnmarshallingException) t;
+            final Info oldInfo = me.info;
+            me.info = new IndexInfo(oldInfo, index, size, kind);
+        } else {
+            Throwable c = t.getCause();
+            if (c == null) {
+                t.initCause(c = new UnmarshallingException());
+            }
+            addIndexInformation(c, index, size, kind);
+        }
+    }
+
+    /**
      * Add information about a field which was being unmarshalled.
      *
      * @param t the throwable to update
@@ -99,7 +121,7 @@ public final class UnmarshallingException extends Throwable {
 
         private final Info cause;
 
-        private Info(final Info cause) {
+        Info(final Info cause) {
             this.cause = cause;
         }
 
@@ -107,7 +129,12 @@ public final class UnmarshallingException extends Throwable {
             return cause;
         }
 
-        abstract void toString(StringBuilder builder);
+        void toString(StringBuilder builder) {
+            final Info cause = getCause();
+            if (cause != null) {
+                cause.toString(builder);
+            }
+        }
 
         public final String toString() {
             final StringBuilder builder = new StringBuilder(256);
@@ -135,11 +162,8 @@ public final class UnmarshallingException extends Throwable {
         }
 
         void toString(StringBuilder builder) {
-            final Info cause = getCause();
-            if (cause != null) {
-                cause.toString(builder);
-            }
-            builder.append("\n\tin object class ").append(targetClassName);
+            super.toString(builder);
+            builder.append("\n\tin object of type ").append(targetClassName);
         }
     }
 
@@ -158,11 +182,56 @@ public final class UnmarshallingException extends Throwable {
         }
 
         void toString(final StringBuilder builder) {
-            final Info cause = getCause();
-            if (cause != null) {
-                cause.toString(builder);
-            }
+            super.toString(builder);
             builder.append("\n\tin field \"").append(fieldName).append('"');
+        }
+    }
+
+    /**
+     * Information about an index in an array or collection.
+     */
+    public static final class IndexInfo extends Info implements Serializable {
+
+        private static final long serialVersionUID = -5402179533085530855L;
+
+        private final int idx;
+        private final int size;
+        private final Kind kind;
+
+        public IndexInfo(final Info cause, final int idx, final int size, final Kind kind) {
+            super(cause);
+            this.idx = idx;
+            this.size = size;
+            this.kind = kind;
+            if (kind == null) {
+                throw new NullPointerException("kind is null");
+            }
+        }
+
+        public enum Kind {
+            MAP_KEY,
+            MAP_VALUE,
+            ELEMENT,
+        }
+
+        void toString(final StringBuilder builder) {
+            super.toString(builder);
+            builder.append("\n\tin ");
+            switch (kind) {
+                case MAP_KEY: builder.append("map key"); break;
+                case MAP_VALUE: builder.append("map value"); break;
+                default: builder.append("element"); break;
+            }
+            builder.append(" at index [").append(idx).append(']');
+            if (size >= 0) {
+                builder.append(" of size [");
+                if (size == Integer.MAX_VALUE) {
+                    builder.append("MAX_VALUE");
+                } else {
+                    builder.append(size);
+                }
+                builder.append(']');
+            }
         }
     }
 }

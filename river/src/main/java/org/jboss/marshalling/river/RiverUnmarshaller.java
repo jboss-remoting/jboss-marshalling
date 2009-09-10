@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
-import java.io.ObjectInput;
 import java.io.ObjectInputValidation;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
@@ -83,7 +82,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final ArrayList<Object> instanceCache;
     private final ArrayList<ClassDescriptor> classCache;
     private final SerializableClassRegistry registry;
-    private ObjectInput objectInput;
     private int version;
     private int depth;
     private BlockUnmarshaller blockUnmarshaller;
@@ -130,7 +128,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     public void finish() throws IOException {
         super.finish();
         blockUnmarshaller = null;
-        objectInput = null;
         objectInputStream = null;
     }
 
@@ -158,25 +155,25 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    private Object doReadNestedField(final boolean unshared, final Object subject, final Field field) throws ClassNotFoundException, IOException {
+    Object doReadNestedField(final boolean unshared, final Object subject, final Field field) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             UnmarshallingException.addFieldInformation(e, field.getName());
+            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
             throw e;
         }
     }
 
-    private Object doReadNestedObject(final boolean unshared, final String enclosingClassName) throws ClassNotFoundException, IOException {
+    Object doReadNestedObject(final boolean unshared, final String enclosingClassName) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
@@ -191,7 +188,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    private Object doReadNestedObject(final boolean unshared, final Class<?> enclosingClass) throws ClassNotFoundException, IOException {
+    Object doReadNestedObject(final boolean unshared, final Class<?> enclosingClass) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
@@ -206,7 +203,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    private Object doReadCollectionObject(final boolean unshared, final Object collection, final int idx, final int size) throws ClassNotFoundException, IOException {
+    Object doReadCollectionObject(final boolean unshared, final Object collection, final int idx, final int size) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
@@ -221,7 +218,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    private Object doReadMapObject(final boolean unshared, final Object collection, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
+    Object doReadMapObject(final boolean unshared, final Object collection, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {

@@ -34,6 +34,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private Creator creator;
     private ClassTable classTable;
     private ObjectTable objectTable;
+    private ExceptionListener exceptionListener;
     private int instanceCount = 256;
     private int classCount = 64;
     private int bufferSize = 512;
@@ -247,6 +248,24 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
+     * Get the exception listener to use.
+     *
+     * @return the exception listener
+     */
+    public ExceptionListener getExceptionListener() {
+        return exceptionListener;
+    }
+
+    /**
+     * Set the exception listener to use.
+     *
+     * @param exceptionListener the exception listener
+     */
+    public void setExceptionListener(final ExceptionListener exceptionListener) {
+        this.exceptionListener = exceptionListener;
+    }
+
+    /**
      * Create a shallow clone.
      *
      * @return a clone
@@ -283,6 +302,9 @@ public final class MarshallingConfiguration implements Cloneable {
         }
         if (objectTable != null) {
             builder.append("objectTable=<").append(objectTable).append("> ");
+        }
+        if (exceptionListener != null) {
+            builder.append("exceptionListener=<").append(objectTable).append("> ");
         }
         builder.append("instanceCount=").append(instanceCount);
         builder.append(" classCount=").append(classCount);

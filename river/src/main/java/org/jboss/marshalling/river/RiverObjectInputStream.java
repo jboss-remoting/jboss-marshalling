@@ -24,6 +24,7 @@ package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectInputStream;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;
 import org.jboss.marshalling.util.ObjectReadField;
@@ -80,45 +81,56 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
 
         for (int i = 0; i < cnt; i++) {
             SerializableField field = streamFields[i];
-            switch (field.getKind()) {
-                case BOOLEAN: {
-                    readFields[i] = new BooleanReadField(field, unmarshaller.readBoolean());
-                    break;
+            try {
+                switch (field.getKind()) {
+                    case BOOLEAN: {
+                        readFields[i] = new BooleanReadField(field, unmarshaller.readBoolean());
+                        break;
+                    }
+                    case BYTE: {
+                        readFields[i] = new ByteReadField(field, unmarshaller.readByte());
+                        break;
+                    }
+                    case CHAR: {
+                        readFields[i] = new CharReadField(field, unmarshaller.readChar());
+                        break;
+                    }
+                    case DOUBLE: {
+                        readFields[i] = new DoubleReadField(field, unmarshaller.readDouble());
+                        break;
+                    }
+                    case FLOAT: {
+                        readFields[i] = new FloatReadField(field, unmarshaller.readFloat());
+                        break;
+                    }
+                    case INT: {
+                        readFields[i] = new IntReadField(field, unmarshaller.readInt());
+                        break;
+                    }
+                    case LONG: {
+                        readFields[i] = new LongReadField(field, unmarshaller.readLong());
+                        break;
+                    }
+                    case OBJECT: {
+                        readFields[i] = new ObjectReadField(field, unmarshaller.readObject());
+                        break;
+                    }
+                    case SHORT: {
+                        readFields[i] = new ShortReadField(field, unmarshaller.readShort());
+                        break;
+                    }
+                    default:
+                        throw new IllegalStateException("Wrong field type");
                 }
-                case BYTE: {
-                    readFields[i] = new ByteReadField(field, unmarshaller.readByte());
-                    break;
-                }
-                case CHAR: {
-                    readFields[i] = new CharReadField(field, unmarshaller.readChar());
-                    break;
-                }
-                case DOUBLE: {
-                    readFields[i] = new DoubleReadField(field, unmarshaller.readDouble());
-                    break;
-                }
-                case FLOAT: {
-                    readFields[i] = new FloatReadField(field, unmarshaller.readFloat());
-                    break;
-                }
-                case INT: {
-                    readFields[i] = new IntReadField(field, unmarshaller.readInt());
-                    break;
-                }
-                case LONG: {
-                    readFields[i] = new LongReadField(field, unmarshaller.readLong());
-                    break;
-                }
-                case OBJECT: {
-                    readFields[i] = new ObjectReadField(field, unmarshaller.readObject());
-                    break;
-                }
-                case SHORT: {
-                    readFields[i] = new ShortReadField(field, unmarshaller.readShort());
-                    break;
-                }
-                default:
-                    throw new IllegalStateException("Wrong field type");
+            } catch (IOException e) {
+                TraceInformation.addFieldInformation(e, field.getName());
+                throw e;
+            } catch (ClassNotFoundException e) {
+                TraceInformation.addFieldInformation(e, field.getName());
+                throw e;
+            } catch (RuntimeException e) {
+                TraceInformation.addFieldInformation(e, field.getName());
+                throw e;
             }
         }
         return new GetField() {

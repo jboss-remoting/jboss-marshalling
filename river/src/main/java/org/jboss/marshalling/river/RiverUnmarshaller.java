@@ -69,7 +69,7 @@ import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.UTFUtils;
-import org.jboss.marshalling.UnmarshallingException;
+import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -155,50 +155,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    Object doReadNestedField(final boolean unshared, final Object subject, final Field field) throws ClassNotFoundException, IOException {
-        try {
-            return doReadObject(unshared);
-        } catch (IOException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
-            throw e;
-        } catch (ClassNotFoundException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
-            throw e;
-        } catch (RuntimeException e) {
-            UnmarshallingException.addFieldInformation(e, field.getName());
-            UnmarshallingException.addObjectInformation(e, subject.getClass().getName());
-            throw e;
-        }
-    }
-
     Object doReadNestedObject(final boolean unshared, final String enclosingClassName) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClassName);
+            TraceInformation.addIncompleteObjectInformation(e, enclosingClassName);
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClassName);
+            TraceInformation.addIncompleteObjectInformation(e, enclosingClassName);
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClassName);
-            throw e;
-        }
-    }
-
-    Object doReadNestedObject(final boolean unshared, final Class<?> enclosingClass) throws ClassNotFoundException, IOException {
-        try {
-            return doReadObject(unshared);
-        } catch (IOException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
-            throw e;
-        } catch (ClassNotFoundException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
-            throw e;
-        } catch (RuntimeException e) {
-            UnmarshallingException.addObjectInformation(e, enclosingClass.getName());
+            TraceInformation.addIncompleteObjectInformation(e, enclosingClassName);
             throw e;
         }
     }
@@ -207,16 +174,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, UnmarshallingException.IndexInfo.Kind.ELEMENT);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         }
     }
@@ -225,16 +192,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (ClassNotFoundException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (RuntimeException e) {
-            UnmarshallingException.addIndexInformation(e, idx, size, key ? UnmarshallingException.IndexInfo.Kind.MAP_KEY : UnmarshallingException.IndexInfo.Kind.MAP_VALUE);
-            UnmarshallingException.addObjectInformation(e, collection.getClass().getName());
+            TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
+//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         }
     }
@@ -1156,167 +1123,181 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     protected Object doReadNewObject(final int streamClassType, final boolean unshared) throws ClassNotFoundException, IOException {
         final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType);
-        final int classType = descriptor.getTypeID();
-        final List<Object> instanceCache = this.instanceCache;
-        switch (classType) {
-            case ID_PROXY_CLASS: {
-                final Class<?> type = descriptor.getType();
-                final Object obj = createProxyInstance(creator, type);
-                final int idx = instanceCache.size();
-                instanceCache.add(obj);
-                try {
-                    proxyInvocationHandler.set(obj, doReadNestedObject(unshared, "[proxy invocation handler]"));
-                } catch (IllegalAccessException e) {
-                    throw new InvalidClassException(type.getName(), "Unable to set proxy invocation handler");
+        try {
+            final int classType = descriptor.getTypeID();
+            final List<Object> instanceCache = this.instanceCache;
+            switch (classType) {
+                case ID_PROXY_CLASS: {
+                    final Class<?> type = descriptor.getType();
+                    final Object obj = createProxyInstance(creator, type);
+                    final int idx = instanceCache.size();
+                    instanceCache.add(obj);
+                    try {
+                        proxyInvocationHandler.set(obj, doReadNestedObject(unshared, "[proxy invocation handler]"));
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidClassException(type.getName(), "Unable to set proxy invocation handler");
+                    }
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
-                final Object resolvedObject = objectResolver.readResolve(obj);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (obj != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
+                case ID_WRITE_OBJECT_CLASS:
+                case ID_SERIALIZABLE_CLASS: {
+                    final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
+                    final Class<?> type = descriptor.getType();
+                    final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
+                    final Object obj = creator.create(type);
+                    final int idx = instanceCache.size();
+                    instanceCache.add(obj);
+                    doInitSerializable(obj, serializableClassDescriptor);
+                    final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
-                return resolvedObject;
-            }
-            case ID_WRITE_OBJECT_CLASS:
-            case ID_SERIALIZABLE_CLASS: {
-                final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
-                final Class<?> type = descriptor.getType();
-                final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                final Object obj = creator.create(type);
-                final int idx = instanceCache.size();
-                instanceCache.add(obj);
-                doInitSerializable(obj, serializableClassDescriptor);
-                final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (obj != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
+                case ID_EXTERNALIZABLE_CLASS: {
+                    final Class<?> type = descriptor.getType();
+                    final SerializableClass serializableClass = registry.lookup(type);
+                    final Externalizable obj = (Externalizable) creator.create(type);
+                    final int idx = instanceCache.size();
+                    instanceCache.add(obj);
+                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                    obj.readExternal(blockUnmarshaller);
+                    blockUnmarshaller.readToEndBlockData();
+                    blockUnmarshaller.unblock();
+                    final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
-                return resolvedObject;
-            }
-            case ID_EXTERNALIZABLE_CLASS: {
-                final Class<?> type = descriptor.getType();
-                final SerializableClass serializableClass = registry.lookup(type);
-                final Externalizable obj = (Externalizable) creator.create(type);
-                final int idx = instanceCache.size();
-                instanceCache.add(obj);
-                final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                obj.readExternal(blockUnmarshaller);
-                blockUnmarshaller.readToEndBlockData();
-                blockUnmarshaller.unblock();
-                final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (obj != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
+                case ID_EXTERNALIZER_CLASS: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    Externalizer externalizer = ((ExternalizerClassDescriptor) descriptor).getExternalizer();
+                    final Class<?> type = descriptor.getType();
+                    final SerializableClass serializableClass = registry.lookup(type);
+                    final Object obj;
+                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                    obj = externalizer.createExternal(type, blockUnmarshaller, creator);
+                    instanceCache.set(idx, obj);
+                    externalizer.readExternal(obj, blockUnmarshaller);
+                    blockUnmarshaller.readToEndBlockData();
+                    blockUnmarshaller.unblock();
+                    final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
-                return resolvedObject;
-            }
-            case ID_EXTERNALIZER_CLASS: {
-                final int idx = instanceCache.size();
-                instanceCache.add(null);
-                Externalizer externalizer = ((ExternalizerClassDescriptor) descriptor).getExternalizer();
-                final Class<?> type = descriptor.getType();
-                final SerializableClass serializableClass = registry.lookup(type);
-                final Object obj;
-                final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                obj = externalizer.createExternal(type, blockUnmarshaller, creator);
-                instanceCache.set(idx, obj);
-                externalizer.readExternal(obj, blockUnmarshaller);
-                blockUnmarshaller.readToEndBlockData();
-                blockUnmarshaller.unblock();
-                final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (obj != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
+                case ID_ENUM_TYPE_CLASS: {
+                    final String name = readString();
+                    final Enum obj = resolveEnumConstant(descriptor, name);
+                    final int idx = instanceCache.size();
+                    instanceCache.add(obj);
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (unshared) {
+                        instanceCache.set(idx, null);
+                    } else if (obj != resolvedObject) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
                 }
-                return resolvedObject;
-            }
-            case ID_ENUM_TYPE_CLASS: {
-                final String name = readString();
-                final Enum obj = resolveEnumConstant(descriptor, name);
-                final int idx = instanceCache.size();
-                instanceCache.add(obj);
-                final Object resolvedObject = objectResolver.readResolve(obj);
-                if (unshared) {
-                    instanceCache.set(idx, null);
-                } else if (obj != resolvedObject) {
-                    instanceCache.set(idx, resolvedObject);
+                case ID_OBJECT_ARRAY_TYPE_CLASS: {
+                    return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared);
                 }
-                return resolvedObject;
+                case ID_STRING_CLASS: {
+                    // v1 string
+                    final String obj = readString();
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    instanceCache.add(unshared ? null : resolvedObject);
+                    return resolvedObject;
+                }
+                case ID_CLASS_CLASS: {
+                    final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                    // Classes are not resolved and may not be unshared!
+                    final Class<?> obj = nestedDescriptor.getType();
+                    return obj;
+                }
+                case ID_BOOLEAN_ARRAY_CLASS: {
+                    return doReadBooleanArray(readInt(), unshared);
+                }
+                case ID_BYTE_ARRAY_CLASS: {
+                    return doReadByteArray(readInt(), unshared);
+                }
+                case ID_SHORT_ARRAY_CLASS: {
+                    return doReadShortArray(readInt(), unshared);
+                }
+                case ID_INT_ARRAY_CLASS: {
+                    return doReadIntArray(readInt(), unshared);
+                }
+                case ID_LONG_ARRAY_CLASS: {
+                    return doReadLongArray(readInt(), unshared);
+                }
+                case ID_CHAR_ARRAY_CLASS: {
+                    return doReadCharArray(readInt(), unshared);
+                }
+                case ID_FLOAT_ARRAY_CLASS: {
+                    return doReadFloatArray(readInt(), unshared);
+                }
+                case ID_DOUBLE_ARRAY_CLASS: {
+                    return doReadDoubleArray(readInt(), unshared);
+                }
+                case ID_BOOLEAN_CLASS: {
+                    return objectResolver.readResolve(Boolean.valueOf(readBoolean()));
+                }
+                case ID_BYTE_CLASS: {
+                    return objectResolver.readResolve(Byte.valueOf(readByte()));
+                }
+                case ID_SHORT_CLASS: {
+                    return objectResolver.readResolve(Short.valueOf(readShort()));
+                }
+                case ID_INTEGER_CLASS: {
+                    return objectResolver.readResolve(Integer.valueOf(readInt()));
+                }
+                case ID_LONG_CLASS: {
+                    return objectResolver.readResolve(Long.valueOf(readLong()));
+                }
+                case ID_CHARACTER_CLASS: {
+                    return objectResolver.readResolve(Character.valueOf(readChar()));
+                }
+                case ID_FLOAT_CLASS: {
+                    return objectResolver.readResolve(Float.valueOf(readFloat()));
+                }
+                case ID_DOUBLE_CLASS: {
+                    return objectResolver.readResolve(Double.valueOf(readDouble()));
+                }
+                case ID_OBJECT_CLASS:
+                case ID_PLAIN_CLASS: {
+                    throw new NotSerializableException("(remote)" + descriptor.getType().getName());
+                }
+                default: {
+                    throw new InvalidObjectException("Unexpected class type " + classType);
+                }
             }
-            case ID_OBJECT_ARRAY_TYPE_CLASS: {
-                return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared);
-            }
-            case ID_STRING_CLASS: {
-                // v1 string
-                final String obj = readString();
-                final Object resolvedObject = objectResolver.readResolve(obj);
-                instanceCache.add(unshared ? null : resolvedObject);
-                return resolvedObject;
-            }
-            case ID_CLASS_CLASS: {
-                final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
-                // Classes are not resolved and may not be unshared!
-                final Class<?> obj = nestedDescriptor.getType();
-                return obj;
-            }
-            case ID_BOOLEAN_ARRAY_CLASS: {
-                return doReadBooleanArray(readInt(), unshared);
-            }
-            case ID_BYTE_ARRAY_CLASS: {
-                return doReadByteArray(readInt(), unshared);
-            }
-            case ID_SHORT_ARRAY_CLASS: {
-                return doReadShortArray(readInt(), unshared);
-            }
-            case ID_INT_ARRAY_CLASS: {
-                return doReadIntArray(readInt(), unshared);
-            }
-            case ID_LONG_ARRAY_CLASS: {
-                return doReadLongArray(readInt(), unshared);
-            }
-            case ID_CHAR_ARRAY_CLASS: {
-                return doReadCharArray(readInt(), unshared);
-            }
-            case ID_FLOAT_ARRAY_CLASS: {
-                return doReadFloatArray(readInt(), unshared);
-            }
-            case ID_DOUBLE_ARRAY_CLASS: {
-                return doReadDoubleArray(readInt(), unshared);
-            }
-            case ID_BOOLEAN_CLASS: {
-                return objectResolver.readResolve(Boolean.valueOf(readBoolean()));
-            }
-            case ID_BYTE_CLASS: {
-                return objectResolver.readResolve(Byte.valueOf(readByte()));
-            }
-            case ID_SHORT_CLASS: {
-                return objectResolver.readResolve(Short.valueOf(readShort()));
-            }
-            case ID_INTEGER_CLASS: {
-                return objectResolver.readResolve(Integer.valueOf(readInt()));
-            }
-            case ID_LONG_CLASS: {
-                return objectResolver.readResolve(Long.valueOf(readLong()));
-            }
-            case ID_CHARACTER_CLASS: {
-                return objectResolver.readResolve(Character.valueOf(readChar()));
-            }
-            case ID_FLOAT_CLASS: {
-                return objectResolver.readResolve(Float.valueOf(readFloat()));
-            }
-            case ID_DOUBLE_CLASS: {
-                return objectResolver.readResolve(Double.valueOf(readDouble()));
-            }
-            case ID_OBJECT_CLASS:
-            case ID_PLAIN_CLASS: {
-                throw new NotSerializableException("(remote)" + descriptor.getType().getName());
-            }
-            default: {
-                throw new InvalidObjectException("Unexpected class type " + classType);
-            }
+        } catch (IOException e) {
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
+            TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            throw e;
+        } catch (ClassNotFoundException e) {
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
+            TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            throw e;
+        } catch (RuntimeException e) {
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
+            TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            throw e;
         }
     }
 
@@ -1533,90 +1514,101 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     protected void readFields(final Object obj, final SerializableClassDescriptor descriptor) throws IOException, ClassNotFoundException {
         for (SerializableField serializableField : descriptor.getFields()) {
-            final Field field = serializableField.getField();
-            if (field == null) {
-                // missing; consume stream data only
-                switch (serializableField.getKind()) {
-                    case BOOLEAN: {
-                        readBoolean();
-                        break;
+            try {
+                final Field field = serializableField.getField();
+                if (field == null) {
+                    // missing; consume stream data only
+                    switch (serializableField.getKind()) {
+                        case BOOLEAN: {
+                            readBoolean();
+                            break;
+                        }
+                        case BYTE: {
+                            readByte();
+                            break;
+                        }
+                        case CHAR: {
+                            readChar();
+                            break;
+                        }
+                        case DOUBLE: {
+                            readDouble();
+                            break;
+                        }
+                        case FLOAT: {
+                            readFloat();
+                            break;
+                        }
+                        case INT: {
+                            readInt();
+                            break;
+                        }
+                        case LONG: {
+                            readLong();
+                            break;
+                        }
+                        case OBJECT: {
+                            doReadObject(serializableField.isUnshared());
+                            break;
+                        }
+                        case SHORT: {
+                            readShort();
+                            break;
+                        }
                     }
-                    case BYTE: {
-                        readByte();
-                        break;
+                } else try {
+                    switch (serializableField.getKind()) {
+                        case BOOLEAN: {
+                            field.setBoolean(obj, readBoolean());
+                            break;
+                        }
+                        case BYTE: {
+                            field.setByte(obj, readByte());
+                            break;
+                        }
+                        case CHAR: {
+                            field.setChar(obj, readChar());
+                            break;
+                        }
+                        case DOUBLE: {
+                            field.setDouble(obj, readDouble());
+                            break;
+                        }
+                        case FLOAT: {
+                            field.setFloat(obj, readFloat());
+                            break;
+                        }
+                        case INT: {
+                            field.setInt(obj, readInt());
+                            break;
+                        }
+                        case LONG: {
+                            field.setLong(obj, readLong());
+                            break;
+                        }
+                        case OBJECT: {
+                            field.set(obj, doReadObject(serializableField.isUnshared()));
+                            break;
+                        }
+                        case SHORT: {
+                            field.setShort(obj, readShort());
+                            break;
+                        }
                     }
-                    case CHAR: {
-                        readChar();
-                        break;
-                    }
-                    case DOUBLE: {
-                        readDouble();
-                        break;
-                    }
-                    case FLOAT: {
-                        readFloat();
-                        break;
-                    }
-                    case INT: {
-                        readInt();
-                        break;
-                    }
-                    case LONG: {
-                        readLong();
-                        break;
-                    }
-                    case OBJECT: {
-                        doReadNestedField(serializableField.isUnshared(), obj, field);
-                        break;
-                    }
-                    case SHORT: {
-                        readShort();
-                        break;
-                    }
+                } catch (IllegalAccessException e) {
+                    final InvalidObjectException ioe = new InvalidObjectException("Unable to set a field");
+                    ioe.initCause(e);
+                    throw ioe;
                 }
-            } else try {
-                switch (serializableField.getKind()) {
-                    case BOOLEAN: {
-                        field.setBoolean(obj, readBoolean());
-                        break;
-                    }
-                    case BYTE: {
-                        field.setByte(obj, readByte());
-                        break;
-                    }
-                    case CHAR: {
-                        field.setChar(obj, readChar());
-                        break;
-                    }
-                    case DOUBLE: {
-                        field.setDouble(obj, readDouble());
-                        break;
-                    }
-                    case FLOAT: {
-                        field.setFloat(obj, readFloat());
-                        break;
-                    }
-                    case INT: {
-                        field.setInt(obj, readInt());
-                        break;
-                    }
-                    case LONG: {
-                        field.setLong(obj, readLong());
-                        break;
-                    }
-                    case OBJECT: {
-                        field.set(obj, doReadNestedField(serializableField.isUnshared(), obj, field));
-                        break;
-                    }
-                    case SHORT: {
-                        field.setShort(obj, readShort());
-                        break;
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                final InvalidObjectException ioe = new InvalidObjectException("Unable to set a field");
-                ioe.initCause(e);
-                throw ioe;
+            } catch (IOException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            } catch (ClassNotFoundException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            } catch (RuntimeException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
             }
         }
     }

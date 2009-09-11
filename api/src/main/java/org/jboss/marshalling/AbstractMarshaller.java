@@ -45,6 +45,8 @@ public abstract class AbstractMarshaller implements Marshaller {
     protected final ClassTable classTable;
     /** The configured object table. */
     protected final ObjectTable objectTable;
+    /** The configured exception listener. */
+    protected final ExceptionListener exceptionListener;
     /** The configured version to write. */
     protected final int configuredVersion;
     /** The current byte output. */
@@ -71,6 +73,8 @@ public abstract class AbstractMarshaller implements Marshaller {
         this.classTable = classTable == null ? marshallerFactory.getDefaultClassTable() : classTable;
         final ObjectTable objectTable = configuration.getObjectTable();
         this.objectTable = objectTable == null ? marshallerFactory.getDefaultObjectTable() : objectTable;
+        final ExceptionListener exceptionListener = configuration.getExceptionListener();
+        this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
         final int minBufSize = marshallerFactory.getMinimumBufferSize();
@@ -387,10 +391,12 @@ public abstract class AbstractMarshaller implements Marshaller {
         try {
             doWriteObject(obj, true);
         } catch (IOException e) {
-            MarshallingException.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
+            TraceInformation.addObjectInformation(e, obj);
             throw e;
         } catch (RuntimeException e) {
-            MarshallingException.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
+            TraceInformation.addObjectInformation(e, obj);
             throw e;
         }
     }
@@ -400,10 +406,12 @@ public abstract class AbstractMarshaller implements Marshaller {
         try {
             doWriteObject(obj, false);
         } catch (IOException e) {
-            MarshallingException.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
+            TraceInformation.addObjectInformation(e, obj);
             throw e;
         } catch (RuntimeException e) {
-            MarshallingException.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
+            TraceInformation.addObjectInformation(e, obj);
             throw e;
         }
     }

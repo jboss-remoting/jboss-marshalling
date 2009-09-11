@@ -45,6 +45,8 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
     protected final ClassTable classTable;
     /** The configured object table. */
     protected final ObjectTable objectTable;
+    /** The configured exception listener. */
+    protected final ExceptionListener exceptionListener;
     /** The configured version. */
     protected final int configuredVersion;
     /** The current byte input. */
@@ -71,6 +73,8 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
         this.classTable = classTable == null ? marshallerFactory.getDefaultClassTable() : classTable;
         final ObjectTable objectTable = configuration.getObjectTable();
         this.objectTable = objectTable == null ? marshallerFactory.getDefaultObjectTable() : objectTable;
+        final ExceptionListener exceptionListener = configuration.getExceptionListener();
+        this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
         buffer = new byte[configuration.getBufferSize()];

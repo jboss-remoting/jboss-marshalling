@@ -27,6 +27,7 @@ import java.io.ObjectOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.util.FieldPutter;
 
 /**
@@ -92,8 +93,16 @@ public class RiverPutField extends ObjectOutputStream.PutField {
     }
 
     protected final void write(final Marshaller marshaller) throws IOException {
-        for (FieldPutter putter : fields) {
-            putter.write(marshaller);
+        final FieldPutter[] fields = this.fields;
+        final int len = fields.length;
+        for (int i = 0; i < len; i++) try {
+            fields[i].write(marshaller);
+        } catch (IOException e) {
+            TraceInformation.addFieldInformation(e, names[i]);
+            throw e;
+        } catch (RuntimeException e) {
+            TraceInformation.addFieldInformation(e, names[i]);
+            throw e;
         }
     }
 }

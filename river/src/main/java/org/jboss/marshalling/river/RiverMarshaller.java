@@ -67,6 +67,7 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.UTFUtils;
+import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -1089,49 +1090,57 @@ public class RiverMarshaller extends AbstractMarshaller {
         final SerializableField[] serializableFields = info.getFields();
         for (SerializableField serializableField : serializableFields) {
             try {
-                final Field field = serializableField.getField();
-                switch (serializableField.getKind()) {
-                    case BOOLEAN: {
-                        writeBoolean(field.getBoolean(obj));
-                        break;
+                try {
+                    final Field field = serializableField.getField();
+                    switch (serializableField.getKind()) {
+                        case BOOLEAN: {
+                            writeBoolean(field.getBoolean(obj));
+                            break;
+                        }
+                        case BYTE: {
+                            writeByte(field.getByte(obj));
+                            break;
+                        }
+                        case SHORT: {
+                            writeShort(field.getShort(obj));
+                            break;
+                        }
+                        case INT: {
+                            writeInt(field.getInt(obj));
+                            break;
+                        }
+                        case CHAR: {
+                            writeChar(field.getChar(obj));
+                            break;
+                        }
+                        case LONG: {
+                            writeLong(field.getLong(obj));
+                            break;
+                        }
+                        case DOUBLE: {
+                            writeDouble(field.getDouble(obj));
+                            break;
+                        }
+                        case FLOAT: {
+                            writeFloat(field.getFloat(obj));
+                            break;
+                        }
+                        case OBJECT: {
+                            doWriteObject(field.get(obj), serializableField.isUnshared());
+                            break;
+                        }
                     }
-                    case BYTE: {
-                        writeByte(field.getByte(obj));
-                        break;
-                    }
-                    case SHORT: {
-                        writeShort(field.getShort(obj));
-                        break;
-                    }
-                    case INT: {
-                        writeInt(field.getInt(obj));
-                        break;
-                    }
-                    case CHAR: {
-                        writeChar(field.getChar(obj));
-                        break;
-                    }
-                    case LONG: {
-                        writeLong(field.getLong(obj));
-                        break;
-                    }
-                    case DOUBLE: {
-                        writeDouble(field.getDouble(obj));
-                        break;
-                    }
-                    case FLOAT: {
-                        writeFloat(field.getFloat(obj));
-                        break;
-                    }
-                    case OBJECT: {
-                        doWriteObject(field.get(obj), serializableField.isUnshared());
-                        break;
-                    }
+                } catch (IllegalAccessException e) {
+                    final InvalidObjectException ioe = new InvalidObjectException("Unexpected illegal access exception");
+                    ioe.initCause(e);
+                    throw ioe;
                 }
-            } catch (IllegalAccessException e) {
-                final InvalidObjectException ioe = new InvalidObjectException("Unexpected illegal access exception");
-                ioe.initCause(e);
-                throw ioe;
+            } catch (IOException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            } catch (RuntimeException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
             }
         }
     }

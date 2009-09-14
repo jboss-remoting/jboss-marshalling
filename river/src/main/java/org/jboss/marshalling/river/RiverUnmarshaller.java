@@ -1287,16 +1287,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
             }
         } catch (IOException e) {
-            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             throw e;
         } catch (ClassNotFoundException e) {
-            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             throw e;
         } catch (RuntimeException e) {
-            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
+            exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             throw e;
         }
     }

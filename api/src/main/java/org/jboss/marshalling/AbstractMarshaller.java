@@ -391,12 +391,12 @@ public abstract class AbstractMarshaller implements Marshaller {
         try {
             doWriteObject(obj, true);
         } catch (IOException e) {
-            exceptionListener.handleMarshallingException(e, obj);
             TraceInformation.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
             throw e;
         } catch (RuntimeException e) {
-            exceptionListener.handleMarshallingException(e, obj);
             TraceInformation.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
             throw e;
         }
     }
@@ -406,12 +406,12 @@ public abstract class AbstractMarshaller implements Marshaller {
         try {
             doWriteObject(obj, false);
         } catch (IOException e) {
-            exceptionListener.handleMarshallingException(e, obj);
             TraceInformation.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
             throw e;
         } catch (RuntimeException e) {
-            exceptionListener.handleMarshallingException(e, obj);
             TraceInformation.addObjectInformation(e, obj);
+            exceptionListener.handleMarshallingException(e, obj);
             throw e;
         }
     }

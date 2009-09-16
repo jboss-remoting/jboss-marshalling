@@ -72,7 +72,8 @@ public interface ByteInput extends Closeable {
     int available() throws IOException;
 
     /**
-     * Skips over and discards up to {@code n} bytes of data from this input stream.
+     * Skips over and discards up to {@code n} bytes of data from this input stream.  If the end of stream is reached,
+     * this method returns {@code 0} in order to be consistent with {@link java.io.InputStream#skip(long)}.
      *
      * @param n the number of bytes to attempt to skip
      * @return the number of bytes skipped

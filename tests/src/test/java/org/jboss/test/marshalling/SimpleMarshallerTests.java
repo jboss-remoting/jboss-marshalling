@@ -48,6 +48,7 @@ import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
 import org.testng.SkipException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
@@ -1682,6 +1683,34 @@ public final class SimpleMarshallerTests extends TestBase {
            return new TestSerializableWithWriteReplaceHolder(this);
         }
      }
+    
+    static class TestSerializable000 implements Serializable {
+       public String contentType;
+       public byte[] data;
+       public Date lastModified = new Date();
+
+       public TestSerializable000() {}
+
+       public TestSerializable000(String contentType, byte[] data) {
+           this.contentType = contentType;
+           this.data = data;
+       }
+    }
+    
+    @Test
+    public void testSerializable000() throws Throwable {
+        final TestSerializable000 serializable = new TestSerializable000();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
     
     /**
      * Verify that objects with writeReplace() and objects with readResolve() methods are

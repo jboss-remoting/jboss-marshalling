@@ -1684,29 +1684,28 @@ public final class SimpleMarshallerTests extends TestBase {
         }
      }
     
-    static class TestSerializable000 implements Serializable {
-       public String contentType;
-       public byte[] data;
-       public Date lastModified = new Date();
+    static class TestSerializableWithJavaUtilDate implements Serializable {
+       public Date lastModified;
 
-       public TestSerializable000() {}
-
-       public TestSerializable000(String contentType, byte[] data) {
-           this.contentType = contentType;
-           this.data = data;
-       }
+       public TestSerializableWithJavaUtilDate() {}
+       
+       public TestSerializableWithJavaUtilDate(Date lastModified) {
+         this.lastModified = lastModified;
+      }
     }
     
     @Test
-    public void testSerializable000() throws Throwable {
-        final TestSerializable000 serializable = new TestSerializable000();
+    public void testSerializableWithJavaUtilDate() throws Throwable {
+        final TestSerializableWithJavaUtilDate serializable = new TestSerializableWithJavaUtilDate(
+                 new Date(System.currentTimeMillis()));
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(serializable);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                assertEquals(serializable, unmarshaller.readObject());
+               TestSerializableWithJavaUtilDate read = (TestSerializableWithJavaUtilDate) unmarshaller.readObject();
+                assertEquals(serializable.lastModified + " is diff to read " + read.lastModified, serializable, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
         });

@@ -2165,9 +2165,9 @@ public final class SimpleMarshallerTests extends TestBase {
         MarshallingConfiguration config = configuration.clone();
         config.setClassExternalizerFactory(externalizerFactory);
         Marshaller marshaller = testMarshallerProvider.create(config, byteOutput);
-        if (marshaller instanceof SerialMarshaller) {
-            throw new SkipException("TODO: Known issue - see JBMAR-50");
-        }
+//        if (marshaller instanceof SerialMarshaller) {
+//            throw new SkipException("TODO: Known issue - see JBMAR-50");
+//        }
         marshaller.writeObject(o);
         marshaller.writeObject(o);
         marshaller.flush();
@@ -2204,9 +2204,6 @@ public final class SimpleMarshallerTests extends TestBase {
         }
     }
 
-    /*
-     * Verify JBMAR-50
-     */
     @Test
     public void testExternalizableWithFollowingObjects() throws Throwable {
         final TestExternalizableWithSerializableFields ext1 = new TestExternalizableWithSerializableFields();
@@ -2219,7 +2216,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof SerialMarshaller || marshaller instanceof ObjectOutputStreamMarshaller) throw new SkipException("TODO Known Issue - see JBMAR-50");
                 marshaller.writeObject(ext1);
                 marshaller.writeObject(ext2);
                 marshaller.writeObject(ext3);
@@ -2228,9 +2224,6 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 if ((unmarshaller instanceof RiverUnmarshaller) && version.get() < 1) {
                     throw new SkipException("River v0 can't detect eof on each object");
-                }
-                if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
-                    throw new SkipException("Unsupported marshaller config");
                 }
                 final TestExternalizableWithSerializableFields rext1 = (TestExternalizableWithSerializableFields) unmarshaller.readObject();
                 final TestExternalizableWithSerializableFields rext2 = (TestExternalizableWithSerializableFields) unmarshaller.readObject();
@@ -2272,7 +2265,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof SerialMarshaller) throw new SkipException("TODO Known Issue - see JBMAR-50");
                 if (marshaller instanceof JavaSerializationMarshaller) {
                     javaSerializationMarshaller.set(true);
                 }

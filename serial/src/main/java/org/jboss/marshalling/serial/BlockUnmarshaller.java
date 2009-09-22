@@ -90,6 +90,9 @@ public final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStre
             while (remaining > 0) {
                 skipBytes(remaining);
             }
+            if (remaining == -1) {
+            	return;
+            }
             final int b = serialUnmarshaller.read();
             switch (b) {
                 case -1:

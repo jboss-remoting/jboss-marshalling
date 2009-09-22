@@ -54,14 +54,16 @@ public final class ExternalizedObject implements Externalizable, Creator {
 
     /** {@inheritDoc} */
     public void writeExternal(final ObjectOutput out) throws IOException {
+    	out.writeObject(obj.getClass());
         out.writeObject(externalizer);
         externalizer.writeExternal(obj, out);
     }
 
     /** {@inheritDoc} */
     public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-        externalizer = (Externalizer) in.readObject();
-        final Object o = externalizer.createExternal(getClass(), in, this);
+    	Class<?> subject = (Class<?>)in.readObject();
+    	externalizer = (Externalizer) in.readObject();
+        final Object o = externalizer.createExternal(subject, in, this);
         externalizer.readExternal(o, in);
         obj = o;
     }

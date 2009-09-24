@@ -40,7 +40,6 @@ import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.ObjectOutputStreamMarshaller;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
-import org.jboss.marshalling.serial.SerialMarshaller;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
@@ -1705,7 +1704,7 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                TestSerializableWithJavaUtilDate read = (TestSerializableWithJavaUtilDate) unmarshaller.readObject();
-                assertEquals(serializable.lastModified + " is diff to read " + read.lastModified, serializable, unmarshaller.readObject());
+                assertEquals(serializable.lastModified + " is diff to read " + read.lastModified, serializable.lastModified, read.lastModified);
                 assertEOF(unmarshaller);
             }
         });

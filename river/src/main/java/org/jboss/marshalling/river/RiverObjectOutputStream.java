@@ -171,7 +171,9 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
     protected void finish(State restoreState) throws IOException {
         switch (state.getAndSet(restoreState)) {
             case UNWRITTEN_FIELDS:
-                throw new NotActiveException("Fields were never written");
+            	if(serializableClass.getFields().length > 0) {
+            		throw new NotActiveException("Fields were never written");
+            	}
         }
     }
 

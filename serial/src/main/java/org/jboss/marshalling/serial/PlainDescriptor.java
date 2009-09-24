@@ -95,7 +95,7 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
         final Object oldSubject = ois.saveCurrentSubject(subject);
         try {
             sc.callReadObject(subject, ois);
-            if (ois.restoreState(oldState) != SerialObjectInputStream.State.ON) {
+            if (sc.getFields().length > 0 && ois.restoreState(oldState) != SerialObjectInputStream.State.ON) {
                 throw new StreamCorruptedException("readObject() did not read fields");
             }
         } finally {

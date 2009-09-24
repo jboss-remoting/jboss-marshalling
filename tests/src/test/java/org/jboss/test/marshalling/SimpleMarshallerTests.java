@@ -2053,9 +2053,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof SerialMarshaller) {
-                    throw new SkipException("TODO Known Issue - JBMAR-65");
-                }
                 marshaller.writeObject(o);
             }
 

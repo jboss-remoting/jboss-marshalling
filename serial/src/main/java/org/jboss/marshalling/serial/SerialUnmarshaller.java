@@ -279,7 +279,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     if (sc.hasReadResolve()) {
                         final Object replacement = sc.callReadResolve(obj);
                         if (! unshared) instanceCache.set(idx, replacement);
-                        return replacement;
+                        return replaceOrReturn(unshared, replacement, idx);
                     }
                     return replaceOrReturn(unshared, obj, idx);
                 }

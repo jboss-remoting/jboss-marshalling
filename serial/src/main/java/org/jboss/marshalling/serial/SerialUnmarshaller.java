@@ -153,15 +153,13 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 case TC_STRING: {
                     final int len = readUnsignedShort();
                     final String str = UTFUtils.readUTFBytesByByteCount(this, len);
-                    instanceCache.add(unshared ? UNSHARED : str);
-                    return str;
+                    return replaceOrReturn(unshared, str);
                 }
 
                 case TC_LONGSTRING: {
                     final long len = super.readLong();
                     final String str = UTFUtils.readUTFBytesByByteCount(this, len);
-                    instanceCache.add(unshared ? UNSHARED : str);
-                    return str;
+                    return replaceOrReturn(unshared, str);
                 }
 
                 case TC_ARRAY: {
@@ -178,57 +176,49 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         if (ct == byte.class) {
                             final byte[] bytes = new byte[size];
                             readFully(bytes);
-                            instanceCache.set(idx, bytes);
-                            return bytes;
+                            return replaceOrReturn(unshared, bytes, idx);
                         } else if (ct == short.class) {
                             final short[] shorts = new short[size];
                             for (int i = 0; i < shorts.length; i++) {
                                 shorts[i] = readShort();
                             }
-                            instanceCache.set(idx, shorts);
-                            return shorts;
+                            return replaceOrReturn(unshared, shorts, idx);
                         } else if (ct == int.class) {
                             final int[] ints = new int[size];
                             for (int i = 0; i < ints.length; i++) {
                                 ints[i] = readInt();
                             }
-                            instanceCache.set(idx, ints);
-                            return ints;
+                            return replaceOrReturn(unshared, ints, idx);
                         } else if (ct == long.class) {
                             final long[] longs = new long[size];
                             for (int i = 0; i < longs.length; i++) {
                                 longs[i] = readLong();
                             }
-                            instanceCache.set(idx, longs);
-                            return longs;
+                            return replaceOrReturn(unshared, longs, idx);
                         } else if (ct == float.class) {
                             final float[] floats = new float[size];
                             for (int i = 0; i < floats.length; i++) {
                                 floats[i] = readFloat();
                             }
-                            instanceCache.set(idx, floats);
-                            return floats;
+                            return replaceOrReturn(unshared, floats, idx);
                         } else if (ct == double.class) {
                             final double[] doubles = new double[size];
                             for (int i = 0; i < doubles.length; i++) {
                                 doubles[i] = readDouble();
                             }
-                            instanceCache.set(idx, doubles);
-                            return doubles;
+                            return replaceOrReturn(unshared, doubles, idx);
                         } else if (ct == boolean.class) {
                             final boolean[] booleans = new boolean[size];
                             for (int i = 0; i < booleans.length; i++) {
                                 booleans[i] = readBoolean();
                             }
-                            instanceCache.set(idx, booleans);
-                            return booleans;
+                            return replaceOrReturn(unshared, booleans, idx);
                         } else if (ct == char.class) {
                             final char[] chars = new char[size];
                             for (int i = 0; i < chars.length; i++) {
                                 chars[i] = readChar();
                             }
-                            instanceCache.set(idx, chars);
-                            return chars;
+                            return replaceOrReturn(unshared, chars, idx);
                         } else {
                             throw new InvalidClassException(type.getName(), "Invalid component type");
                         }
@@ -238,7 +228,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         for (int i = 0; i < objects.length; i++) {
                             objects[i] = doReadObject(false);
                         }
-                        return objects;
+                        return replaceOrReturn(unshared, objects, idx);
                     }
                 }
 
@@ -254,8 +244,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     instanceCache.add(UNRESOLVED);
                     final String constName = (String) doReadObject(false);
                     final Enum obj = Enum.valueOf(enumType, constName);
-                    instanceCache.set(idx, obj);
-                    return obj;
+                    return replaceOrReturn(unshared, obj, idx);
                 }
 
                 case TC_OBJECT: {
@@ -266,6 +255,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     final Object obj = creator.create(descriptor.getType());
                     final int idx = instanceCache.size();
                     instanceCache.add(unshared ? UNSHARED : obj);
+                    
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
                         if (obj instanceof Externalizable) {
                             final Externalizable externalizable = (Externalizable) obj;
@@ -291,7 +281,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         if (! unshared) instanceCache.set(idx, replacement);
                         return replacement;
                     }
-                    return obj;
+                    return replaceOrReturn(unshared, obj, idx);
                 }
 
                 case TC_OBJECTTABLE: {
@@ -585,5 +575,25 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         } else {
             return new NoDataDescriptor(clazz, null);
         }
+    }
+
+    private Object replaceOrReturn(boolean unshared, Object object) {
+        final int idx = instanceCache.size();
+        instanceCache.add(UNSHARED);
+        return replaceOrReturn(unshared, object, idx);
+    }
+
+    private Object replaceOrReturn(boolean unshared, Object object, int idx) {
+        Object toReturn = object;
+        final Object replacement = objectResolver.readResolve(object);
+        if (replacement != null && replacement != object) {
+            toReturn = replacement;
+        }
+        if (unshared) {
+            instanceCache.set(idx, null);
+        } else {
+            instanceCache.set(idx, toReturn);
+        }
+        return toReturn;
     }
 }

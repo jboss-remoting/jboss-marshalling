@@ -170,38 +170,32 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    Object doReadCollectionObject(final boolean unshared, final Object collection, final int idx, final int size) throws ClassNotFoundException, IOException {
+    Object doReadCollectionObject(final boolean unshared, final int idx, final int size) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
             TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (ClassNotFoundException e) {
             TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (RuntimeException e) {
             TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         }
     }
 
-    Object doReadMapObject(final boolean unshared, final Object collection, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
+    Object doReadMapObject(final boolean unshared, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
         try {
             return doReadObject(unshared);
         } catch (IOException e) {
             TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (ClassNotFoundException e) {
             TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         } catch (RuntimeException e) {
             TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
-//            TraceInformation.addIncompleteObjectInformation(e, collection.getClass());
             throw e;
         }
     }
@@ -694,7 +688,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         idx = instanceCache.size();
         instanceCache.add(target);
         for (int i = 0; i < len; i ++) {
-            target.add(doReadCollectionObject(false, target, idx, len));
+            target.add(doReadCollectionObject(false, idx, len));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         if (unshared) {
@@ -712,7 +706,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         idx = instanceCache.size();
         instanceCache.add(target);
         for (int i = 0; i < len; i ++) {
-            target.put(doReadMapObject(false, target, idx, len, true), doReadMapObject(false, target, idx, len, false));
+            target.put(doReadMapObject(false, idx, len, true), doReadMapObject(false, idx, len, false));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         if (unshared) {
@@ -1413,7 +1407,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final int idx = instanceCache.size();
         instanceCache.add(array);
         for (int i = 0; i < cnt; i ++) {
-            array[i] = doReadCollectionObject(unshared, array, i, cnt);
+            array[i] = doReadCollectionObject(unshared, i, cnt);
         }
         final Object resolvedObject = objectResolver.readResolve(array);
         if (unshared) {

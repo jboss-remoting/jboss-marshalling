@@ -49,21 +49,31 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RiverObjectInputStream extends MarshallerObjectInputStream {
     private AtomicReference<State> state = new AtomicReference<State>(State.OFF);
     private final RiverUnmarshaller unmarshaller;
-    
-    protected RiverObjectInputStream(final RiverUnmarshaller riverUnmarshaller, final Unmarshaller delegateUnmarshaller) throws IOException, SecurityException {
+    private final BlockUnmarshaller blockUnmarshaller;
+
+    protected RiverObjectInputStream(final RiverUnmarshaller riverUnmarshaller, final BlockUnmarshaller delegateUnmarshaller) throws IOException, SecurityException {
         super(delegateUnmarshaller);
         unmarshaller = riverUnmarshaller;
+        blockUnmarshaller = delegateUnmarshaller;
     }
 
     private SerializableClassDescriptor serializableClassDescriptor;
     private Object current;
+    private int restoreIdx;
 
     public void defaultReadObject() throws IOException, ClassNotFoundException {
-        if (! state.compareAndSet(State.UNREAD_FIELDS, State.ON)) {
-            throw new NotActiveException("defaultReadObject() may only be called when the fields have not yet been read");
+        State old = state.getAndSet(State.ON);
+        switch (old) {
+            case UNREAD_FIELDS:
+            case UNREAD_FIELDS_EOB: break;
+            default:
+                throw new NotActiveException("readFields() may only be called when the fields have not yet been read");
         }
         try {
             unmarshaller.readFields(current, serializableClassDescriptor);
+            if (old == State.UNREAD_FIELDS_EOB) {
+                restoreIdx = blockUnmarshaller.tempEndOfStream();
+            }
         } finally {
             serializableClassDescriptor = null;
             current = null;
@@ -71,8 +81,12 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     }
 
     public GetField readFields() throws IOException, ClassNotFoundException {
-        if (! state.compareAndSet(State.UNREAD_FIELDS, State.ON)) {
-            throw new NotActiveException("readFields() may only be called when the fields have not yet been read");
+        State old = state.getAndSet(State.ON);
+        switch (old) {
+            case UNREAD_FIELDS:
+            case UNREAD_FIELDS_EOB: break;
+            default:
+                throw new NotActiveException("readFields() may only be called when the fields have not yet been read");
         }
         final SerializableField[] streamFields = serializableClassDescriptor.getFields();
         final int cnt = streamFields.length;
@@ -132,6 +146,9 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                 TraceInformation.addFieldInformation(e, field.getName());
                 throw e;
             }
+        }
+        if (old == State.UNREAD_FIELDS_EOB) {
+            restoreIdx = blockUnmarshaller.tempEndOfStream();
         }
         return new GetField() {
             public ObjectStreamClass getObjectStreamClass() {
@@ -246,9 +263,18 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         current = null;
     }
 
+    protected void noCustomData() {
+        state.set(State.UNREAD_FIELDS_EOB);
+    }
+
+    protected int getRestoreIdx() {
+        return restoreIdx;
+    }
+
     protected enum State {
         OFF,
         UNREAD_FIELDS,
+        UNREAD_FIELDS_EOB,
         ON,
         ;
     }

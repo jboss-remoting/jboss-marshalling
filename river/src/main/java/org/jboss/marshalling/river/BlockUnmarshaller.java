@@ -59,6 +59,18 @@ public final class BlockUnmarshaller implements Unmarshaller {
         }
     }
 
+    int tempEndOfStream() {
+        try {
+            return remaining;
+        } finally {
+            remaining = -1;
+        }
+    }
+
+    void restore(int remaining) {
+        this.remaining = remaining;
+    }
+
     void unblock() {
         if (remaining == -1) {
             remaining = 0;

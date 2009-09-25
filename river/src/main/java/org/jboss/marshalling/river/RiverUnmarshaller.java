@@ -1482,10 +1482,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     info.callReadObject(obj, objectInputStream);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
-                } else {
-                    // no fields to read
-                    blockUnmarshaller.endOfStream();
+                } else { // typeid == ID_SERIALIZABLE_CLASS
+                    // no user data to read - mark the OIS so that it calls endOfBlock after reading fields!
+                    objectInputStream.noCustomData();
                     info.callReadObject(obj, objectInputStream);
+                    blockUnmarshaller.restore(objectInputStream.getRestoreIdx());
                 }
                 objectInputStream.finish(restoreState);
                 objectInputStream.swapCurrent(oldObj);

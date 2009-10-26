@@ -29,6 +29,8 @@ import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import static org.jboss.test.marshalling.Pair.pair;
 import java.util.Collection;
@@ -46,18 +48,18 @@ public final class SimpleMarshallerTestFactory {
     @SuppressWarnings({ "ZeroLengthArrayAllocation" })
     public static Object[][] parameters() {
 
-        final RiverMarshallerFactory riverMarshallerFactory = new RiverMarshallerFactory();
+        final MarshallerFactory riverMarshallerFactory = Marshalling.getMarshallerFactory("river");
         final TestMarshallerProvider riverTestMarshallerProviderV1 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 1);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV1 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 1);
 
         final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 2);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 2);
 
-        final SerialMarshallerFactory serialMarshallerFactory = new SerialMarshallerFactory();
+        final MarshallerFactory serialMarshallerFactory = Marshalling.getMarshallerFactory("serial");
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
         final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
 
-        final JavaSerializationMarshallerFactory javaSerializationMarshallerFactory = new JavaSerializationMarshallerFactory();
+        final MarshallerFactory javaSerializationMarshallerFactory = new JavaSerializationMarshallerFactory();
         final TestMarshallerProvider javaTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(javaSerializationMarshallerFactory);
         final TestUnmarshallerProvider javaTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(javaSerializationMarshallerFactory);
 

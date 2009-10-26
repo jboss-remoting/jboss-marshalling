@@ -1,0 +1,4 @@
+#
+# Serial protocol provider
+#
+org.jboss.marshalling.serial.SerialProviderDescriptor

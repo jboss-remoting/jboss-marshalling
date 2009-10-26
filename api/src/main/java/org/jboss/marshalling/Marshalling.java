@@ -40,6 +40,7 @@ import java.security.AccessController;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.ServiceLoader;
 
 /**
  * Static utility methods for simplfying use of marshallers.
@@ -47,6 +48,42 @@ import java.util.Arrays;
 public final class Marshalling {
 
     private Marshalling() {
+    }
+
+    /**
+     * Get a marshaller factory, by name.  Uses the thread's current context classloader, if available, to locate
+     * the factory.
+     *
+     * @param name the name of the protocol to acquire
+     * @return the marshaller factory, or {@code null} if no matching factory was found
+     *
+     * @see ServiceLoader
+     */
+    public static MarshallerFactory getMarshallerFactory(String name) {
+        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class), name);
+    }
+
+    /**
+     * Get a marshaller factory, by name.  Uses the given classloader to locate
+     * the factory.
+     *
+     * @param name the name of the protocol to acquire
+     * @param classLoader the class loader to use
+     * @return the marshaller factory, or {@code null} if no matching factory was found
+     *
+     * @see ServiceLoader
+     */
+    public static MarshallerFactory getMarshallerFactory(String name, ClassLoader classLoader) {
+        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, classLoader), name);
+    }
+
+    private static MarshallerFactory loadMarshallerFactory(ServiceLoader<ProviderDescriptor> loader, String name) {
+        for (ProviderDescriptor descriptor : loader) {
+            if (name.equals(descriptor.getName())) {
+                return descriptor.getMarshallerFactory();
+            }
+        }
+        return null;
     }
 
     private static final StreamHeader NULL_STREAM_HEADER = new StreamHeader() {

@@ -104,6 +104,6 @@ public final class SingleObjectMarshallerTests extends TestBase {
     }
 
     private static String stringOf(Object foo) {
-        return foo == null ? "-null-" : "(" + foo.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(foo)) + "[" + Integer.toHexString(foo.hashCode()) + "])";
+        return foo == null ? "-null-" : (foo instanceof Class) ? foo.toString() : "(" + foo.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(foo)) + "[" + Integer.toHexString(foo.hashCode()) + "])";
     }
 }

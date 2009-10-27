@@ -37,8 +37,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.LinkedHashSet;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.SortedMap;
+import java.util.RandomAccess;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
@@ -153,6 +160,25 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(new TimeoutException());
         list.add(new TestArrayList());
         list.add(new TestCollectionHolder());
+        list.add(HashMap.class);
+        list.add(ConcurrentHashMap.class);
+        list.add(LinkedHashMap.class);
+        list.add(IdentityHashMap.class);
+        list.add(TreeMap.class);
+        list.add(ArrayList.class);
+        list.add(LinkedList.class);
+        list.add(HashSet.class);
+        list.add(LinkedHashSet.class);
+        list.add(TreeSet.class);
+        list.add(Object.class);
+        list.add(Collection.class);
+        list.add(List.class);
+        list.add(Queue.class);
+        list.add(Set.class);
+        list.add(SortedSet.class);
+        list.add(Map.class);
+        list.add(SortedMap.class);
+        list.add(RandomAccess.class);
     }
 
     @Factory(dataProvider = "singleObjectProvider")

@@ -651,7 +651,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return readMapData(unshared, len, new EnumMap(elementType));
                         }
                         default: {
-                            throw new StreamCorruptedException("Unexpected byte foudn when reading a collection type: " + leadByte);
+                            throw new StreamCorruptedException("Unexpected byte found when reading a collection type: " + leadByte);
                         }
                     }
                 }

@@ -1305,6 +1305,11 @@ public class RiverMarshaller extends AbstractMarshaller {
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("No standard serialization proxy found for enum set!");
         }
+
+        BASIC_CLASSES_V2 = map;
+
+        // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
+        // do something tricky involving ObjectStreamField anyway...
         ENUM_SET_VALUES_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
             public Field run() {
                 try {
@@ -1338,8 +1343,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
             }
         });
-
-        BASIC_CLASSES_V2 = map;
     }
 
     protected void writeNewClass(final Class<?> objClass) throws IOException {
@@ -1380,6 +1383,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected boolean writeKnownClass(final Class<?> objClass) throws IOException {
+        final int configuredVersion = this.configuredVersion;
         int i = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
         if (i != -1) {
             write(i);

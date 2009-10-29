@@ -497,7 +497,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         classResolver.annotateClass(blockMarshaller, forClass);
         doEndBlock();
         final Class<?> sc = forClass.getSuperclass();
-        if (Serializable.class.isAssignableFrom(sc) && ! forClass.isEnum()) {
+        if (sc != null && Serializable.class.isAssignableFrom(sc) && ! forClass.isEnum()) {
             writeClassDescFor(sc);
         } else {
             write(TC_NULL);

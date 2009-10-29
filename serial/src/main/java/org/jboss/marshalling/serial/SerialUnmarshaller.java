@@ -352,6 +352,9 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         return readClassDescriptor(readUnsignedByte());
     }
 
+    private static final int[] EMPTY_INTS = new int[0];
+    private static final String[] EMPTY_STRINGS = new String[0];
+
     private Descriptor readClassDescriptor(int leadByte) throws IOException, ClassNotFoundException {
         final BlockUnmarshaller blockUnmarshaller = this.blockUnmarshaller;
         switch (leadByte) {
@@ -372,72 +375,87 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 instanceCache.add(UNRESOLVED);
                 final int descFlags = readUnsignedByte();
                 final int fieldCount = readUnsignedShort();
-                final int[] typecodes = new int[fieldCount];
-                final String[] names = new String[fieldCount];
-                final String[] fieldSignatures = new String[fieldCount];
-                for (int i = 0; i < fieldCount; i ++) {
-                    typecodes[i] = readUnsignedByte();
-                    names[i] = readUTF();
-                    if (typecodes[i] == '[' || typecodes[i] == 'L') {
-                        fieldSignatures[i] = doReadString();
+                final int[] typecodes;
+                final String[] names;
+                final String[] fieldSignatures;
+                if (fieldCount == 0) {
+                    // either no fields or it's not serializable
+                    typecodes = EMPTY_INTS;
+                    names = EMPTY_STRINGS;
+                    fieldSignatures = EMPTY_STRINGS;
+                } else {
+                    typecodes = new int[fieldCount];
+                    names = new String[fieldCount];
+                    fieldSignatures = new String[fieldCount];
+                    for (int i = 0; i < fieldCount; i ++) {
+                        typecodes[i] = readUnsignedByte();
+                        names[i] = readUTF();
+                        if (typecodes[i] == '[' || typecodes[i] == 'L') {
+                            fieldSignatures[i] = doReadString();
+                        }
                     }
                 }
                 final Class<?> clazz = classResolver.resolveClass(blockUnmarshaller, className, svu);
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();
                 final SerializableClass sc = registry.lookup(clazz);
-                final SerializableField[] fields = new SerializableField[fieldCount];
-                for (int i = 0; i < fieldCount; i ++) {
-                    final Class<?> fieldType;
-                    switch (typecodes[i]) {
-                        case 'B': {
-                            fieldType = byte.class;
-                            break;
-                        }
-                        case 'C': {
-                            fieldType = char.class;
-                            break;
-                        }
-                        case 'D': {
-                            fieldType = double.class;
-                            break;
-                        }
-                        case 'F': {
-                            fieldType = float.class;
-                            break;
-                        }
-                        case 'I': {
-                            fieldType = int.class;
-                            break;
-                        }
-                        case 'J': {
-                            fieldType = long.class;
-                            break;
-                        }
-                        case 'S': {
-                            fieldType = short.class;
-                            break;
-                        }
-                        case 'Z': {
-                            fieldType = boolean.class;
-                            break;
-                        }
-                        case 'L':
-                        case '[': {
-                            fieldType = Object.class;
-                            break;
-                        }
-                        default: {
-                            throw new StreamCorruptedException("Invalid field typecode " + typecodes[i]);
-                        }
-                    }
-                    fields[i] = sc.getSerializableField(names[i], fieldType, false);
-                }
                 final Descriptor superDescr = readClassDescriptor();
                 final Class<?> superClazz = clazz.getSuperclass();
                 final Descriptor descriptor;
                 if (superDescr == null || superDescr.getType().isAssignableFrom(superClazz)) {
-                    descriptor = descFlags == 0 ? new NoDataDescriptor(clazz, bridge(superDescr, superClazz)) : new PlainDescriptor(clazz, bridge(superDescr, superClazz), fields, descFlags);
+                    if (descFlags == 0) {
+                        descriptor = new NoDataDescriptor(clazz, bridge(superDescr, superClazz));
+                    } else {
+                        // HAS FIELDS
+                        final SerializableField[] fields = new SerializableField[fieldCount];
+                        for (int i = 0; i < fieldCount; i ++) {
+                            final Class<?> fieldType;
+                            switch (typecodes[i]) {
+                                case 'B': {
+                                    fieldType = byte.class;
+                                    break;
+                                }
+                                case 'C': {
+                                    fieldType = char.class;
+                                    break;
+                                }
+                                case 'D': {
+                                    fieldType = double.class;
+                                    break;
+                                }
+                                case 'F': {
+                                    fieldType = float.class;
+                                    break;
+                                }
+                                case 'I': {
+                                    fieldType = int.class;
+                                    break;
+                                }
+                                case 'J': {
+                                    fieldType = long.class;
+                                    break;
+                                }
+                                case 'S': {
+                                    fieldType = short.class;
+                                    break;
+                                }
+                                case 'Z': {
+                                    fieldType = boolean.class;
+                                    break;
+                                }
+                                case 'L':
+                                case '[': {
+                                    fieldType = Object.class;
+                                    break;
+                                }
+                                default: {
+                                    throw new StreamCorruptedException("Invalid field typecode " + typecodes[i]);
+                                }
+                            }
+                            fields[i] = sc.getSerializableField(names[i], fieldType, false);
+                        }
+                        descriptor = new PlainDescriptor(clazz, bridge(superDescr, superClazz), fields, descFlags);
+                    }
                 } else {
                     throw new InvalidClassException(clazz.getName(), "Class hierarchy mismatch");
                 }
@@ -476,6 +494,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     }
 
     private Descriptor bridge(final Descriptor descriptor, final Class<?> type) {
+        if (descriptor == null) return null;
         final Class<?> superDescrClazz = descriptor == null ? null : descriptor.getType();
         final Class<?> typeSuperclass = type.getSuperclass();
         if (type == superDescrClazz || descriptor == null && (typeSuperclass == null || Serializable.class.isAssignableFrom(typeSuperclass))) {

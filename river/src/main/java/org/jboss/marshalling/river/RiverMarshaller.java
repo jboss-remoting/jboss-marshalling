@@ -151,6 +151,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                 if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
                     if (configuredVersion >= 2) {
+                        // In V2, if a class is one we have an entry for, we just write that byte directly.
+                        // These guys can't be written directly though, otherwise they'll get confused with the objects
+                        // of the corresponding type.
                         final int cid = BASIC_CLASSES_V2.get(classObj, -1);
                         switch (cid) {
                             case -1:
@@ -169,6 +172,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                             }
                         }
                     }
+                    // If we're V1, or the class is one of the above special object types, then we write a
+                    // full NEW_OBJECT+CLASS_CLASS header followed by the class byte, or if there is none, write
+                    // the full class descriptor.
                     write(ID_NEW_OBJECT);
                     writeClassClass(classObj);
                     return;

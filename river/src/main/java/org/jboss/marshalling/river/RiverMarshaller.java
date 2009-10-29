@@ -1297,14 +1297,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         map.put(EnumMap.class, ID_CC_ENUM_MAP);
         map.put(EnumSet.class, ID_CC_ENUM_SET);
-
-        final Class<?> enumSetProxyClass;
-        try {
-            enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
-            map.put(enumSetProxyClass, ID_CC_ENUM_SET_PROXY); // special case...
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("No standard serialization proxy found for enum set!");
-        }
+        map.put(enumSetProxyClass, ID_CC_ENUM_SET_PROXY); // special case
 
         BASIC_CLASSES_V2 = map;
 

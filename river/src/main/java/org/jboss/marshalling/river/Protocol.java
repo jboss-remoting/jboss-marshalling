@@ -181,6 +181,18 @@ public final class Protocol {
     static final Class<?> emptySetClass = Collections.emptySet().getClass();
     static final Class<?> emptyMapClass = Collections.emptyMap().getClass();
 
+    static final Class<?> enumSetProxyClass;
+
+    static {
+        Class<?> clazz;
+        try {
+            clazz = Class.forName("java.util.EnumSet$SerializationProxy");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("No standard serialization proxy found for enum set!");
+        }
+        enumSetProxyClass = clazz;
+    }
+
     private Protocol() {
     }
 }

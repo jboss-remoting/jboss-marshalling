@@ -64,6 +64,9 @@ import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
 import java.util.Vector;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
@@ -536,6 +539,22 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return AbstractSet.class;
                 }
 
+                case ID_CC_CONCURRENT_HASH_MAP: {
+                    return ConcurrentHashMap.class;
+                }
+                case ID_CC_COPY_ON_WRITE_ARRAY_LIST: {
+                    return CopyOnWriteArrayList.class;
+                }
+                case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
+                    return CopyOnWriteArraySet.class;
+                }
+                case ID_CC_VECTOR: {
+                    return Vector.class;
+                }
+                case ID_CC_STACK: {
+                    return Stack.class;
+                }
+
                 case ID_SINGLETON_LIST_OBJECT: {
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
@@ -968,6 +987,26 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_STACK: {
                 return ClassDescriptor.STACK;
+            }
+
+            case ID_SINGLETON_MAP_OBJECT: {
+                return ClassDescriptor.SINGLETON_MAP;
+            }
+            case ID_SINGLETON_SET_OBJECT: {
+                return ClassDescriptor.SINGLETON_SET;
+            }
+            case ID_SINGLETON_LIST_OBJECT: {
+                return ClassDescriptor.SINGLETON_LIST;
+            }
+
+            case ID_EMPTY_MAP_OBJECT: {
+                return ClassDescriptor.EMPTY_MAP;
+            }
+            case ID_EMPTY_SET_OBJECT: {
+                return ClassDescriptor.EMPTY_SET;
+            }
+            case ID_EMPTY_LIST_OBJECT: {
+                return ClassDescriptor.EMPTY_LIST;
             }
 
             case ID_STRING_CLASS: {

@@ -100,6 +100,14 @@ public class ClassDescriptor {
 
     // non-public (due to security)
 
+    static final ClassDescriptor SINGLETON_MAP = getSerializableClassDescriptor(Protocol.singletonMapClass);
+    static final ClassDescriptor SINGLETON_SET = getSerializableClassDescriptor(Protocol.singletonSetClass);
+    static final ClassDescriptor SINGLETON_LIST = getSerializableClassDescriptor(Protocol.singletonListClass);
+
+    static final ClassDescriptor EMPTY_MAP = getSerializableClassDescriptor(Protocol.emptyMapClass);
+    static final ClassDescriptor EMPTY_SET = getSerializableClassDescriptor(Protocol.emptySetClass);
+    static final ClassDescriptor EMPTY_LIST = getSerializableClassDescriptor(Protocol.emptyListClass);
+
     static final ClassDescriptor CC_ARRAY_LIST = getSerializableClassDescriptor(ArrayList.class);
     static final ClassDescriptor CC_LINKED_LIST = getSerializableClassDescriptor(LinkedList.class);
 

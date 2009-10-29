@@ -490,7 +490,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return Hashtable.class;
                 }
                 case ID_CC_IDENTITY_HASH_MAP: {
-                    return HashMap.class;
+                    return IdentityHashMap.class;
                 }
                 case ID_CC_LINKED_HASH_MAP: {
                     return LinkedHashMap.class;

@@ -480,33 +480,46 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_CC_ARRAY_LIST: {
                     return ArrayList.class;
                 }
-                case ID_CC_HASH_MAP: {
-                    return HashMap.class;
+                case ID_CC_LINKED_LIST: {
+                    return LinkedList.class;
                 }
+
                 case ID_CC_HASH_SET: {
                     return HashSet.class;
-                }
-                case ID_CC_HASHTABLE: {
-                    return Hashtable.class;
-                }
-                case ID_CC_IDENTITY_HASH_MAP: {
-                    return IdentityHashMap.class;
-                }
-                case ID_CC_LINKED_HASH_MAP: {
-                    return LinkedHashMap.class;
                 }
                 case ID_CC_LINKED_HASH_SET: {
                     return LinkedHashSet.class;
                 }
-                case ID_CC_LINKED_LIST: {
-                    return LinkedList.class;
+                case ID_CC_TREE_SET: {
+                    return TreeSet.class;
+                }
+
+                case ID_CC_IDENTITY_HASH_MAP: {
+                    return IdentityHashMap.class;
+                }
+                case ID_CC_HASH_MAP: {
+                    return HashMap.class;
+                }
+                case ID_CC_HASHTABLE: {
+                    return Hashtable.class;
+                }
+                case ID_CC_LINKED_HASH_MAP: {
+                    return LinkedHashMap.class;
                 }
                 case ID_CC_TREE_MAP: {
                     return TreeMap.class;
                 }
-                case ID_CC_TREE_SET: {
-                    return TreeSet.class;
+
+                case ID_CC_ENUM_SET_PROXY: {
+                    return enumSetProxyClass;
                 }
+                case ID_CC_ENUM_SET: {
+                    return EnumSet.class;
+                }
+                case ID_CC_ENUM_MAP: {
+                    return EnumMap.class;
+                }
+
                 case ID_ABSTRACT_COLLECTION: {
                     return AbstractCollection.class;
                 }

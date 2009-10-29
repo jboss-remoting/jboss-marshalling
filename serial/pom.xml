@@ -30,6 +30,8 @@
         <jbmar.version>1.2.0.CR5-SNAPSHOT</jbmar.version>
     </properties>
 
+    <name>JBoss Marshalling Serial</name>
+    <description>JBoss Marshalling Serial Implementation</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>serial</artifactId>
     <version>${jbmar.version}</version>

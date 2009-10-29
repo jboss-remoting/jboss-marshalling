@@ -30,6 +30,8 @@
         <jbmar.version>1.2.0.CR5-SNAPSHOT</jbmar.version>
     </properties>
 
+    <name>JBoss Marshalling API</name>
+    <description>JBoss Marshalling API</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>marshalling-api</artifactId>
     <version>${jbmar.version}</version>

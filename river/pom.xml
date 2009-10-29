@@ -30,6 +30,8 @@
         <jbmar.version>1.2.0.CR5-SNAPSHOT</jbmar.version>
     </properties>
 
+    <name>JBoss Marshalling River</name>
+    <description>JBoss Marshalling River Implementation</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>river</artifactId>
     <version>${jbmar.version}</version>

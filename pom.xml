@@ -30,6 +30,8 @@
         <jbmar.version>1.2.0.CR5-SNAPSHOT</jbmar.version>
     </properties>
 
+    <name>JBoss Marshalling Parent</name>
+    <description>JBoss Marshalling Parent POM</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling</artifactId>
     <packaging>pom</packaging>

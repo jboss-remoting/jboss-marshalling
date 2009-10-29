@@ -27,6 +27,8 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Map;
+import java.util.HashMap;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 
 /**
@@ -129,7 +131,8 @@ public abstract class AbstractClassResolver implements ClassResolver {
      * @throws ClassNotFoundException if the class is not found, or if there is no classloader
      */
     protected Class<?> loadClass(final String name) throws ClassNotFoundException {
-        return Class.forName(name, false, getClassLoaderChecked());
+        final Class<?> prim = primitives.get(name);
+        return prim != null ? prim : Class.forName(name, false, getClassLoaderChecked());
     }
 
     /**
@@ -144,5 +147,25 @@ public abstract class AbstractClassResolver implements ClassResolver {
             classes[i] = loadClass(interfaces[i]);
         }
         return Proxy.getProxyClass(classLoader, classes);
+    }
+
+    private static final Map<String, Class<?>> primitives;
+
+    static {
+        final Map<String, Class<?>> map = new HashMap<String, Class<?>>();
+        map.put("void", void.class);
+
+        map.put("byte", byte.class);
+        map.put("short", short.class);
+        map.put("int", int.class);
+        map.put("long", long.class);
+
+        map.put("char", char.class);
+
+        map.put("boolean", boolean.class);
+
+        map.put("float", float.class);
+        map.put("double", double.class);
+        primitives = map;
     }
 }

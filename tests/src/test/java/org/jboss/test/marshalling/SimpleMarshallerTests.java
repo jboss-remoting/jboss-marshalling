@@ -2310,4 +2310,30 @@ public final class SimpleMarshallerTests extends TestBase {
             });
         }
     }
+
+    public static class TestSerializableEmpty implements Serializable {
+        private static final long serialVersionUID = 997011009926105464L;
+    }
+
+    @Test
+    public void testObjectGraphDistance() throws Throwable {
+        final TestSerializableEmpty first = new TestSerializableEmpty();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(first);
+                for (int i = 0; i < 65536 + 500; i ++) {
+                    marshaller.writeObject(new TestSerializableEmpty());
+                }
+                marshaller.writeObject(first);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object test = unmarshaller.readObject();
+                for (int i = 0; i < 65536 + 500; i ++) {
+                    unmarshaller.readObject();
+                }
+                assertSame("Far backref", test, unmarshaller.readObject());
+            }
+        });
+    }
 }

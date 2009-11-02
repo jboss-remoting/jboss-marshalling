@@ -127,6 +127,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                         } else if (diff >= -65536) {
                             write(ID_REPEAT_OBJECT_NEARISH);
                             writeShort(diff);
+                        } else {
+                            write(ID_REPEAT_OBJECT_FAR);
+                            writeInt(rid);
                         }
                         return;
                     }

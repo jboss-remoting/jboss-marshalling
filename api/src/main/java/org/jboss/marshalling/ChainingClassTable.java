@@ -32,22 +32,9 @@ import java.io.StreamCorruptedException;
  * with an identifier byte.
  */
 public class ChainingClassTable implements ClassTable {
-    private interface Pair<X, Y> {
-        X getX();
-
-        Y getY();
-    }
 
     private static Pair<ClassTable, Writer> pair(final ClassTable classTable, final Writer writer) {
-        return new Pair<ClassTable, Writer>() {
-            public ClassTable getX() {
-                return classTable;
-            }
-
-            public Writer getY() {
-                return writer;
-            }
-        };
+        return Pair.create(classTable, writer);
     }
 
     private final List<Pair<ClassTable, Writer>> writers;
@@ -85,8 +72,8 @@ public class ChainingClassTable implements ClassTable {
     /** {@inheritDoc} */
     public Writer getClassWriter(final Class<?> clazz) throws IOException {
         for (Pair<ClassTable, Writer> entry : writers) {
-            final ClassTable table = entry.getX();
-            final Writer writer = entry.getY();
+            final ClassTable table = entry.getA();
+            final Writer writer = entry.getB();
             if (table.getClassWriter(clazz) != null) {
                 return writer;
             }

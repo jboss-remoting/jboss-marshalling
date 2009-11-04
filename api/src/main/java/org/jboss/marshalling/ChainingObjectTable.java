@@ -32,22 +32,8 @@ import java.io.StreamCorruptedException;
  * with an identifier byte.
  */
 public class ChainingObjectTable implements ObjectTable {
-    private interface Pair<X, Y> {
-        X getX();
-
-        Y getY();
-    }
-
     private static Pair<ObjectTable, Writer> pair(final ObjectTable objectTable, final Writer writer) {
-        return new Pair<ObjectTable, Writer>() {
-            public ObjectTable getX() {
-                return objectTable;
-            }
-
-            public Writer getY() {
-                return writer;
-            }
-        };
+        return Pair.create(objectTable, writer);
     }
 
     private final List<Pair<ObjectTable, Writer>> writers;
@@ -85,8 +71,8 @@ public class ChainingObjectTable implements ObjectTable {
     /** {@inheritDoc} */
     public Writer getObjectWriter(final Object obj) throws IOException {
         for (Pair<ObjectTable, Writer> entry : writers) {
-            final ObjectTable table = entry.getX();
-            final Writer writer = entry.getY();
+            final ObjectTable table = entry.getA();
+            final Writer writer = entry.getB();
             if (table.getObjectWriter(obj) != null) {
                 return writer;
             }

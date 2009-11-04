@@ -25,14 +25,13 @@ package org.jboss.test.marshalling;
 import org.testng.annotations.Factory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.jboss.marshalling.river.RiverMarshallerFactory;
-import org.jboss.marshalling.serial.SerialMarshallerFactory;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
-import static org.jboss.test.marshalling.Pair.pair;
+import static org.jboss.marshalling.Pair.create;
+import org.jboss.marshalling.Pair;
 import java.util.Collection;
 import java.util.List;
 import java.util.Arrays;
@@ -69,20 +68,20 @@ public final class SimpleMarshallerTestFactory {
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
                 // river - v1 writer, v1 reader
-                pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
+                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
                 // river - v1 writer, v2 reader
-                pair(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
+                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
                 // river - v2 writer, v2 reader
-                pair(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
+                create(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
 
                 // serial
-                pair(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
-                pair(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
+                create(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
+                create(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
+                create(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
                 // reflection java serialization
-                pair(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
-                pair(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                pair(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
+                create(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
+                create(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
+                create(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
                 null
         );
 

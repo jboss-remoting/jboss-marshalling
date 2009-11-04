@@ -22,7 +22,7 @@
 
 package org.jboss.marshalling;
 
-import org.jboss.marshalling.reflect.ReflectiveCreator;
+import org.jboss.marshalling.reflect.SunReflectiveCreator;
 
 /**
  * An abstract implementation of the {@code MarshallerFactory} interface.  This
@@ -84,7 +84,7 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
      * @return the creator
      */
     protected Creator getDefaultCreator() {
-        return new ReflectiveCreator();
+        return new SunReflectiveCreator();
     }
 
     /**

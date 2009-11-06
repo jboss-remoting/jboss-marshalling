@@ -102,6 +102,7 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
     private void send() throws IOException {
         final ByteBuffer buffer = this.buffer;
         try {
+            final boolean eof = this.eof;
             try {
                 if (buffer != null && buffer.position() > 0) {
                     buffer.flip();
@@ -110,7 +111,7 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
                     bufferWriterTask.accept(EMPTY_BUFFER, eof);
                 }
             } catch (IOException e) {
-                eof = true;
+                this.eof = true;
                 throw e;
             }
         } finally {

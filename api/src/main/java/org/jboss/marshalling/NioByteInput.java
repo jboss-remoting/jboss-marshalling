@@ -25,6 +25,7 @@ package org.jboss.marshalling;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.ArrayDeque;
@@ -34,23 +35,20 @@ import java.util.ArrayDeque;
  */
 public class NioByteInput extends InputStream implements ByteInput {
     private final Queue<ByteBuffer> queue;
-    private final Runnable ackTask;
-    private final Runnable closeTask;
+    private final InputHandler inputHandler;
 
     // protected by "queue"
     private boolean eof;
     private IOException failure;
 
     /**
-     * Construct a new instance.  The given {@code ackTask} will
-     * be invoked after each buffer is fully read.  The given {@code closeTask} will be called when the stream is closed.
+     * Construct a new instance.  The given {@code inputHandler} will
+     * be invoked after each buffer is fully read and when the stream is closed.
      *
-     * @param ackTask the read acknowledge task
-     * @param closeTask the close task
+     * @param inputHandler the input events handler
      */
-    public NioByteInput(final Runnable ackTask, final Runnable closeTask) {
-        this.ackTask = ackTask;
-        this.closeTask = closeTask;
+    public NioByteInput(final InputHandler inputHandler) {
+        this.inputHandler = inputHandler;
         queue = new ArrayDeque<ByteBuffer>();
     }
 
@@ -109,14 +107,18 @@ public class NioByteInput extends InputStream implements ByteInput {
                 }
             }
             final ByteBuffer buf = queue.peek();
-            try {
-                return buf.get() & 0xff;
-            } finally {
-                if (buf.remaining() == 0) {
-                    queue.poll();
-                    ackTask.run();
+            final int v = buf.get() & 0xff;
+            if (buf.remaining() == 0) {
+                queue.poll();
+                try {
+                    inputHandler.acknowledge();
+                } catch (IOException e) {
+                    eof = true;
+                    queue.clear();
+                    throw e;
                 }
             }
+            return v;
         }
     }
 
@@ -150,8 +152,13 @@ public class NioByteInput extends InputStream implements ByteInput {
                 total += bytecnt;
                 len -= bytecnt;
                 if (buffer.remaining() == 0) {
-                    queue.poll();
-                    ackTask.run();
+                    try {
+                        inputHandler.acknowledge();
+                    } catch (IOException e) {
+                        eof = true;
+                        queue.clear();
+                        throw e;
+                    }
                 }
             }
             return total;
@@ -199,7 +206,13 @@ public class NioByteInput extends InputStream implements ByteInput {
                 qty -= bytecnt;
                 if (buffer.remaining() == 0) {
                     queue.poll();
-                    ackTask.run();
+                    try {
+                        inputHandler.acknowledge();
+                    } catch (IOException e) {
+                        eof = true;
+                        queue.clear();
+                        throw e;
+                    }
                 }
             }
             return skipped;
@@ -212,7 +225,7 @@ public class NioByteInput extends InputStream implements ByteInput {
             if (! eof) {
                 queue.clear();
                 eof = true;
-                closeTask.run();
+                inputHandler.close();
             }
         }
     }
@@ -228,5 +241,26 @@ public class NioByteInput extends InputStream implements ByteInput {
                 this.failure = null;
             }
         }
+    }
+
+    /**
+     * A handler for events relating to the consumption of data from a {@link NioByteInput} instance.
+     */
+    public interface InputHandler extends Closeable {
+
+        /**
+         * Acknowledges the successful processing of an input buffer.
+         *
+         * @throws IOException if an I/O error occurs sending the acknowledgement
+         */
+        void acknowledge() throws IOException;
+
+        /**
+         * Signifies that the user of the enclosing {@link NioByteInput} has called the {@code close()} method
+         * explicitly.
+         *
+         * @throws IOException if an I/O error occurs
+         */
+        void close() throws IOException;
     }
 }

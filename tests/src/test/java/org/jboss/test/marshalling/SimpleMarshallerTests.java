@@ -2336,4 +2336,35 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+    
+    public static final class TestExternalizableForWithBockData implements Externalizable {
+
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+			for (int i = 0; i < 550; i++) {
+				int current = in.readInt();
+				assertEquals(i, current);
+            }
+		}
+
+		public void writeExternal(ObjectOutput out) throws IOException {
+			for (int i = 0; i < 550; i++) {
+				out.writeInt(i);
+            }
+		}
+    	
+    }
+    
+    @Test
+    public void testFlushWithBlockData() throws Throwable {
+    	final TestExternalizableForWithBockData externalizableForJBMar84 = new TestExternalizableForWithBockData();
+    	runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+            	marshaller.writeObject(externalizableForJBMar84);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+            	unmarshaller.readObject();
+            }
+        });
+    }
 }

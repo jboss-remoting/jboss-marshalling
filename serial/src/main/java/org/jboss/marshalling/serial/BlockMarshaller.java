@@ -306,11 +306,11 @@ public final class BlockMarshaller implements Marshaller, ExtendedObjectStreamCo
         if (position > 256) {
             serialMarshaller.write(TC_BLOCKDATALONG);
             serialMarshaller.writeInt(position);
-            serialMarshaller.write(buffer, 0, position);
+            serialMarshaller.writeNoBlockFlush(buffer, 0, position);
         } else if (position > 0) {
             serialMarshaller.write(TC_BLOCKDATA);
             serialMarshaller.write(position);
-            serialMarshaller.write(buffer, 0, position);
+            serialMarshaller.writeNoBlockFlush(buffer, 0, position);
         }
         this.position = 0;
     }

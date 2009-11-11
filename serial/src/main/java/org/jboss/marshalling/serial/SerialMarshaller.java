@@ -573,4 +573,9 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         }
         super.flush();
     }
+    
+    void writeNoBlockFlush(final byte[] bytes, final int off, int len) throws IOException {
+        super.flush();
+        byteOutput.write(bytes, off, len);
+    }
 }

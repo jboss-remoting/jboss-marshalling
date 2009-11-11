@@ -90,7 +90,7 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
             checkClosed();
             if (len > (bufferSize >> 2)) {
                 send();
-                bufferWriterTask.accept(ByteBuffer.wrap(b, off, len), false);
+                send(ByteBuffer.wrap(b, off, len), false);
             } else while (len > 0) {
                 final ByteBuffer buffer = getBuffer();
                 final int cnt = Math.min(len, buffer.remaining());
@@ -109,9 +109,9 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
             try {
                 if (buffer != null && buffer.position() > 0) {
                     buffer.flip();
-                    bufferWriterTask.accept(buffer, eof);
+                    send(buffer, eof);
                 } else if (eof) {
-                    bufferWriterTask.accept(EMPTY_BUFFER, eof);
+                    send(EMPTY_BUFFER, eof);
                 }
             } catch (IOException e) {
                 this.eof = true;
@@ -119,6 +119,15 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
             }
         } finally {
             this.buffer =  null;
+        }
+    }
+
+    private void send(ByteBuffer buffer, boolean eof) throws IOException {
+        try {
+            bufferWriterTask.accept(buffer, eof);
+        } catch (IOException e) {
+            this.eof = true;
+            throw e;
         }
     }
 

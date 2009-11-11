@@ -297,6 +297,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 case TC_EXCEPTION: {
                     clearInstanceCache();
                     final IOException ex = (IOException) doReadObject(false);
+                    clearInstanceCache();
                     throw new WriteAbortedException("Write aborted", ex);
                 }
 

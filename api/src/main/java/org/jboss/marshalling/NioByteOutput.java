@@ -104,21 +104,13 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
     // call with lock held
     private void send() throws IOException {
         final ByteBuffer buffer = this.buffer;
-        try {
-            final boolean eof = this.eof;
-            try {
-                if (buffer != null && buffer.position() > 0) {
-                    buffer.flip();
-                    send(buffer, eof);
-                } else if (eof) {
-                    send(EMPTY_BUFFER, eof);
-                }
-            } catch (IOException e) {
-                this.eof = true;
-                throw e;
-            }
-        } finally {
-            this.buffer =  null;
+        this.buffer =  null;
+        final boolean eof = this.eof;
+        if (buffer != null && buffer.position() > 0) {
+            buffer.flip();
+            send(buffer, eof);
+        } else if (eof) {
+            send(EMPTY_BUFFER, eof);
         }
     }
 

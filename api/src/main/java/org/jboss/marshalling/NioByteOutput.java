@@ -88,7 +88,10 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
     public void write(final byte[] b, int off, int len) throws IOException {
         synchronized (this) {
             checkClosed();
-            while (len > 0) {
+            if (len > (bufferSize >> 2)) {
+                send();
+                bufferWriterTask.accept(ByteBuffer.wrap(b, off, len), false);
+            } else while (len > 0) {
                 final ByteBuffer buffer = getBuffer();
                 final int cnt = Math.min(len, buffer.remaining());
                 buffer.put(b, off, cnt);

@@ -40,6 +40,7 @@ import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.ObjectOutputStreamMarshaller;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
+import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
@@ -73,6 +74,7 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Field;
 
 /**
  *
@@ -2454,6 +2456,65 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 unmarshaller.readObject();
+            }
+        });
+    }
+
+    public static final class TestModifiableFinalField implements Serializable {
+
+        private static final long serialVersionUID = 712538031604959058L;
+        private static final FieldSetter valSetter = FieldSetter.get(TestModifiableFinalField.class, "val");
+        private static final FieldSetter fooSetter = FieldSetter.get(TestModifiableFinalField.class, "foo");
+
+        private transient final int val;
+        private transient final Object foo;
+
+        public TestModifiableFinalField(final int val, final Object foo) {
+            this.val = val;
+            this.foo = foo;
+        }
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+            oos.defaultWriteObject();
+            oos.writeInt(val);
+            oos.writeObject(foo);
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+            valSetter.setInt(this, ois.readInt());
+            fooSetter.set(this, ois.readObject());
+        }
+
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final TestModifiableFinalField that = (TestModifiableFinalField) o;
+            if (val != that.val) return false;
+            if (foo != null ? !foo.equals(that.foo) : that.foo != null) return false;
+            return true;
+        }
+
+        public int hashCode() {
+            int result = val;
+            result = 31 * result + (foo != null ? foo.hashCode() : 0);
+            return result;
+        }
+    }
+
+    @Test
+    public void testModifiableFinalFields() throws Throwable {
+        final TestModifiableFinalField test = new TestModifiableFinalField(42, "Boogeyman");
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(test);
+                marshaller.writeObject(test);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object newTest = unmarshaller.readObject();
+                assertSame("Consecutive reads not identical", newTest, unmarshaller.readObject());
+                assertEquals("Read object != written object", test, newTest);
             }
         });
     }

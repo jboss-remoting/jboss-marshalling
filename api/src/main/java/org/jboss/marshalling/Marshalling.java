@@ -39,8 +39,6 @@ import java.security.PrivilegedAction;
 import java.security.AccessController;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.ServiceLoader;
 
@@ -577,70 +575,5 @@ public final class Marshalling {
      */
     public static Externalizer nullExternalizer() {
         return NULL_EXTERNALIZER;
-    }
-
-    /**
-     * Get an accessible field from the current class.  Used by serializable classes to initialize final fields during
-     * {@code readObject()} execution.
-     *
-     * @param clazz the class containing the field
-     * @param name the name of the field
-     * @return the {@code Field} instance
-     * @throws SecurityException if the field does not belong to the caller's class, or the field is static
-     * @throws IllegalArgumentException if there is no field of the given name on the given class
-     */
-    public static Field getAccessibleField(final Class<?> clazz, final String name) throws SecurityException, IllegalArgumentException {
-        final Class[] stackTrace = Holder.STACK_TRACE_READER.getClassContext();
-        if (stackTrace[1] != clazz) {
-            throw new SecurityException("Cannot get accessible field from someone else's class");
-        }
-        return AccessController.doPrivileged(new GetFieldAction(clazz, name));
-    }
-
-    private static final class Holder {
-
-        static final StackTraceReader STACK_TRACE_READER;
-
-        static {
-            STACK_TRACE_READER = AccessController.doPrivileged(new PrivilegedAction<StackTraceReader>() {
-                public StackTraceReader run() {
-                    return new StackTraceReader();
-                }
-            });
-        }
-
-        private Holder() {
-        }
-
-        static final class StackTraceReader extends SecurityManager {
-            protected Class[] getClassContext() {
-                return super.getClassContext();
-            }
-        }
-    }
-
-    private static class GetFieldAction implements PrivilegedAction<Field> {
-
-        private final Class<?> clazz;
-        private final String name;
-
-        private GetFieldAction(final Class<?> clazz, final String name) {
-            this.clazz = clazz;
-            this.name = name;
-        }
-
-        public Field run() {
-            try {
-                final Field field = clazz.getDeclaredField(name);
-                final int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers)) {
-                    throw new SecurityException("Cannot get access to static field '" + name + "'");
-                }
-                field.setAccessible(true);
-                return field;
-            } catch (NoSuchFieldException e) {
-                throw new IllegalArgumentException("No such field '" + name + "'", e);
-            }
-        }
     }
 }

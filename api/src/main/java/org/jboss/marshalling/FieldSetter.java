@@ -186,7 +186,7 @@ public final class FieldSetter {
      * @throws SecurityException if the field does not belong to the caller's class, or the field is static
      * @throws IllegalArgumentException if there is no field of the given name on the given class
      */
-    public static <T> FieldSetter get(final Class<T> clazz, final String name) throws SecurityException, IllegalArgumentException {
+    public static FieldSetter get(final Class<?> clazz, final String name) throws SecurityException, IllegalArgumentException {
         final Class[] stackTrace = Holder.STACK_TRACE_READER.getClassContext();
         if (stackTrace[2] != clazz) {
             throw new SecurityException("Cannot get accessible field from someone else's class");

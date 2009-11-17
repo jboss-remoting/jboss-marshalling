@@ -32,7 +32,7 @@ import java.io.ObjectStreamClass;
  * An object input stream which wraps an {@code Unmarshaller}, which may be used by legacy {@link java.io.ObjectInputStream ObjectInputStream}-based
  * applications that wish to use the marshalling framework.
  */
-public final class MarshallingObjectInputStream extends ObjectInputStream {
+public final class UnmarshallingObjectInputStream extends ObjectInputStream {
 
     private Unmarshaller unmarshaller;
 
@@ -46,7 +46,7 @@ public final class MarshallingObjectInputStream extends ObjectInputStream {
      * @throws java.io.IOException if an I/O error occurs
      * @throws SecurityException if the caller does not have permission to construct an instance of this class
      */
-    public MarshallingObjectInputStream(final Unmarshaller unmarshaller, final InputStream stream) throws IOException, SecurityException {
+    public UnmarshallingObjectInputStream(final Unmarshaller unmarshaller, final InputStream stream) throws IOException, SecurityException {
         this(unmarshaller, Marshalling.createByteInput(stream));
     }
 
@@ -60,7 +60,7 @@ public final class MarshallingObjectInputStream extends ObjectInputStream {
      * @throws java.io.IOException if an I/O error occurs
      * @throws SecurityException if the caller does not have permission to construct an instance of this class
      */
-    public MarshallingObjectInputStream(final Unmarshaller unmarshaller, final ByteInput byteInput) throws IOException, SecurityException {
+    public UnmarshallingObjectInputStream(final Unmarshaller unmarshaller, final ByteInput byteInput) throws IOException, SecurityException {
         unmarshaller.start(byteInput);
         this.unmarshaller = unmarshaller;
     }

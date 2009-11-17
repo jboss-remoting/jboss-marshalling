@@ -101,9 +101,9 @@ public final class SimpleMarshallerTests extends TestBase {
     public void testUnserializable() throws Throwable {
         try {
             runReadWriteTest(new ReadWriteTest() {
-               public void runWrite(final Marshaller marshaller) throws Throwable {
-                  marshaller.writeObject(new Object());
-               }
+                public void runWrite(final Marshaller marshaller) throws Throwable {
+                    marshaller.writeObject(new Object());
+                }
 
                 public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 }
@@ -116,6 +116,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class SerializableWithFinalFields implements Serializable {
+
         private static final long serialVersionUID = 1L;
 
         @SuppressWarnings({ "FieldMayBeStatic" })
@@ -148,6 +149,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializable implements Serializable {
+
         private static final long serialVersionUID = -3834685845327229499L;
 
         private int first = 1234;
@@ -161,23 +163,19 @@ public final class SimpleMarshallerTests extends TestBase {
         public boolean equals(final Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             final TestSerializable that = (TestSerializable) o;
-
             if (argh != that.argh) return false;
             if (first != that.first) return false;
             if (Float.compare(that.second, second) != 0) return false;
             if (foo != null ? !foo.equals(that.foo) : that.foo != null) return false;
             if (!Arrays.equals(third, that.third)) return false;
             if (!zap.equals(that.zap)) return false;
-
             return true;
         }
 
         public int hashCode() {
             return 0;
         }
-
         //        private void writeObject(ObjectOutputStream oos) throws IOException {
         //            final ObjectOutputStream.PutField field = oos.putFields();
         //            field.put("first", first);
@@ -189,7 +187,6 @@ public final class SimpleMarshallerTests extends TestBase {
         //            oos.writeFields();
         //        }
     }
-
 
     @Test
     public void testSimple() throws Throwable {
@@ -207,10 +204,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializableNoWriteObjectDefaultReadObject extends TestSerializable {
+
         private static final long serialVersionUID = 3121360863878480344L;
         protected double fourth = 1.23;
 
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
         }
     }
@@ -231,10 +229,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializableNoWriteObjectGetFieldsReadObject extends TestSerializable {
+
         private static final long serialVersionUID = 3121360863878480344L;
         protected double fifth = 2.34;
 
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ObjectInputStream.GetField getField = ois.readFields();
             fifth = (double) getField.get("fifth", 2.34);
         }
@@ -256,10 +255,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializableDefaultWriteObjectNoReadObject extends TestSerializable {
+
         private static final long serialVersionUID = 3121360863878480344L;
         protected double sixth = 3.45;
 
-        protected void writeObject(ObjectOutputStream oos) throws IOException {
+        private void writeObject(ObjectOutputStream oos) throws IOException {
             oos.defaultWriteObject();
         }
     }
@@ -280,10 +280,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class TestSerializableDefaultWriteObjectDefaultReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
         private static final long serialVersionUID = 3121360863878480344L;
         protected double seventh = 4.56;
 
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
         }
     }
@@ -302,72 +303,74 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
-    
+
     public static final class TestSerializableThatReferencesSerializableOverridenReadObject implements Serializable {
-       private static final long serialVersionUID = 3131360863878480344L;
-       TestSerializableOverridenReadObject anSerializableOverridenReadObject;
-       Integer balance;
-       
-       public boolean equals(Object obj) {
-          if (obj == this) return true;
-          if (!(obj instanceof TestSerializableThatReferencesSerializableOverridenReadObject)) return false;
-          TestSerializableThatReferencesSerializableOverridenReadObject that = (TestSerializableThatReferencesSerializableOverridenReadObject) obj;
-          if (!safeEquals(balance, that.balance)) return false;
-          if (!safeEquals(anSerializableOverridenReadObject, that.anSerializableOverridenReadObject)) return false;
-          return true;
-       }
 
-       public int hashCode() {
-          int result = 17;
-          result = result * 31 + safeHashCode(balance);
-          result = result * 31 + safeHashCode(anSerializableOverridenReadObject);
-          return result;
-       }
-       
-       private static int safeHashCode(Object obj) {
-          return obj == null ? 0 : obj.hashCode();
-       }
+        private static final long serialVersionUID = 3131360863878480344L;
+        TestSerializableOverridenReadObject anSerializableOverridenReadObject;
+        Integer balance;
 
-       private static boolean safeEquals(Object a, Object b) {
-          return (a == b || (a != null && a.equals(b)));
-       }
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (!(obj instanceof TestSerializableThatReferencesSerializableOverridenReadObject)) return false;
+            TestSerializableThatReferencesSerializableOverridenReadObject that = (TestSerializableThatReferencesSerializableOverridenReadObject) obj;
+            if (!safeEquals(balance, that.balance)) return false;
+            if (!safeEquals(anSerializableOverridenReadObject, that.anSerializableOverridenReadObject)) return false;
+            return true;
+        }
+
+        public int hashCode() {
+            int result = 17;
+            result = result * 31 + safeHashCode(balance);
+            result = result * 31 + safeHashCode(anSerializableOverridenReadObject);
+            return result;
+        }
+
+        private static int safeHashCode(Object obj) {
+            return obj == null ? 0 : obj.hashCode();
+        }
+
+        private static boolean safeEquals(Object a, Object b) {
+            return (a == b || (a != null && a.equals(b)));
+        }
     }
-    
+
     public static final class TestSerializableOverridenReadObject implements Serializable {
-       private static final long serialVersionUID = 3141360863878480344L;
-       String name;
-       String ssn;
-       transient boolean deserialized;
 
-       public TestSerializableOverridenReadObject() {
-          this.name = "Zamarreno";
-          this.ssn = "234-567-8901";
-       }
-       
-       @Override
-       public boolean equals(Object obj) {
-          if (obj == this) return true;
-          if (!(obj instanceof TestSerializableOverridenReadObject)) return false;
-          TestSerializableOverridenReadObject that = (TestSerializableOverridenReadObject) obj;
-          if (!name.equals(that.name)) return false;
-          if (!ssn.equals(that.ssn)) return false;          
-          return true;
-       }
+        private static final long serialVersionUID = 3141360863878480344L;
+        String name;
+        String ssn;
+        transient boolean deserialized;
 
-       @Override
-       public int hashCode( ) {
-          int result = 17;
-          result = result * 31 + name.hashCode();
-          result = result * 31 + ssn.hashCode();
-          return result;
-       }
+        public TestSerializableOverridenReadObject() {
+            this.name = "Zamarreno";
+            this.ssn = "234-567-8901";
+        }
 
-       private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-          ois.defaultReadObject();
-          deserialized = true;
-       }
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (!(obj instanceof TestSerializableOverridenReadObject)) return false;
+            TestSerializableOverridenReadObject that = (TestSerializableOverridenReadObject) obj;
+            if (!name.equals(that.name)) return false;
+            if (!ssn.equals(that.ssn)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = 17;
+            result = result * 31 + name.hashCode();
+            result = result * 31 + ssn.hashCode();
+            return result;
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+            deserialized = true;
+        }
     }
-    
+
     @Test
     public void testSerializableThatReferencesSerializableOverridenReadObject() throws Throwable {
         final TestSerializableThatReferencesSerializableOverridenReadObject serializable = new TestSerializableThatReferencesSerializableOverridenReadObject();
@@ -385,10 +388,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class TestSerializableDefaultWriteObjectGetFieldsReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
         private static final long serialVersionUID = 3121360863878480344L;
         protected double eighth = 5.67;
 
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ObjectInputStream.GetField getField = ois.readFields();
             eighth = (double) getField.get("eighth", 5.67);
         }
@@ -410,10 +414,11 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializablePutFieldsWriteObjectNoReadObject extends TestSerializable {
+
         private static final long serialVersionUID = 1191166362124148545L;
         protected double ninth = 6.78;
 
-        protected void writeObject(ObjectOutputStream oos) throws IOException {
+        private void writeObject(ObjectOutputStream oos) throws IOException {
             final ObjectOutputStream.PutField field = oos.putFields();
             field.put("ninth", ninth);
             oos.writeFields();
@@ -423,7 +428,6 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testSimplePutFieldsWriteObjectNoReadObject() throws Throwable {
         final Serializable serializable = new TestSerializablePutFieldsWriteObjectNoReadObject();
-        
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(serializable);
@@ -434,13 +438,14 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
-    }  
+    }
 
     public static final class TestSerializablePutFieldsWriteObjectDefaultReadObject extends TestSerializablePutFieldsWriteObjectNoReadObject {
+
         private static final long serialVersionUID = 1191166362124148545L;
         protected double tenth = 7.89;
 
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
         }
     }
@@ -458,19 +463,20 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
-    }  
+    }
 
     public static final class TestSerializablePutFieldsWriteObjectGetFieldsReadObject extends TestSerializable {
+
         private static final long serialVersionUID = 1191166362124148545L;
         protected double eleventh = 8.90;
 
-        protected void writeObject(ObjectOutputStream oos) throws IOException {
+        private void writeObject(ObjectOutputStream oos) throws IOException {
             final ObjectOutputStream.PutField field = oos.putFields();
             field.put("eleventh", eleventh);
             oos.writeFields();
         }
-        
-        protected void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ObjectInputStream.GetField getField = ois.readFields();
             eleventh = (double) getField.get("eleventh", 8.90);
         }
@@ -489,7 +495,7 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
-    }  
+    }
 
     @Test
     public void testString() throws Throwable {
@@ -522,6 +528,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class TestExternalizable implements Externalizable {
+
         private boolean ran;
 
         private static final long serialVersionUID = 2776810457096829768L;
@@ -948,7 +955,7 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testObjectArray() throws Throwable {
         final TestSerializable[] test = new TestSerializable[50];
-        for (int i = 0; i < 50; i ++) {
+        for (int i = 0; i < 50; i++) {
             test[i] = new TestSerializable();
         }
         runReadWriteTest(new ReadWriteTest() {
@@ -969,7 +976,7 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testObjectArrayRecursion() throws Throwable {
         final Object[] test = new Object[5];
-        for (int i = 0; i < 5; i ++) {
+        for (int i = 0; i < 5; i++) {
             test[i] = test;
         }
         runReadWriteTest(new ReadWriteTest() {
@@ -1004,7 +1011,7 @@ public final class SimpleMarshallerTests extends TestBase {
                 marshaller.writeObject(map);
             }
 
-            @SuppressWarnings({"unchecked"})
+            @SuppressWarnings({ "unchecked" })
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final Map<String, String> map2 = (Map<String, String>) unmarshaller.readObject();
                 assertEquals(map, map2);
@@ -1027,7 +1034,7 @@ public final class SimpleMarshallerTests extends TestBase {
                 marshaller.writeObject(map);
             }
 
-            @SuppressWarnings({"unchecked"})
+            @SuppressWarnings({ "unchecked" })
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final Map<String, String> map2 = (Map<String, String>) unmarshaller.readObject();
                 assertEquals(map, map2);
@@ -1037,21 +1044,21 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
-
     private static final class HashMapExternalizer implements Externalizer {
+
         private static final long serialVersionUID = 4923778660953773530L;
 
-        @SuppressWarnings({"unchecked"})
+        @SuppressWarnings({ "unchecked" })
         public void writeExternal(final Object subject, final ObjectOutput output) throws IOException {
             final HashMap map = (HashMap) subject;
             output.writeInt(map.size());
-            for (Map.Entry e : (Set<Map.Entry>)map.entrySet()) {
+            for (Map.Entry e : (Set<Map.Entry>) map.entrySet()) {
                 output.writeObject(e.getKey());
                 output.writeObject(e.getValue());
             }
         }
 
-        @SuppressWarnings({"unchecked"})
+        @SuppressWarnings({ "unchecked" })
         public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
             final int size = input.readInt();
             final HashMap map = new HashMap(size * 2, 0.5f);
@@ -1108,12 +1115,14 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestA implements Serializable {
+
         private static final long serialVersionUID = 4788787450574491652L;
 
         TestB testb;
     }
 
     public static class TestB implements Serializable {
+
         private static final long serialVersionUID = 4788787450574491652L;
 
         TestA testa;
@@ -1146,11 +1155,13 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class OuterClass implements Serializable {
+
         private static final long serialVersionUID = 4268208561523701594L;
-        @SuppressWarnings({"UnusedDeclaration"})
+        @SuppressWarnings({ "UnusedDeclaration" })
         private InnerClass inner;
 
         public class InnerClass implements Serializable {
+
             private static final long serialVersionUID = 26916326776519192L;
         }
     }
@@ -1185,6 +1196,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestC implements Externalizable {
+
         private static final long serialVersionUID = 4788787450574491652L;
 
         TestD testd;
@@ -1199,6 +1211,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestD implements Externalizable {
+
         private static final long serialVersionUID = 4788787450574491652L;
 
         TestC testc;
@@ -1239,6 +1252,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public enum Fruit {
+
         BANANA,
         APPLE,
         PEAR,
@@ -1274,10 +1288,12 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public interface Adder {
+
         int add(int amount);
     }
 
     public static final class TestInvocationHandler implements InvocationHandler, Serializable {
+
         private static final long serialVersionUID = 2808883573499129906L;
 
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
@@ -1307,9 +1323,10 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class TestSerializableWithTransientFields implements Serializable {
+
         private static final long serialVersionUID = -4063085698159274676L;
         private transient int value;
-        private String name;  
+        private String name;
     }
 
     @Test
@@ -1331,8 +1348,9 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
-    
+
     public static final class TestSerializableWithFields implements Serializable {
+
         private static final long serialVersionUID = -4063085698159274676L;
 
         private transient int value;
@@ -1389,7 +1407,6 @@ public final class SimpleMarshallerTests extends TestBase {
                 if (marshaller instanceof JavaSerializationMarshaller) {
                     throw new SkipException("JavaSerializationMarshaller does not support Externalizer annotation");
                 }
-
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
             }
@@ -1405,6 +1422,7 @@ public final class SimpleMarshallerTests extends TestBase {
 
     @Externalize(TestAnnotationExternalizer.class)
     public static final class TestExternalizerWithAnnotation {
+
         private final String string;
         private final int v;
 
@@ -1442,6 +1460,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class OriginalClass implements Serializable {
+
         private static final long serialVersionUID = -1179299150244154246L;
 
         @SuppressWarnings({ "UnusedDeclaration" })
@@ -1486,7 +1505,7 @@ public final class SimpleMarshallerTests extends TestBase {
                 final Object repl = unmarshaller.readObject();
                 assertEquals(ReplacementClass.class, repl.getClass());
                 assertSame(repl, unmarshaller.readObject());
-                assertEquals(((ReplacementClass)repl).blah, "Testing!");
+                assertEquals(((ReplacementClass) repl).blah, "Testing!");
             }
         });
     }
@@ -1525,7 +1544,7 @@ public final class SimpleMarshallerTests extends TestBase {
                 final Object repl = unmarshaller.readObject();
                 assertEquals(ReplacementClass.class, repl.getClass());
                 assertSame(repl, unmarshaller.readObject());
-                assertEquals(((ReplacementClass)repl).blah, "Testing!");
+                assertEquals(((ReplacementClass) repl).blah, "Testing!");
             }
         });
     }
@@ -1601,7 +1620,7 @@ public final class SimpleMarshallerTests extends TestBase {
             ois.defaultReadObject();
             ois.registerValidation(new ObjectInputValidation() {
                 public void validateObject() throws InvalidObjectException {
-                    if (! Integer.toString(number).equals(string)) {
+                    if (!Integer.toString(number).equals(string)) {
                         throw new InvalidObjectException("No match");
                     }
                 }
@@ -1633,90 +1652,101 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     static class TestSerializableWithWriteReplaceHolder implements Serializable {
+
         private static final long serialVersionUID = 1L;
         private int i;
         private int j;
+
         public TestSerializableWithWriteReplaceHolder(TestSerializableWithWriteReplace original) {
-           this.i = original.i;
-           this.j = original.j;
+            this.i = original.i.intValue();
+            this.j = original.j.intValue();
         }
-        public TestSerializableWithWriteReplaceHolder() {            
+
+        public TestSerializableWithWriteReplaceHolder() {
         }
-        public Object readResolve() throws ObjectStreamException {
-           System.out.println(this + ".readResolve()");
-           return new TestSerializableWithWriteReplace(this);
+
+        protected Object readResolve() throws ObjectStreamException {
+            System.out.println(this + ".readResolve()");
+            return new TestSerializableWithWriteReplace(this);
         }
-     }
-    
+    }
+
     static class TestSerializableWithWriteReplace implements Serializable {
+
         private static final long serialVersionUID = 1L;
         private static int replaceCounter;
         private static int resolveCounter;
         private Integer i;
         private Integer j;
-        
+
         public TestSerializableWithWriteReplace(int i, int j) {
-           this.i = i;
-           this.j = j;
+            this.i = Integer.valueOf(i);
+            this.j = Integer.valueOf(j);
         }
+
         public TestSerializableWithWriteReplace(TestSerializableWithWriteReplaceHolder holder) {
-           resolveCounter++;
-           this.i = holder.i;
-           this.j = holder.j;
+            resolveCounter++;
+            this.i = Integer.valueOf(holder.i);
+            this.j = Integer.valueOf(holder.j);
         }
+
         public TestSerializableWithWriteReplace() {
         }
-        public boolean equals(Object o) {
-           if (o == null || !(o instanceof TestSerializableWithWriteReplace)) {
-              return false;
-           }
-           TestSerializableWithWriteReplace other = (TestSerializableWithWriteReplace) o;
-           return i.equals(other.i) && j.equals(other.j);
-        }
-        public boolean ok(int count) {
-           return replaceCounter == count && resolveCounter == count;
-        }
-        public Object writeReplace() throws ObjectStreamException {
-           System.out.println(this + ".writeReplace()");
-           replaceCounter++;
-           return new TestSerializableWithWriteReplaceHolder(this);
-        }
-     }
-    
-    static class TestSerializableWithJavaUtilDate implements Serializable {
-       public Date lastModified;
 
-       public TestSerializableWithJavaUtilDate() {}
-       
-       public TestSerializableWithJavaUtilDate(Date lastModified) {
-         this.lastModified = lastModified;
-      }
+        public boolean equals(Object o) {
+            if (o == null || !(o instanceof TestSerializableWithWriteReplace)) {
+                return false;
+            }
+            TestSerializableWithWriteReplace other = (TestSerializableWithWriteReplace) o;
+            return i.equals(other.i) && j.equals(other.j);
+        }
+
+        public boolean ok(int count) {
+            return replaceCounter == count && resolveCounter == count;
+        }
+
+        protected Object writeReplace() throws ObjectStreamException {
+            System.out.println(this + ".writeReplace()");
+            replaceCounter++;
+            return new TestSerializableWithWriteReplaceHolder(this);
+        }
     }
-    
+
+    static class TestSerializableWithJavaUtilDate implements Serializable {
+
+        public Date lastModified;
+        private static final long serialVersionUID = -432434823510589221L;
+
+        public TestSerializableWithJavaUtilDate() {
+        }
+
+        public TestSerializableWithJavaUtilDate(Date lastModified) {
+            this.lastModified = lastModified;
+        }
+    }
+
     @Test
     public void testSerializableWithJavaUtilDate() throws Throwable {
         final TestSerializableWithJavaUtilDate serializable = new TestSerializableWithJavaUtilDate(
-                 new Date(System.currentTimeMillis()));
+                new Date(System.currentTimeMillis()));
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(serializable);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-               TestSerializableWithJavaUtilDate read = (TestSerializableWithJavaUtilDate) unmarshaller.readObject();
+                TestSerializableWithJavaUtilDate read = (TestSerializableWithJavaUtilDate) unmarshaller.readObject();
                 assertEquals(serializable.lastModified + " is diff to read " + read.lastModified, serializable.lastModified, read.lastModified);
                 assertEOF(unmarshaller);
             }
         });
     }
-    
+
     /**
-     * Verify that objects with writeReplace() and objects with readResolve() methods are
-     * handled correctly.
+     * Verify that objects with writeReplace() and objects with readResolve() methods are handled correctly.
      */
     @Test
-    public void testWriteReplace() throws Throwable
-    {
+    public void testWriteReplace() throws Throwable {
         final TestSerializableWithWriteReplace t = new TestSerializableWithWriteReplace(1234, 5678);
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
@@ -1729,24 +1759,22 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
-    
+
     /**
      * Verifies that marshallers and unmarshallers can be stopped and restarted.
      */
     @Test
-    public void testReuse() throws Throwable
-    {
+    public void testReuse() throws Throwable {
         final TestSerializable t = new TestSerializable();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);
         ByteOutput byteOutput = Marshalling.createByteOutput(baos);
-        Marshaller marshaller = testMarshallerProvider.create(configuration.clone(), byteOutput);        
+        Marshaller marshaller = testMarshallerProvider.create(configuration.clone(), byteOutput);
         if (marshaller instanceof ObjectOutputStreamMarshaller) {
             throw new SkipException(marshaller + " doesn't support start()");
         }
         System.out.println("Marshaller = " + marshaller + " (version set to " + configuration.getVersion() + ")");
         marshaller.writeObject(t);
         marshaller.finish();
-
         byte[] bytes = baos.toByteArray();
         ByteInput byteInput = Marshalling.createByteInput(new ByteArrayInputStream(bytes));
         Unmarshaller unmarshaller = testUnmarshallerProvider.create(configuration.clone(), byteInput);
@@ -1756,13 +1784,11 @@ public final class SimpleMarshallerTests extends TestBase {
         System.out.println("Unmarshaller = " + unmarshaller + " (version set to " + configuration.getVersion() + ")");
         assertEquals(t, unmarshaller.readObject());
         unmarshaller.finish();
-
         baos.reset();
         byteOutput = Marshalling.createByteOutput(baos);
         marshaller.start(byteOutput);
         marshaller.writeObject(t);
         marshaller.finish();
-
         bytes = baos.toByteArray();
         byteInput = Marshalling.createByteInput(new ByteArrayInputStream(bytes));
         unmarshaller.start(byteInput);
@@ -1770,33 +1796,34 @@ public final class SimpleMarshallerTests extends TestBase {
         assertEquals(t, unmarshaller.readObject());
         unmarshaller.finish();
     }
-    
+
     static class TestStreamHeader implements StreamHeader {
-        private byte B1 = (byte)12;
-        private byte B2 = (byte)13;
+
+        private byte B1 = (byte) 12;
+        private byte B2 = (byte) 13;
         private boolean readVisited;
         private boolean writeVisited;
-        
+
         public void readHeader(ByteInput input) throws IOException {
-           readVisited = true;
-           System.out.println("readHeader() visited");
-           byte b1 = (byte) input.read();
-           byte b2 = (byte) input.read();
-           System.out.println("b1: " + b1 + ", b2: " + b2);
-           if (b1 != B1 || b2 != B2) {
-                 throw new StreamCorruptedException("invalid stream header");
-           }
+            readVisited = true;
+            System.out.println("readHeader() visited");
+            byte b1 = (byte) input.read();
+            byte b2 = (byte) input.read();
+            System.out.println("b1: " + b1 + ", b2: " + b2);
+            if (b1 != B1 || b2 != B2) {
+                throw new StreamCorruptedException("invalid stream header");
+            }
         }
 
         public void writeHeader(ByteOutput output) throws IOException {
-           writeVisited = true;
-           System.out.println("writeHeader() visited");
-           output.write(B1);
-           output.write(B2);
+            writeVisited = true;
+            System.out.println("writeHeader() visited");
+            output.write(B1);
+            output.write(B2);
         }
-        
+
         public boolean ok() {
-           return readVisited && writeVisited;
+            return readVisited && writeVisited;
         }
     }
 
@@ -1809,14 +1836,14 @@ public final class SimpleMarshallerTests extends TestBase {
             throw new SkipException("Can't set StreamHeader in compatibility tests");
         }
         if (testUnmarshallerProvider instanceof ObjectInputStreamTestUnmarshallerProvider) {
-            throw new SkipException("Can't set StreamHeader in compatibility tests");   
+            throw new SkipException("Can't set StreamHeader in compatibility tests");
         }
         final Serializable serializable = new TestSerializable();
         final TestStreamHeader streamHeader = new TestStreamHeader();
         configuration.setStreamHeader(streamHeader);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);
         ByteOutput byteOutput = Marshalling.createByteOutput(baos);
-        Marshaller marshaller = testMarshallerProvider.create(configuration.clone(), byteOutput);        
+        Marshaller marshaller = testMarshallerProvider.create(configuration.clone(), byteOutput);
         System.out.println("Marshaller = " + marshaller + " (version set to " + configuration.getVersion() + ")");
         marshaller.writeObject(serializable);
         marshaller.finish();
@@ -1829,50 +1856,50 @@ public final class SimpleMarshallerTests extends TestBase {
         assertEOF(unmarshaller);
         assertTrue(streamHeader.ok());
     }
-    
+
     public static class TestObjectResolver implements ObjectResolver {
-       private boolean resolveVisited;
-       private boolean replaceVisited;
-       
-       public Object readResolve(Object replacement) {
-          if (new Integer(17).equals(replacement)) {
-             resolveVisited = true;
-             System.out.println("readResolve() visited");
-             return new TestSerializable();
-          } else {
-             return replacement;
-          }
-       }
-       public Object writeReplace(Object original) {
-          if (original instanceof TestSerializable) {
-             replaceVisited = true;
-             System.out.println("writeReplace() visited");
-             return new Integer(17);
-          } else {
-             return original;
-          }
-       }
-       public boolean ok() {
-          return resolveVisited && replaceVisited;
-       }
+
+        private boolean resolveVisited;
+        private boolean replaceVisited;
+
+        public Object readResolve(Object replacement) {
+            if (new Integer(17).equals(replacement)) {
+                resolveVisited = true;
+                System.out.println("readResolve() visited");
+                return new TestSerializable();
+            } else {
+                return replacement;
+            }
+        }
+
+        public Object writeReplace(Object original) {
+            if (original instanceof TestSerializable) {
+                replaceVisited = true;
+                System.out.println("writeReplace() visited");
+                return new Integer(17);
+            } else {
+                return original;
+            }
+        }
+
+        public boolean ok() {
+            return resolveVisited && replaceVisited;
+        }
     }
-    
+
     /**
      * Verify that use of customized ObjectResolver works correctly.
      */
     @Test
-    public void testObjectResolver() throws Throwable
-    {
+    public void testObjectResolver() throws Throwable {
         if (testMarshallerProvider instanceof ObjectOutputStreamTestMarshallerProvider) {
             throw new SkipException("Can't use ObjectResolver in compatibility tests");
         }
         if (testUnmarshallerProvider instanceof ObjectInputStreamTestUnmarshallerProvider) {
-            throw new SkipException("Can't use ObjectResolver in compatibility tests");   
+            throw new SkipException("Can't use ObjectResolver in compatibility tests");
         }
-
         final TestObjectResolver objectResolver = new TestObjectResolver();
         final TestSerializable serializable = new TestSerializable();
-
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setObjectResolver(objectResolver);
@@ -1887,11 +1914,11 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
-
         assertTrue(objectResolver.ok());
     }
-    
+
     static class TestSerializableWithInterleavedWriteReplace implements Serializable {
+
         private static final long serialVersionUID = 1L;
         private static int replaceCounter;
         private static int resolveCounter;
@@ -1902,12 +1929,15 @@ public final class SimpleMarshallerTests extends TestBase {
             replaceCounter = 0;
             resolveCounter = 0;
         }
+
         public TestSerializableWithInterleavedWriteReplace(int i, TestEnum te) {
-            this.i = i;
+            this.i = Integer.valueOf(i);
             this.te = te;
         }
+
         public TestSerializableWithInterleavedWriteReplace() {
         }
+
         public boolean equals(Object o) {
             if (o == null || !(o instanceof TestSerializableWithInterleavedWriteReplace)) {
                 return false;
@@ -1915,101 +1945,130 @@ public final class SimpleMarshallerTests extends TestBase {
             TestSerializableWithInterleavedWriteReplace other = (TestSerializableWithInterleavedWriteReplace) o;
             return i.equals(other.i) && te.equals(other.te);
         }
+
         public boolean ok(int count) {
             System.out.println("replaceCounter: " + replaceCounter + ", resolveCounter: " + resolveCounter);
             return 0 < replaceCounter && replaceCounter <= count && resolveCounter == 1;
         }
-        public Object writeReplace() throws ObjectStreamException {
+
+        protected Object writeReplace() throws ObjectStreamException {
             System.out.println(this + ".writeReplace()");
             replaceCounter++;
             if (te.equals(TestEnum.FIRST)) {
-                return new TestSerializableWithInterleavedWriteReplace2(i, te.next());
+                return new TestSerializableWithInterleavedWriteReplace2(i.intValue(), te.next());
             }
             if (te.equals(TestEnum.SECOND)) {
-                return new TestSerializableWithInterleavedWriteReplace3(i, te.next());
+                return new TestSerializableWithInterleavedWriteReplace3(i.intValue(), te.next());
             }
             if (te.equals(TestEnum.THIRD)) {
-                return new TestSerializableWithInterleavedWriteReplace4(i, te.next());
+                return new TestSerializableWithInterleavedWriteReplace4(i.intValue(), te.next());
             }
             return this;
         }
-        public Object readResolve() throws ObjectStreamException {
+
+        protected Object readResolve() throws ObjectStreamException {
             System.out.println(this + ".readResolve()");
             resolveCounter++;
             if (te.equals(TestEnum.FIFTH)) {
-                return new TestSerializableWithInterleavedWriteReplace2(i, TestEnum.SECOND);
+                return new TestSerializableWithInterleavedWriteReplace2(i.intValue(), TestEnum.SECOND);
             }
             if (te.equals(TestEnum.FOURTH)) {
-                return new TestSerializableWithInterleavedWriteReplace2(i, TestEnum.SECOND);
+                return new TestSerializableWithInterleavedWriteReplace2(i.intValue(), TestEnum.SECOND);
             }
             if (te.equals(TestEnum.THIRD)) {
-                return new TestSerializableWithInterleavedWriteReplace2(i, TestEnum.SECOND);
-            }
-            else {
+                return new TestSerializableWithInterleavedWriteReplace2(i.intValue(), TestEnum.SECOND);
+            } else {
                 return this;
             }
         }
     }
-     
+
     static class TestSerializableWithInterleavedWriteReplace2 extends TestSerializableWithInterleavedWriteReplace implements Serializable {
-        public TestSerializableWithInterleavedWriteReplace2(int i, TestEnum te) {super(i, te);}
-        public TestSerializableWithInterleavedWriteReplace2() {}
+
+        private static final long serialVersionUID = 1527776832343228061L;
+
+        public TestSerializableWithInterleavedWriteReplace2(int i, TestEnum te) {
+            super(i, te);
+        }
+
+        public TestSerializableWithInterleavedWriteReplace2() {
+        }
     }
 
     static class TestSerializableWithInterleavedWriteReplace3 extends TestSerializableWithInterleavedWriteReplace2 implements Serializable {
-        public TestSerializableWithInterleavedWriteReplace3(int i, TestEnum te) {super(i, te);}
-        public TestSerializableWithInterleavedWriteReplace3() {}
+
+        private static final long serialVersionUID = -3231519519502968011L;
+
+        public TestSerializableWithInterleavedWriteReplace3(int i, TestEnum te) {
+            super(i, te);
+        }
+
+        public TestSerializableWithInterleavedWriteReplace3() {
+        }
     }
 
     static class TestSerializableWithInterleavedWriteReplace4 extends TestSerializableWithInterleavedWriteReplace3 implements Serializable {
-        public TestSerializableWithInterleavedWriteReplace4(int i, TestEnum te) {super(i, te);}
-        public TestSerializableWithInterleavedWriteReplace4() {}
+
+        private static final long serialVersionUID = -2396921036139628732L;
+
+        public TestSerializableWithInterleavedWriteReplace4(int i, TestEnum te) {
+            super(i, te);
+        }
+
+        public TestSerializableWithInterleavedWriteReplace4() {
+        }
     }
 
     static class TestSerializableWithInterleavedWriteReplace5 extends TestSerializableWithInterleavedWriteReplace4 implements Serializable {
-        public TestSerializableWithInterleavedWriteReplace5(int i, TestEnum te) {super(i, te);}
-        public TestSerializableWithInterleavedWriteReplace5() {}
+
+        private static final long serialVersionUID = 7353628200601762692L;
+
+        public TestSerializableWithInterleavedWriteReplace5(int i, TestEnum te) {
+            super(i, te);
+        }
+
+        public TestSerializableWithInterleavedWriteReplace5() {
+        }
     }
 
     static class TestObjectResolverForInterleavedWriteReplace implements ObjectResolver {
+
         private int resolveCounter;
         private int replaceCounter;
 
         public Object readResolve(Object replacement) {
-            if (! (replacement instanceof TestSerializableWithInterleavedWriteReplace)) {
+            if (!(replacement instanceof TestSerializableWithInterleavedWriteReplace)) {
                 return replacement;
             }
             System.out.println(this + ".readResolve(): " + replacement);
             resolveCounter++;
             TestSerializableWithInterleavedWriteReplace tsw = (TestSerializableWithInterleavedWriteReplace) replacement;
             if (tsw.te.equals(TestEnum.SECOND)) {
-                return new TestSerializableWithInterleavedWriteReplace(tsw.i, tsw.te.previous());
-            }
-            else {
+                return new TestSerializableWithInterleavedWriteReplace(tsw.i.intValue(), tsw.te.previous());
+            } else {
                 return replacement;
             }
         }
 
         public Object writeReplace(Object original) {
-            if (! (original instanceof TestSerializableWithInterleavedWriteReplace)) {
+            if (!(original instanceof TestSerializableWithInterleavedWriteReplace)) {
                 return original;
             }
             System.out.println(this + ".writeReplace(): " + original);
             replaceCounter++;
             TestSerializableWithInterleavedWriteReplace tsw = (TestSerializableWithInterleavedWriteReplace) original;
             if (tsw.te.equals(TestEnum.FIRST)) {
-                return new TestSerializableWithInterleavedWriteReplace2(tsw.i, tsw.te.next());
+                return new TestSerializableWithInterleavedWriteReplace2(tsw.i.intValue(), tsw.te.next());
             }
             if (tsw.te.equals(TestEnum.SECOND)) {
-                return new TestSerializableWithInterleavedWriteReplace3(tsw.i, tsw.te.next());
+                return new TestSerializableWithInterleavedWriteReplace3(tsw.i.intValue(), tsw.te.next());
             }
             if (tsw.te.equals(TestEnum.THIRD)) {
-                return new TestSerializableWithInterleavedWriteReplace4(tsw.i, tsw.te.next());
+                return new TestSerializableWithInterleavedWriteReplace4(tsw.i.intValue(), tsw.te.next());
             }
             if (tsw.te.equals(TestEnum.FOURTH)) {
-                return new TestSerializableWithInterleavedWriteReplace5(tsw.i, tsw.te.next());
-            }
-            else {
+                return new TestSerializableWithInterleavedWriteReplace5(tsw.i.intValue(), tsw.te.next());
+            } else {
                 return original;
             }
         }
@@ -2020,12 +2079,35 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public enum TestEnum {
-        FIRST  { TestEnum next() { return SECOND; }; TestEnum previous() { return FIFTH; } },
-        SECOND { TestEnum next() { return THIRD;  }; TestEnum previous() { return FIRST;  } },
-        THIRD  { TestEnum next() { return FOURTH; }; TestEnum previous() { return SECOND; } },
-        FOURTH { TestEnum next() { return FIFTH;  }; TestEnum previous() { return THIRD;  } },
-        FIFTH  { TestEnum next() { return FIRST;  }; TestEnum previous() { return FOURTH; } };
+
+        FIRST {TestEnum next() {
+            return SECOND;
+        };TestEnum previous() {
+            return FIFTH;
+        }},
+        SECOND {TestEnum next() {
+            return THIRD;
+        };TestEnum previous() {
+            return FIRST;
+        }},
+        THIRD {TestEnum next() {
+            return FOURTH;
+        };TestEnum previous() {
+            return SECOND;
+        }},
+        FOURTH {TestEnum next() {
+            return FIFTH;
+        };TestEnum previous() {
+            return THIRD;
+        }},
+        FIFTH {TestEnum next() {
+            return FIRST;
+        };TestEnum previous() {
+            return FOURTH;
+        }};
+
         abstract TestEnum next();
+
         abstract TestEnum previous();
     }
 
@@ -2033,19 +2115,16 @@ public final class SimpleMarshallerTests extends TestBase {
      * Verify that objects with writeReplace()/readResolve() interact correctly with ObjectResolvers.
      */
     @Test
-    public void testObjectResolverWithInterleavedWriteReplace() throws Throwable
-    {  
+    public void testObjectResolverWithInterleavedWriteReplace() throws Throwable {
         if (testMarshallerProvider instanceof ObjectOutputStreamTestMarshallerProvider) {
             throw new SkipException("Can't use ObjectResolver in compatibility tests");
         }
         if (testUnmarshallerProvider instanceof ObjectInputStreamTestUnmarshallerProvider) {
-            throw new SkipException("Can't use ObjectResolver in compatibility tests");   
+            throw new SkipException("Can't use ObjectResolver in compatibility tests");
         }
-
         final TestObjectResolverForInterleavedWriteReplace objectResolver = new TestObjectResolverForInterleavedWriteReplace();
         final TestSerializableWithInterleavedWriteReplace o = new TestSerializableWithInterleavedWriteReplace(3, TestEnum.FIRST);
         TestSerializableWithInterleavedWriteReplace.reset();
-
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setObjectResolver(objectResolver);
@@ -2060,24 +2139,35 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
-
         assertTrue(o.ok(4));
         assertTrue(objectResolver.ok());
     }
-    
+
     public static class TestExternalizableInt implements Serializable {
+
         private static final long serialVersionUID = 805500397903006481L;
         private int secret;
-        public TestExternalizableInt(int secret) { this.secret = secret; }
-        public TestExternalizableInt() {}
-        public int getSecret() { return secret; }
-        public void setSecret(int secret) { this.secret = secret; }
+
+        public TestExternalizableInt(int secret) {
+            this.secret = secret;
+        }
+
+        public TestExternalizableInt() {
+        }
+
+        public int getSecret() {
+            return secret;
+        }
+
+        public void setSecret(int secret) {
+            this.secret = secret;
+        }
 
         public boolean equals(Object o) {
-            if (! (o instanceof TestExternalizableInt)) {
+            if (!(o instanceof TestExternalizableInt)) {
                 return false;
             }
-            return ((TestExternalizableInt)o).secret == this.secret;
+            return ((TestExternalizableInt) o).secret == this.secret;
         }
 
         public int hashCode() {
@@ -2086,13 +2176,13 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestExternalizer implements Externalizer, Serializable {
+
         private static final long serialVersionUID = -8104713864804175542L;
 
         public Object createExternal(Class<?> subjectType, ObjectInput input, Creator defaultCreator) throws IOException, ClassNotFoundException {
             if (!TestExternalizableInt.class.isAssignableFrom(subjectType)) {
                 throw new IOException(this + " only works for " + TestExternalizableInt.class + " but I got a " + subjectType);
             }
-
             Object obj = null;
             try {
                 if (defaultCreator != null) {
@@ -2121,10 +2211,10 @@ public final class SimpleMarshallerTests extends TestBase {
                 output.writeInt(((TestExternalizableInt) subject).getSecret());
             } else {
                 throw new IOException(this + " only works for " + TestExternalizableInt.class);
-            } 
+            }
         }
     }
-    
+
     static class TestExternalizerFactory implements ClassExternalizerFactory {
 
         public Externalizer getExternalizer(Class<?> type) {
@@ -2136,23 +2226,21 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         }
     }
-    
+
     /*
-     * Verify that use of customized ExternalizerFactory to write the same object twice
-     * results in sending a handle on the second write.
-     */
+    * Verify that use of customized ExternalizerFactory to write the same object twice
+    * results in sending a handle on the second write.
+    */
     @Test
-    public void testExternalizerWithRepeatedWrites() throws Throwable
-    {
+    public void testExternalizerWithRepeatedWrites() throws Throwable {
         if (testMarshallerProvider instanceof ObjectOutputStreamTestMarshallerProvider) {
             throw new SkipException("Can't use ClassExternalizerFactory in compatibility tests");
         }
         if (testUnmarshallerProvider instanceof ObjectInputStreamTestUnmarshallerProvider) {
-            throw new SkipException("Can't use ClassExternalizerFactory in compatibility tests");   
+            throw new SkipException("Can't use ClassExternalizerFactory in compatibility tests");
         }
         TestExternalizerFactory externalizerFactory = new TestExternalizerFactory();
         Object o = new TestExternalizableInt(7);
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ByteOutput byteOutput = Marshalling.createByteOutput(baos);
         MarshallingConfiguration config = configuration.clone();
@@ -2164,7 +2252,6 @@ public final class SimpleMarshallerTests extends TestBase {
         marshaller.writeObject(o);
         marshaller.writeObject(o);
         marshaller.flush();
-
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ByteInput byteInput = Marshalling.createByteInput(bais);
         config = configuration.clone();
@@ -2177,6 +2264,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static final class TestExternalizableWithSerializableFields implements Externalizable {
+
         private boolean ran;
         private Object obj = new TestSerializableWithFields();
 
@@ -2288,11 +2376,11 @@ public final class SimpleMarshallerTests extends TestBase {
         final Random random = new Random(reallyLongStringLengthSeed);
         for (int len : reallyLongStringLengths) {
             final StringBuilder builder = new StringBuilder(len);
-            for (int i = 0; i < len; i ++) {
+            for (int i = 0; i < len; i++) {
                 char ch;
                 do {
                     ch = (char) random.nextInt();
-                } while (! Character.isDefined(ch) || Character.isLowSurrogate(ch) || Character.isHighSurrogate(ch));
+                } while (!Character.isDefined(ch) || Character.isLowSurrogate(ch) || Character.isHighSurrogate(ch));
                 builder.append(ch);
             }
             final String s = builder.toString();
@@ -2312,6 +2400,7 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     public static class TestSerializableEmpty implements Serializable {
+
         private static final long serialVersionUID = 997011009926105464L;
     }
 
@@ -2321,7 +2410,7 @@ public final class SimpleMarshallerTests extends TestBase {
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(first);
-                for (int i = 0; i < 65536 + 500; i ++) {
+                for (int i = 0; i < 65536 + 500; i++) {
                     marshaller.writeObject(new TestSerializableEmpty());
                 }
                 marshaller.writeObject(first);
@@ -2329,41 +2418,42 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final Object test = unmarshaller.readObject();
-                for (int i = 0; i < 65536 + 500; i ++) {
+                for (int i = 0; i < 65536 + 500; i++) {
                     unmarshaller.readObject();
                 }
                 assertSame("Far backref", test, unmarshaller.readObject());
             }
         });
     }
-    
-    public static final class TestExternalizableForWithBockData implements Externalizable {
 
-		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-			for (int i = 0; i < 550; i++) {
-				int current = in.readInt();
-				assertEquals(i, current);
-            }
-		}
+    public static final class TestExternalizableForWithBlockData implements Externalizable {
 
-		public void writeExternal(ObjectOutput out) throws IOException {
-			for (int i = 0; i < 550; i++) {
-				out.writeInt(i);
+        private static final long serialVersionUID = -5588239332881048585L;
+
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            for (int i = 0; i < 550; i++) {
+                int current = in.readInt();
+                assertEquals(i, current);
             }
-		}
-    	
+        }
+
+        public void writeExternal(ObjectOutput out) throws IOException {
+            for (int i = 0; i < 550; i++) {
+                out.writeInt(i);
+            }
+        }
     }
-    
+
     @Test
     public void testFlushWithBlockData() throws Throwable {
-    	final TestExternalizableForWithBockData externalizableForJBMar84 = new TestExternalizableForWithBockData();
-    	runReadWriteTest(new ReadWriteTest() {
+        final TestExternalizableForWithBlockData externalizableForJBMar84 = new TestExternalizableForWithBlockData();
+        runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-            	marshaller.writeObject(externalizableForJBMar84);
+                marshaller.writeObject(externalizableForJBMar84);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-            	unmarshaller.readObject();
+                unmarshaller.readObject();
             }
         });
     }

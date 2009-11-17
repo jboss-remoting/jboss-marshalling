@@ -187,14 +187,14 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if there is no field of the given name on the given class
      */
     public static <T> FieldSetter get(final Class<T> clazz, final String name) throws SecurityException, IllegalArgumentException {
-        final Class[] stackTrace = getInstance.STACK_TRACE_READER.getClassContext();
+        final Class[] stackTrace = Holder.STACK_TRACE_READER.getClassContext();
         if (stackTrace[2] != clazz) {
             throw new SecurityException("Cannot get accessible field from someone else's class");
         }
         return new FieldSetter(AccessController.doPrivileged(new GetFieldAction(clazz, name)));
     }
 
-    private static final class getInstance {
+    private static final class Holder {
 
         static final StackTraceReader STACK_TRACE_READER;
 
@@ -206,7 +206,7 @@ public final class FieldSetter {
             });
         }
 
-        private getInstance() {
+        private Holder() {
         }
 
         static final class StackTraceReader extends SecurityManager {

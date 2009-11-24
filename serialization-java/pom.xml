@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <jbmar.version>1.2.0.CR5-SNAPSHOT</jbmar.version>
+        <jbmar.version>1.2.0.GA</jbmar.version>
     </properties>
 
     <name>JBoss Marshalling Serialization</name>

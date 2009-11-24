@@ -54,6 +54,7 @@ public final class UTFUtils {
      * @param s the string
      * @return the length
      * @throws UTFDataFormatException if the string is longer than {@code 65536} characters
+     * @see java.io.DataInput#readUTF()
      */
     public static int getShortUTFLength(final String s) throws UTFDataFormatException {
         final int length = s.length();
@@ -79,6 +80,7 @@ public final class UTFUtils {
      *
      * @param s the string
      * @return the length
+     * @see java.io.DataInput#readUTF()
      */
     public static long getLongUTFLength(final String s) {
         final int length = s.length();
@@ -102,6 +104,7 @@ public final class UTFUtils {
      * @param output the output to write to
      * @param s the string
      * @throws IOException if an I/O error occurs
+     * @see java.io.DataOutput#writeUTF(String)
      */
     public static void writeUTFBytes(final ByteOutput output, final String s) throws IOException {
         final byte[] byteBuf = BYTES_HOLDER.get();
@@ -140,6 +143,7 @@ public final class UTFUtils {
      * @param len the number of characters to read
      * @return the string
      * @throws IOException if an I/O error occurs
+     * @see java.io.DataInput#readUTF()
      */
     public static String readUTFBytes(final ByteInput input, final int len) throws IOException {
         final byte[] byteBuf = BYTES_HOLDER.get();
@@ -210,6 +214,7 @@ public final class UTFUtils {
      * @param len the number of bytes to read
      * @return the string
      * @throws IOException if an I/O error occurs
+     * @see java.io.DataInput#readUTF()
      */
     public static String readUTFBytesByByteCount(final ByteInput input, final long len) throws IOException {
         final StringBuilder builder = new StringBuilder();
@@ -271,6 +276,7 @@ public final class UTFUtils {
      * @param input the input
      * @return the string
      * @throws IOException if an I/O error occurs
+     * @see java.io.DataInput#readUTF()
      */
     public static String readUTFZBytes(final ByteInput input) throws IOException {
         final StringBuilder builder = new StringBuilder();

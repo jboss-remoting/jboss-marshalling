@@ -35,7 +35,6 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
     private ByteBuffer buffer;
     private boolean eof;
 
-    private final int bufferSize;
     private final BufferWriter bufferWriterTask;
 
     private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
@@ -45,14 +44,12 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
      * given {@code bufferWriterTask} will be called to send buffers, flush the output stream, and handle the
      * end-of-file condition.
      *
-     * @param bufferSize the buffer size
      * @param bufferWriterTask the writer task
      */
-    public NioByteOutput(final int bufferSize, final BufferWriter bufferWriterTask) {
-        this.bufferSize = bufferSize;
+    public NioByteOutput(final BufferWriter bufferWriterTask) {
         this.bufferWriterTask = bufferWriterTask;
         synchronized (lock) {
-            buffer = ByteBuffer.allocate(bufferSize);
+            buffer = bufferWriterTask.getBuffer();
         }
     }
 
@@ -72,7 +69,7 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
             return buffer;
         } else {
             if (buffer != null) send();
-            return this.buffer = ByteBuffer.allocate(bufferSize);
+            return this.buffer = bufferWriterTask.getBuffer();
         }
     }
 
@@ -88,7 +85,8 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
     public void write(final byte[] b, int off, int len) throws IOException {
         synchronized (this) {
             checkClosed();
-            if (len > (bufferSize >> 2)) {
+            // todo - arbitrary selection...
+            if (len > 256) {
                 send();
                 send(ByteBuffer.wrap(b, off, len), false);
             } else while (len > 0) {
@@ -152,6 +150,13 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
      * A buffer writer for an {@link NioByteOutput}.
      */
     public interface BufferWriter extends Flushable {
+
+        /**
+         * Get a new buffer to be filled.  The new buffer may, for example, include a prepended header.
+         *
+         * @return the new buffer
+         */
+        ByteBuffer getBuffer();
 
         /**
          * Accept a buffer.  If this is the last buffer that will be sent, the {@code eof} flag will be set to {@code true}.

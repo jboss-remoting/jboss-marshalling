@@ -63,6 +63,15 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <doclet>net.gleamynode.apiviz.APIviz</doclet>
                     <docletArtifact>
@@ -70,6 +79,9 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
+                    <links>
+                        <link>http://java.sun.com/javase/6/docs/</link>
+                    </links>
                 </configuration>
             </plugin>
         </plugins>

@@ -79,6 +79,10 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
+                    <doctitle><![CDATA[JBoss Marshalling ]]>${version}</doctitle>
+                    <header><![CDATA[JBoss Marshalling ]]>${version}</header>
+                    <footer><![CDATA[JBoss Marshalling ]]>${version}</footer>
+                    <bottom><![CDATA[<i>Copyright &#169; 2009 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/javase/6/docs/</link>
                     </links>

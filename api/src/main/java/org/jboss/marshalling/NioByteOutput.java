@@ -142,7 +142,7 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
                 return;
             }
             eof = true;
-            send();
+            flush();
         }
     }
 

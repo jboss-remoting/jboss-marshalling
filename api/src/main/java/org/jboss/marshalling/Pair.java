@@ -67,7 +67,7 @@ public final class Pair<A, B> implements Serializable {
      * @return the combined hash code
      */
     private static int hashCode(final Object a, final Object b) {
-        return a.hashCode() * 1319 + b.hashCode();
+        return (a == null ? 0 : a.hashCode()) * 1319 + (b == null ? 0 : b.hashCode());
     }
 
     /**

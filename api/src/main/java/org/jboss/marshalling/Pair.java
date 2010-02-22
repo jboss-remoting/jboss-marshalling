@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling;
 
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.io.Externalizable;
 import java.io.ObjectOutput;
@@ -29,7 +30,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 
 /**
- * A serialiable pair of values.  There is also a specified externalizer as well, to support more efficient I/O.
+ * A serializable pair of values.  There is also a specified externalizer as well, to support more efficient I/O.
  *
  * @param <A> the first value type
  * @param <B> the second value type
@@ -41,6 +42,10 @@ public final class Pair<A, B> implements Serializable {
 
     private final A a;
     private final B b;
+    @SuppressWarnings({ "InstanceVariableMayNotBeInitializedByReadObject" })
+    private final transient int hashCode;
+
+    private static final FieldSetter setter = FieldSetter.get(Pair.class, "hashCode");
 
     /**
      * Create a new instance.
@@ -51,6 +56,18 @@ public final class Pair<A, B> implements Serializable {
     public Pair(final A a, final B b) {
         this.a = a;
         this.b = b;
+        hashCode = hashCode(a, b);
+    }
+
+    /**
+     * Calculate the combined hash code of two objects.
+     *
+     * @param a the first object
+     * @param b the second object
+     * @return the combined hash code
+     */
+    private static int hashCode(final Object a, final Object b) {
+        return a.hashCode() * 1319 + b.hashCode();
     }
 
     /**
@@ -72,6 +89,66 @@ public final class Pair<A, B> implements Serializable {
     }
 
     /**
+     * Reinitialize the object and set the hash code.
+     *
+     * @param ois the object input stream
+     * @throws IOException if an I/O error occurs while reading the default fields
+     * @throws ClassNotFoundException if a class isn't found while reading the default fields
+     */
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
+        setter.setInt(this, hashCode(a, b));
+    }
+
+    /**
+     * Return the combined hash code of the two argument objects.
+     *
+     * @return the combined hash code
+     */
+    public int hashCode() {
+        return hashCode;
+    }
+
+    /**
+     * Determine if this pair equals another.  A pair is equal to another pair if both members are equal.
+     *
+     * @param other the other pair
+     * @return {@code true} if they are equal, {@code false} otherwise
+     */
+    public boolean equals(final Object other) {
+        return (other instanceof Pair) ? equals((Pair) other) : false;
+    }
+
+    /**
+     * Determine if this pair equals another.  A pair is equal to another pair if both members are equal.
+     *
+     * @param other the other pair
+     * @return {@code true} if they are equal, {@code false} otherwise
+     */
+    public boolean equals(final Pair<?, ?> other) {
+        if (other == null) {
+            return false;
+        }
+        final Object a = this.a;
+        final Object othera = other.a;
+        final Object b = this.b;
+        final Object otherb = other.b;
+        return (a == othera || a != null && a.equals(othera)) &&
+                (b == otherb || b != null && b.equals(otherb));
+    }
+
+    /**
+     * Get a string representation of this pair.
+     *
+     * @return the string representation
+     */
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("Pair (").append(a).append(", ").append(b).append(')');
+        return builder.toString();
+    }
+
+    /**
      * Create a new instance.
      *
      * @param a the first value
@@ -81,7 +158,7 @@ public final class Pair<A, B> implements Serializable {
      * @return the new instance
      */
     public static <A, B> Pair<A, B> create(A a, B b) {
-        return new Pair<A,B>(a, b);
+        return new Pair<A, B>(a, b);
     }
 
     /**

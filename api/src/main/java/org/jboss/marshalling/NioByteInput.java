@@ -63,8 +63,6 @@ public class NioByteInput extends InputStream implements ByteInput {
             if (!eof && failure == null) {
                 queue.add(Pair.create(buffer, (BufferReturn) null));
                 notifyAll();
-            } else {
-                throw new IllegalStateException();
             }
         }
     }
@@ -82,7 +80,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                 queue.add(Pair.create(buffer, bufferReturn));
                 notifyAll();
             } else {
-                throw new IllegalStateException();
+                bufferReturn.returnBuffer(buffer);
             }
         }
     }

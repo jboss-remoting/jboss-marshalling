@@ -27,6 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jbmar.version>1.3.0.CR1-SNAPSHOT</jbmar.version>
     </properties>
 

@@ -34,7 +34,7 @@ import java.util.ArrayDeque;
  * A {@code ByteInput} implementation which is populated asynchronously with {@link ByteBuffer} instances.
  */
 public class NioByteInput extends InputStream implements ByteInput {
-    private final Queue<ByteBuffer> queue;
+    private final Queue<Pair<ByteBuffer, BufferReturn>> queue;
     private final InputHandler inputHandler;
 
     // protected by "queue"
@@ -49,7 +49,7 @@ public class NioByteInput extends InputStream implements ByteInput {
      */
     public NioByteInput(final InputHandler inputHandler) {
         this.inputHandler = inputHandler;
-        queue = new ArrayDeque<ByteBuffer>();
+        queue = new ArrayDeque<Pair<ByteBuffer, BufferReturn>>();
     }
 
     /**
@@ -61,7 +61,28 @@ public class NioByteInput extends InputStream implements ByteInput {
     public void push(final ByteBuffer buffer) {
         synchronized (this) {
             if (!eof && failure == null) {
-                queue.add(buffer);
+                queue.add(Pair.create(buffer, (BufferReturn) null));
+                notifyAll();
+            } else {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    /**
+     * Push a buffer into the queue.  There is no mechanism to limit the number of pushed buffers; if such a mechanism
+     * is desired, it must be implemented externally, for example maybe using a {@link java.util.concurrent.Semaphore Semaphore}.
+     *
+     * @param buffer the buffer from which more data should be read
+     * @param bufferReturn the buffer return to send this buffer to when it is exhausted
+     */
+    public void push(final ByteBuffer buffer, final BufferReturn bufferReturn) {
+        synchronized (this) {
+            if (!eof && failure == null) {
+                queue.add(Pair.create(buffer, bufferReturn));
+                notifyAll();
+            } else {
+                throw new IllegalStateException();
             }
         }
     }
@@ -73,6 +94,7 @@ public class NioByteInput extends InputStream implements ByteInput {
     public void pushEof() {
         synchronized (this) {
             eof = true;
+            notifyAll();
         }
     }
 
@@ -86,13 +108,14 @@ public class NioByteInput extends InputStream implements ByteInput {
         synchronized (this) {
             if (! eof) {
                 failure = e;
+                notifyAll();
             }
         }
     }
 
     /** {@inheritDoc} */
     public int read() throws IOException {
-        final Queue<ByteBuffer> queue = this.queue;
+        final Queue<Pair<ByteBuffer, BufferReturn>> queue = this.queue;
         synchronized (this) {
             while (queue.isEmpty()) {
                 if (eof) {
@@ -106,19 +129,38 @@ public class NioByteInput extends InputStream implements ByteInput {
                     throw new InterruptedIOException("Interrupted on read()");
                 }
             }
-            final ByteBuffer buf = queue.peek();
+            final Pair<ByteBuffer, BufferReturn> pair = queue.peek();
+            final ByteBuffer buf = pair.getA();
+            final BufferReturn bufferReturn = pair.getB();
             final int v = buf.get() & 0xff;
             if (buf.remaining() == 0) {
+                if (bufferReturn != null) {
+                    bufferReturn.returnBuffer(buf);
+                }
                 queue.poll();
                 try {
                     inputHandler.acknowledge();
                 } catch (IOException e) {
                     eof = true;
-                    queue.clear();
+                    clearQueue();
+                    notifyAll();
                     throw e;
                 }
             }
             return v;
+        }
+    }
+
+    private void clearQueue() {
+        synchronized (this) {
+            Pair<ByteBuffer, BufferReturn> pair;
+            while ((pair = queue.poll()) != null) {
+                final ByteBuffer buffer = pair.getA();
+                final BufferReturn ret = pair.getB();
+                if (ret != null) {
+                    ret.returnBuffer(buffer);
+                }
+            }
         }
     }
 
@@ -127,7 +169,7 @@ public class NioByteInput extends InputStream implements ByteInput {
         if (len == 0) {
             return 0;
         }
-        final Queue<ByteBuffer> queue = this.queue;
+        final Queue<Pair<ByteBuffer, BufferReturn>> queue = this.queue;
         synchronized (this) {
             while (queue.isEmpty()) {
                 if (eof) {
@@ -143,20 +185,27 @@ public class NioByteInput extends InputStream implements ByteInput {
             }
             int total = 0;
             while (len > 0) {
-                final ByteBuffer buffer = queue.peek();
-                if (buffer == null) {
+                final Pair<ByteBuffer, BufferReturn> pair = queue.peek();
+                if (pair == null) {
                     break;
                 }
+                final ByteBuffer buffer = pair.getA();
+                final BufferReturn bufferReturn = pair.getB();
                 final int bytecnt = Math.min(buffer.remaining(), len);
                 buffer.get(b, off, bytecnt);
                 total += bytecnt;
                 len -= bytecnt;
                 if (buffer.remaining() == 0) {
+                    if (bufferReturn != null) {
+                        bufferReturn.returnBuffer(buffer);
+                    }
+                    queue.poll();
                     try {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
                         eof = true;
-                        queue.clear();
+                        clearQueue();
+                        notifyAll();
                         throw e;
                     }
                 }
@@ -169,8 +218,8 @@ public class NioByteInput extends InputStream implements ByteInput {
     public int available() throws IOException {
         synchronized (this) {
             int total = 0;
-            for (ByteBuffer buffer : queue) {
-                total += buffer.remaining();
+            for (Pair<ByteBuffer, BufferReturn> pair : queue) {
+                total += pair.getA().remaining();
                 if (total < 0) {
                     return Integer.MAX_VALUE;
                 }
@@ -180,7 +229,7 @@ public class NioByteInput extends InputStream implements ByteInput {
     }
 
     public long skip(long qty) throws IOException {
-        final Queue<ByteBuffer> queue = this.queue;
+        final Queue<Pair<ByteBuffer, BufferReturn>> queue = this.queue;
         synchronized (this) {
             while (queue.isEmpty()) {
                 if (eof) {
@@ -196,21 +245,26 @@ public class NioByteInput extends InputStream implements ByteInput {
             }
             long skipped = 0L;
             while (qty > 0L) {
-                final ByteBuffer buffer = queue.peek();
-                if (buffer == null) {
+                final Pair<ByteBuffer, BufferReturn> pair = queue.peek();
+                if (pair == null) {
                     break;
                 }
+                final ByteBuffer buffer = pair.getA();
+                final BufferReturn bufferReturn = pair.getB();
                 final int bytecnt = Math.min(buffer.remaining(), (int) Math.max((long)Integer.MAX_VALUE, qty));
                 buffer.position(buffer.position() + bytecnt);
                 skipped += bytecnt;
                 qty -= bytecnt;
                 if (buffer.remaining() == 0) {
                     queue.poll();
+                    if (bufferReturn != null) {
+                        bufferReturn.returnBuffer(buffer);
+                    }
                     try {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
                         eof = true;
-                        queue.clear();
+                        clearQueue();
                         throw e;
                     }
                 }
@@ -223,7 +277,7 @@ public class NioByteInput extends InputStream implements ByteInput {
     public void close() throws IOException {
         synchronized (this) {
             if (! eof) {
-                queue.clear();
+                clearQueue();
                 eof = true;
                 inputHandler.close();
             }
@@ -238,6 +292,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                 throw failure;
             } finally {
                 eof = true;
+                clearQueue();
                 this.failure = null;
             }
         }
@@ -262,5 +317,18 @@ public class NioByteInput extends InputStream implements ByteInput {
          * @throws IOException if an I/O error occurs
          */
         void close() throws IOException;
+    }
+
+    /**
+     * A handler for returning buffers which are have been exhausted.
+     */
+    public interface BufferReturn {
+
+        /**
+         * Accept a returned buffer.
+         *
+         * @param buffer the buffer
+         */
+        void returnBuffer(ByteBuffer buffer);
     }
 }

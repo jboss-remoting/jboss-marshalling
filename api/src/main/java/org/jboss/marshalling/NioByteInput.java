@@ -264,6 +264,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
                         eof = true;
+                        notifyAll();
                         clearQueue();
                         throw e;
                     }
@@ -279,6 +280,7 @@ public class NioByteInput extends InputStream implements ByteInput {
             if (! eof) {
                 clearQueue();
                 eof = true;
+                notifyAll();
                 inputHandler.close();
             }
         }
@@ -293,6 +295,7 @@ public class NioByteInput extends InputStream implements ByteInput {
             } finally {
                 eof = true;
                 clearQueue();
+                notifyAll();
                 this.failure = null;
             }
         }

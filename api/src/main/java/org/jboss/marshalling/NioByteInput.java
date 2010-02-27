@@ -62,6 +62,7 @@ public class NioByteInput extends InputStream implements ByteInput {
         synchronized (this) {
             if (!eof && failure == null) {
                 queue.add(buffer);
+                notifyAll();
             }
         }
     }
@@ -73,6 +74,7 @@ public class NioByteInput extends InputStream implements ByteInput {
     public void pushEof() {
         synchronized (this) {
             eof = true;
+            notifyAll();
         }
     }
 
@@ -86,6 +88,7 @@ public class NioByteInput extends InputStream implements ByteInput {
         synchronized (this) {
             if (! eof) {
                 failure = e;
+                notifyAll();
             }
         }
     }
@@ -114,6 +117,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                     inputHandler.acknowledge();
                 } catch (IOException e) {
                     eof = true;
+                    notifyAll();
                     queue.clear();
                     throw e;
                 }
@@ -156,6 +160,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
                         eof = true;
+                        notifyAll();
                         queue.clear();
                         throw e;
                     }
@@ -210,6 +215,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
                         eof = true;
+                        notifyAll();
                         queue.clear();
                         throw e;
                     }
@@ -225,6 +231,7 @@ public class NioByteInput extends InputStream implements ByteInput {
             if (! eof) {
                 queue.clear();
                 eof = true;
+                notifyAll();
                 inputHandler.close();
             }
         }
@@ -238,6 +245,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                 throw failure;
             } finally {
                 eof = true;
+                notifyAll();
                 this.failure = null;
             }
         }

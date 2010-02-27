@@ -139,10 +139,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                 try {
                     inputHandler.acknowledge();
                 } catch (IOException e) {
-                    eof = true;
-                    clearQueue();
-                    notifyAll();
-                    throw e;
+                    // no operation!
                 }
             }
             return v;
@@ -163,7 +160,7 @@ public class NioByteInput extends InputStream implements ByteInput {
     }
 
     /** {@inheritDoc} */
-    public int read(final byte[] b, final int off, int len) throws IOException {
+    public int read(final byte[] b, int off, int len) throws IOException {
         if (len == 0) {
             return 0;
         }
@@ -191,6 +188,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                 final BufferReturn bufferReturn = pair.getB();
                 final int bytecnt = Math.min(buffer.remaining(), len);
                 buffer.get(b, off, bytecnt);
+                off += bytecnt;
                 total += bytecnt;
                 len -= bytecnt;
                 if (buffer.remaining() == 0) {
@@ -201,10 +199,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                     try {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
-                        eof = true;
-                        clearQueue();
-                        notifyAll();
-                        throw e;
+                        // no operation!
                     }
                 }
             }
@@ -261,10 +256,7 @@ public class NioByteInput extends InputStream implements ByteInput {
                     try {
                         inputHandler.acknowledge();
                     } catch (IOException e) {
-                        eof = true;
-                        notifyAll();
-                        clearQueue();
-                        throw e;
+                        // no operation!
                     }
                 }
             }
@@ -305,7 +297,8 @@ public class NioByteInput extends InputStream implements ByteInput {
     public interface InputHandler extends Closeable {
 
         /**
-         * Acknowledges the successful processing of an input buffer.
+         * Acknowledges the successful processing of an input buffer.  Though this method may throw an exception,
+         * it is not acted upon.
          *
          * @throws IOException if an I/O error occurs sending the acknowledgement
          */
@@ -313,7 +306,7 @@ public class NioByteInput extends InputStream implements ByteInput {
 
         /**
          * Signifies that the user of the enclosing {@link NioByteInput} has called the {@code close()} method
-         * explicitly.
+         * explicitly.  Any thrown exception is propagated up to the caller of {@link NioByteInput#close() NioByteInput.close()}.
          *
          * @throws IOException if an I/O error occurs
          */

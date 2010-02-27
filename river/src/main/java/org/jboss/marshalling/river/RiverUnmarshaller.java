@@ -71,6 +71,7 @@ import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.reflect.SerializableClass;
@@ -688,6 +689,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                 }
 
+                case ID_PAIR: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Pair.create(doReadNestedObject(unshared, "java.util.marshalling.Pair [A]"), doReadNestedObject(unshared, "java.util.marshalling.Pair [B]"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
+                }
+
                 case ID_CLEAR_CLASS_CACHE: {
                     if (depth > 1) {
                         throw new StreamCorruptedException("ID_CLEAR_CLASS_CACHE token in the middle of stream processing");
@@ -1007,6 +1019,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_EMPTY_LIST_OBJECT: {
                 return ClassDescriptor.EMPTY_LIST;
+            }
+
+            case ID_PAIR: {
+                return ClassDescriptor.PAIR;
             }
 
             case ID_STRING_CLASS: {
@@ -1417,7 +1433,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private Object doReadBooleanArray(final int cnt, final boolean unshared) throws IOException {
         final boolean[] array = new boolean[cnt];
-        int v = 0;
+        int v;
         int bc = cnt & ~7;
         for (int i = 0; i < bc; ) {
             v = readByte();

@@ -66,6 +66,7 @@ import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
+import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.reflect.SerializableClass;
@@ -149,7 +150,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 objClass = obj.getClass();
-                id = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
+                id = (configuredVersion >= 3 ? BASIC_CLASSES_V3 : configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
                 // First, non-replaceable classes
                 if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
@@ -863,6 +864,17 @@ public class RiverMarshaller extends AbstractMarshaller {
                     info = registry.lookup(objClass);
                     break;
                 }
+                case ID_PAIR: {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    Pair<?, ?> pair = (Pair<?, ?>) obj;
+                    doWriteObject(pair.getA(), unshared);
+                    doWriteObject(pair.getB(), unshared);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }
@@ -1224,6 +1236,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
+    private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V3;
 
     private static final Field ENUM_SET_ELEMENT_TYPE_FIELD;
     private static final Field ENUM_SET_VALUES_FIELD;
@@ -1308,7 +1321,11 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(EnumSet.class, ID_CC_ENUM_SET);
         map.put(enumSetProxyClass, ID_CC_ENUM_SET_PROXY); // special case
 
-        BASIC_CLASSES_V2 = map;
+        BASIC_CLASSES_V2 = map.clone();
+
+        map.put(Pair.class, ID_PAIR);
+
+        BASIC_CLASSES_V3 = map;
 
         // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
         // do something tricky involving ObjectStreamField anyway...
@@ -1386,7 +1403,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected boolean writeKnownClass(final Class<?> objClass) throws IOException {
         final int configuredVersion = this.configuredVersion;
-        int i = (configuredVersion >= 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
+        int i = (configuredVersion >= 3 ? BASIC_CLASSES_V3 : configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
         if (i != -1) {
             write(i);
             return true;

@@ -29,7 +29,7 @@ import java.util.Collections;
  */
 public final class Protocol {
     public static final int MIN_VERSION = 1;
-    public static final int MAX_VERSION = 2;
+    public static final int MAX_VERSION = 3;
 
     public static final int ID_NULL                     = 0x01;
     public static final int ID_REPEAT_OBJECT_FAR        = 0x02;
@@ -172,6 +172,13 @@ public final class Protocol {
     public static final int ID_CC_COPY_ON_WRITE_ARRAY_SET   = 0x74;
     public static final int ID_CC_VECTOR                    = 0x75;
     public static final int ID_CC_STACK                     = 0x76;
+
+    // protocol version >= 3
+    public static final int ID_PAIR                     = 0x77;
+    // todo - ID_JAVASSIST_PROXY
+    // todo - ID_DEQUEs
+    // todo - ID_NAVIGABLE_MAPs
+    // todo - ID_NAVIGABLE_SETs
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();

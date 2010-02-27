@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling.river;
 
+import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -97,6 +98,8 @@ public class ClassDescriptor {
     public static final ClassDescriptor ABSTRACT_QUEUE = new ClassDescriptor(AbstractQueue.class, Protocol.ID_ABSTRACT_QUEUE);
     public static final ClassDescriptor ABSTRACT_SEQUENTIAL_LIST = new ClassDescriptor(AbstractSequentialList.class, Protocol.ID_ABSTRACT_SEQUENTIAL_LIST);
     public static final ClassDescriptor ABSTRACT_SET = new ClassDescriptor(AbstractSet.class, Protocol.ID_ABSTRACT_SET);
+
+    public static final ClassDescriptor PAIR = new ClassDescriptor(Pair.class, Protocol.ID_PAIR);
 
     // non-public (due to security)
 

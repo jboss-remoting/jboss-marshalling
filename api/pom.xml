@@ -63,13 +63,31 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
+                    <detectJavaApiLink>false</detectJavaApiLink>
                     <doclet>net.gleamynode.apiviz.APIviz</doclet>
                     <docletArtifact>
                         <groupId>org.jboss.apiviz</groupId>
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
+                    <doctitle><![CDATA[JBoss Marshalling ]]>${version}</doctitle>
+                    <header><![CDATA[JBoss Marshalling ]]>${version}</header>
+                    <footer><![CDATA[JBoss Marshalling ]]>${version}</footer>
+                    <bottom><![CDATA[<i>Copyright &#169; 2010 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
+                    <links>
+                        <link>http://java.sun.com/javase/6/docs/api/</link>
+                    </links>
                 </configuration>
             </plugin>
         </plugins>

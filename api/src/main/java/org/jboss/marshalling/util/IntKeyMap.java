@@ -23,6 +23,8 @@ package org.jboss.marshalling.util;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An integer-keyed map, optimized for fast copying.  Based on {@code FastCopyHashMap} by Jason T. Greene.
@@ -30,7 +32,7 @@ import java.io.Serializable;
  * @author Jason T. Greene
  * @author David M. Lloyd
  */
-public final class IntKeyMap<V> implements Cloneable, Serializable {
+public final class IntKeyMap<V> implements Cloneable, Serializable, Iterable<IntKeyMap.Entry<V>> {
 
     /**
      * Same default as HashMap, must be a power of 2
@@ -335,14 +337,63 @@ public final class IntKeyMap<V> implements Cloneable, Serializable {
         }
     }
 
-    private static final class Entry<V> {
+    /**
+     * Iterate over the entries.  Read-only operation.
+     *
+     * @return the entry iterator
+     */
+    public Iterator<Entry<V>> iterator() {
+        return new Iterator<Entry<V>>() {
+            int i = 0;
 
-        final int key;
-        final V value;
+            public boolean hasNext() {
+                final Entry<V>[] table = IntKeyMap.this.table;
+                final int len = table.length;
+                if (i == len) {
+                    return false;
+                }
+                while (table[i] == null) {
+                    if (++i == len) {
+                        return false;
+                    }
+                }
+                return false;
+            }
 
-        Entry(int key, V value) {
+            public Entry<V> next() {
+                if (! hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return table[i++];
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    /**
+     * A map entry.
+     *
+     * @param <V> the value type
+     */
+    public static final class Entry<V> {
+
+        private final int key;
+        private final V value;
+
+        private Entry(int key, V value) {
             this.key = key;
             this.value = value;
+        }
+
+        public int getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
         }
     }
 }

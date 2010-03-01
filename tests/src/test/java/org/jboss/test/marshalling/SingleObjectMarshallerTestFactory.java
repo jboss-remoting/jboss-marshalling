@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Pair;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
@@ -142,6 +143,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(Collections.singletonMap(Integer.valueOf(1234), Long.valueOf(54321L)));
         list.add(Boolean.TRUE);
         list.add(Boolean.FALSE);
+        list.add(Pair.create(Pair.class, Boolean.TRUE));
         list.add(null);
         list.add(Short.valueOf((short) 153));
         list.add(Byte.valueOf((byte) 18));
@@ -222,6 +224,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(Map.class);
         list.add(SortedMap.class);
         list.add(RandomAccess.class);
+        list.add(Pair.class);
     }
 
     @Factory(dataProvider = "singleObjectProvider")

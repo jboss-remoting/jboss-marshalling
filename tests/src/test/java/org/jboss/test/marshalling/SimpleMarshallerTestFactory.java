@@ -54,6 +54,9 @@ public final class SimpleMarshallerTestFactory {
         final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 2);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 2);
 
+        final TestMarshallerProvider riverTestMarshallerProviderV3 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 3);
+        final TestUnmarshallerProvider riverTestUnmarshallerProviderV3 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 3);
+
         final MarshallerFactory serialMarshallerFactory = Marshalling.getMarshallerFactory("serial");
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
         final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
@@ -73,6 +76,12 @@ public final class SimpleMarshallerTestFactory {
                 create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
                 // river - v2 writer, v2 reader
                 create(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
+                // river - v1 writer, v3 reader
+                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV3),
+                // river - v2 writer, v3 reader
+                create(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV3),
+                // river - v3 writer, v3 reader
+                create(riverTestMarshallerProviderV3, riverTestUnmarshallerProviderV3),
 
                 // serial
                 create(serialTestMarshallerProvider, serialTestUnmarshallerProvider),

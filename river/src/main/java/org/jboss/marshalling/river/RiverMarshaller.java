@@ -324,7 +324,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                             write(ID_STRING_LARGE);
                             writeInt(len);
                         }
-                        flush();
+                        shallowFlush();
                         UTFUtils.writeUTFBytes(byteOutput, string);
                     } else {
                         write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
@@ -1528,7 +1528,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     private void writeString(String string) throws IOException {
         writeInt(string.length());
-        flush();
+        shallowFlush();
         UTFUtils.writeUTFBytes(byteOutput, string);
     }
 
@@ -1536,7 +1536,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     public void writeUTF(final String string) throws IOException {
         writeInt(string.length());
-        flush();
+        shallowFlush();
         UTFUtils.writeUTFBytes(byteOutput, string);
     }
 }

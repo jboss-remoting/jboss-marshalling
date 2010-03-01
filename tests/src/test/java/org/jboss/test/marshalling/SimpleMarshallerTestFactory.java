@@ -25,7 +25,6 @@ package org.jboss.test.marshalling;
 import org.testng.annotations.Factory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.jboss.marshalling.serialization.java.JavaSerializationMarshallerFactory;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
@@ -61,10 +60,6 @@ public final class SimpleMarshallerTestFactory {
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
         final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
 
-        final MarshallerFactory javaSerializationMarshallerFactory = new JavaSerializationMarshallerFactory();
-        final TestMarshallerProvider javaTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(javaSerializationMarshallerFactory);
-        final TestUnmarshallerProvider javaTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(javaSerializationMarshallerFactory);
-
         final TestMarshallerProvider oosTestMarshallerProvider = new ObjectOutputStreamTestMarshallerProvider();
         final TestUnmarshallerProvider oisTestUnmarshallerProvider = new ObjectInputStreamTestUnmarshallerProvider();
 
@@ -87,16 +82,11 @@ public final class SimpleMarshallerTestFactory {
                 create(serialTestMarshallerProvider, serialTestUnmarshallerProvider),
                 create(serialTestMarshallerProvider, oisTestUnmarshallerProvider),
                 create(oosTestMarshallerProvider, serialTestUnmarshallerProvider),
-                // reflection java serialization
-                create(javaTestMarshallerProvider, javaTestUnmarshallerProvider),
-                create(javaTestMarshallerProvider, oisTestUnmarshallerProvider),
-                create(oosTestMarshallerProvider, javaTestUnmarshallerProvider),
                 null
         );
 
         final Collection<Object[]> c = new ArrayList<Object[]>();
         final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setCreator(new SunReflectiveCreator());
         for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
             if (pair == null) continue;
             // Add this combination

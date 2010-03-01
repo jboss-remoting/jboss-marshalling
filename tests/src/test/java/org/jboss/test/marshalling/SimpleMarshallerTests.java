@@ -42,7 +42,6 @@ import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
 import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.river.RiverUnmarshaller;
-import org.jboss.marshalling.serialization.java.JavaSerializationMarshaller;
 import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
@@ -74,7 +73,6 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Field;
 
 /**
  *
@@ -1082,7 +1080,6 @@ public final class SimpleMarshallerTests extends TestBase {
         map.put("34890fdu90uq09rdewq", "wqeioqwdias90ifd0adfw");
         map.put("dsajkljwqej21309ejjfdasfda", "dsajkdqwoid");
         map.put("nczxm,ncoijd0q93wjdwdwq", " dsajkldwqj9edwqu");
-        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setClassExternalizerFactory(new ClassExternalizerFactory() {
@@ -1097,17 +1094,11 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    javaSerializationMarshaller.set(true);
-                }
                 marshaller.writeObject(map);
                 marshaller.writeObject(map);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
-                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizable objects to regular ObjectInputStream");
-                }
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(map, m1);
                 assertSame(m1, unmarshaller.readObject());
@@ -1170,10 +1161,6 @@ public final class SimpleMarshallerTests extends TestBase {
 
     @Test
     public void testInnerClass() throws Throwable {
-        if (configuration.getCreator().getClass() == ReflectiveCreator.class) {
-            System.out.println("Skipping inner class test with reflective creator, which cannot create inner classes");
-            return;
-        }
         final OuterClass outerClass = new OuterClass();
         outerClass.inner = outerClass.new InnerClass();
         final OuterClass.InnerClass innerClass = new OuterClass().new InnerClass();
@@ -1406,9 +1393,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    throw new SkipException("JavaSerializationMarshaller does not support Externalizer annotation");
-                }
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
             }
@@ -1496,9 +1480,6 @@ public final class SimpleMarshallerTests extends TestBase {
                 if (marshaller instanceof ObjectOutputStreamMarshaller) {
                     throw new SkipException("Test not relevant for " + marshaller);
                 }
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    throw new SkipException("JavaSerializationMarshaller does not support class renaming");
-                }
                 marshaller.writeObject(orig);
                 marshaller.writeObject(orig);
             }
@@ -1531,9 +1512,6 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 if (marshaller instanceof ObjectOutputStreamMarshaller) {
                     throw new SkipException("Test not relevant for " + marshaller);
-                }
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    throw new SkipException("JavaSerializationMarshaller does not support class renaming");
                 }
                 marshaller.writeObject(orig);
                 marshaller.writeObject(orig);
@@ -2332,7 +2310,6 @@ public final class SimpleMarshallerTests extends TestBase {
         map.put("34890fdu90uq09rdewq", ext2);
         map.put("nczxm,ncoijd0q93wjdwdwq", ext3);
         final AtomicInteger version = new AtomicInteger();
-        final AtomicBoolean javaSerializationMarshaller = new AtomicBoolean();
         runReadWriteTest(new ReadWriteTest() {
             public void configure(final MarshallingConfiguration configuration) throws Throwable {
                 configuration.setClassExternalizerFactory(new ClassExternalizerFactory() {
@@ -2348,9 +2325,6 @@ public final class SimpleMarshallerTests extends TestBase {
             }
 
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                if (marshaller instanceof JavaSerializationMarshaller) {
-                    javaSerializationMarshaller.set(true);
-                }
                 marshaller.writeObject(map);
                 marshaller.writeObject(map);
             }
@@ -2358,9 +2332,6 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 if ((unmarshaller instanceof RiverUnmarshaller) && version.get() < 1) {
                     throw new SkipException("River v0 can't detect eof on each object");
-                }
-                if ((unmarshaller instanceof ObjectInputStreamUnmarshaller) && javaSerializationMarshaller.get()) {
-                    throw new SkipException("JavaSerializationMarshaller does not support writing Externalizer objects to regular ObjectInputStream");
                 }
                 final Object m1 = unmarshaller.readObject();
                 assertEquals(HashMap.class, m1.getClass());

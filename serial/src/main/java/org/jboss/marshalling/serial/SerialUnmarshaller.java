@@ -489,6 +489,12 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     throw new StreamCorruptedException("Backreference was not a resolved class descriptor");
                 }
             }
+            case TC_EXCEPTION: {
+                clearInstanceCache();
+                final IOException ex = (IOException) doReadObject(false);
+                clearInstanceCache();
+                throw new WriteAbortedException("Write aborted", ex);
+            }
             default:
                 throw badLeadByte(leadByte);
         }

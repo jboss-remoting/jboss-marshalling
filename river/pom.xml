@@ -28,7 +28,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jbmar.version>1.3.0.CR1</jbmar.version>
+        <jbmar.version>1.3.0.CR2-SNAPSHOT</jbmar.version>
     </properties>
 
     <name>JBoss Marshalling River</name>

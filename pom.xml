@@ -41,7 +41,6 @@
         <module>api</module>
         <module>river</module>
         <module>serial</module>
-        <module>serialization-java</module>
         <module>tests</module>
     </modules>
 

@@ -354,6 +354,22 @@ public abstract class AbstractMarshaller implements Marshaller {
         }
     }
 
+    /**
+     * This shallow flush will write the internal buffer out to the {@code ByteOutput}, but will not flush it.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    protected void shallowFlush() throws IOException {
+        final int pos = position;
+        final ByteOutput byteOutput = this.byteOutput;
+        if (byteOutput != null) {
+            if (pos > 0) {
+                byteOutput.write(buffer, 0, pos);
+            }
+            position = 0;
+        }
+    }
+
     /** {@inheritDoc} */
     public void close() throws IOException {
         finish();

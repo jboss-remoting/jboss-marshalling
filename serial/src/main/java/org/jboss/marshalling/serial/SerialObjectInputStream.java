@@ -107,16 +107,35 @@ public final class SerialObjectInputStream extends MarshallerObjectInputStream {
         if (state != State.NEW) {
             throw new IllegalStateException("Fields may not be read now");
         }
+        final BlockUnmarshaller blockUnmarshaller = serialUnmarshaller.getBlockUnmarshaller();
+        final int cnt = blockUnmarshaller.available();
+        if (cnt == -1) {
+            blockUnmarshaller.unblock();
+        }
         state = State.ON;
         currentDescriptor.defaultReadFields(serialUnmarshaller, currentSubject);
+        if (cnt == -1) {
+            blockUnmarshaller.endOfStream();
+        }
     }
 
     public GetField readFields() throws IOException, ClassNotFoundException {
         if (state != State.NEW) {
             throw new IllegalStateException("Fields may not be read now");
         }
+        final BlockUnmarshaller blockUnmarshaller = serialUnmarshaller.getBlockUnmarshaller();
+        final int cnt = blockUnmarshaller.available();
+        if (cnt == -1) {
+            blockUnmarshaller.unblock();
+        }
         state = State.ON;
-        return currentDescriptor.getField(serialUnmarshaller, currentSerializableClass);
+        try {
+            return currentDescriptor.getField(serialUnmarshaller, currentSerializableClass);
+        } finally {
+            if (cnt == -1) {
+                blockUnmarshaller.endOfStream();
+            }
+        }
     }
 
     public void registerValidation(final ObjectInputValidation obj, final int prio) throws NotActiveException, InvalidObjectException {

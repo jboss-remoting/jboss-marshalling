@@ -150,7 +150,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 objClass = obj.getClass();
-                id = (configuredVersion >= 3 ? BASIC_CLASSES_V3 : configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
+                id = getBasicClasses(configuredVersion).get(objClass, -1);
                 // First, non-replaceable classes
                 if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
@@ -990,6 +990,15 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
+    private static IdentityIntMap<Class<?>> getBasicClasses(final int configuredVersion) {
+        switch (configuredVersion) {
+            case 1: return BASIC_CLASSES_V1;
+            case 2: return BASIC_CLASSES_V2;
+            case 3: return BASIC_CLASSES_V3;
+            default: return BASIC_CLASSES_V1;
+        }
+    }
+
     private static Class<? extends Enum> getEnumMapKeyType(final Object obj) {
         return getAccessableEnumFieldValue(ENUM_MAP_KEY_TYPE_FIELD, obj);
     }
@@ -1234,7 +1243,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    private static final IdentityIntMap<Class<?>> BASIC_CLASSES;
+    private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V1;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V3;
 
@@ -1281,7 +1290,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(long[].class, ID_LONG_ARRAY_CLASS);
         map.put(short[].class, ID_SHORT_ARRAY_CLASS);
 
-        BASIC_CLASSES = map.clone();
+        BASIC_CLASSES_V1 = map.clone();
 
         map.put(ArrayList.class, ID_CC_ARRAY_LIST);
         map.put(LinkedList.class, ID_CC_LINKED_LIST);
@@ -1403,7 +1412,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected boolean writeKnownClass(final Class<?> objClass) throws IOException {
         final int configuredVersion = this.configuredVersion;
-        int i = (configuredVersion >= 3 ? BASIC_CLASSES_V3 : configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES).get(objClass, -1);
+        int i = getBasicClasses(configuredVersion).get(objClass, -1);
         if (i != -1) {
             write(i);
             return true;

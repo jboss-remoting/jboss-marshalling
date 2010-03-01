@@ -54,11 +54,6 @@
             <version>${jbmar.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.marshalling</groupId>
-            <artifactId>serialization-java</artifactId>
-            <version>${jbmar.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <classifier>jdk15</classifier>

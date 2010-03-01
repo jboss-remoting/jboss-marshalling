@@ -252,11 +252,12 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     if ((descriptor.getFlags() & (SC_SERIALIZABLE | SC_EXTERNALIZABLE)) == 0) {
                         throw new NotSerializableException(descriptor.getClass().getName());
                     }
-                    final Object obj = creator.create(descriptor.getType());
-                    final int idx = instanceCache.size();
-                    instanceCache.add(unshared ? UNSHARED : obj);
-                    
+                    final Object obj;
+                    final int idx;
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
+                        obj = externalizedCreator.create(descriptor.getType());
+                        idx = instanceCache.size();
+                        instanceCache.add(unshared ? UNSHARED : obj);
                         if (obj instanceof Externalizable) {
                             final Externalizable externalizable = (Externalizable) obj;
                             if ((descriptor.getFlags() & SC_BLOCK_DATA) != 0) {
@@ -270,9 +271,13 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         } else {
                             throw new InvalidObjectException("Created object should be Externalizable but it is not");
                         }
-                    } else if (obj instanceof Externalizable) {
-                        throw new InvalidObjectException("Created object should not be Externalizable but it is");
                     } else {
+                        obj = serializedCreator.create(descriptor.getType());
+                        if (obj instanceof Externalizable) {
+                            throw new InvalidObjectException("Created object should not be Externalizable but it is");
+                        }
+                        idx = instanceCache.size();
+                        instanceCache.add(unshared ? UNSHARED : obj);
                         doReadSerialObject(descriptor, obj);
                     }
                     final SerializableClass sc = registry.lookup(obj.getClass());

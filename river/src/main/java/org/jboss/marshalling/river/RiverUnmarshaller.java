@@ -1191,7 +1191,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             switch (classType) {
                 case ID_PROXY_CLASS: {
                     final Class<?> type = descriptor.getType();
-                    final Object obj = createProxyInstance(creator, type);
+                    final Object obj = createProxyInstance(serializedCreator, type);
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     try {
@@ -1212,7 +1212,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                     final Class<?> type = descriptor.getType();
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                    final Object obj = creator.create(type);
+                    final Object obj = serializedCreator.create(type);
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     doInitSerializable(obj, serializableClassDescriptor);
@@ -1227,7 +1227,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_EXTERNALIZABLE_CLASS: {
                     final Class<?> type = descriptor.getType();
                     final SerializableClass serializableClass = registry.lookup(type);
-                    final Externalizable obj = (Externalizable) creator.create(type);
+                    final Externalizable obj = (Externalizable) externalizedCreator.create(type);
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
@@ -1250,7 +1250,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClass serializableClass = registry.lookup(type);
                     final Object obj;
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj = externalizer.createExternal(type, blockUnmarshaller, creator);
+                    obj = externalizer.createExternal(type, blockUnmarshaller, externalizedCreator);
                     instanceCache.set(idx, obj);
                     externalizer.readExternal(obj, blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();

@@ -32,6 +32,8 @@ public final class MarshallingConfiguration implements Cloneable {
     private ClassResolver classResolver;
     private ObjectResolver objectResolver;
     private Creator creator;
+    private Creator externalizedCreator;
+    private Creator serializedCreator;
     private ClassTable classTable;
     private ObjectTable objectTable;
     private ExceptionListener exceptionListener;
@@ -119,19 +121,25 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
-     * Get the object creator, or {@code null} if none is specified.
+     * Get the object creator, or {@code null} if none is specified.  Used only if a more specific creator type
+     * was not specified.
      *
+     * @deprecated Use {@link #getExternalizedCreator()} or {@link #getSerializedCreator()} instead.
      * @return the object creator
      */
+    @Deprecated
     public Creator getCreator() {
         return creator;
     }
 
     /**
-     * Set the object creator, or {@code null} to use the default.
+     * Set the object creator, or {@code null} to use the default.  Used only if a more specific creator type
+     * was not specified.
      *
+     * @deprecated Use {@link #setExternalizedCreator(Creator)} or {@link #setSerializedCreator(Creator)} instead.
      * @param creator the object creator
      */
+    @Deprecated
     public void setCreator(final Creator creator) {
         this.creator = creator;
     }
@@ -263,6 +271,46 @@ public final class MarshallingConfiguration implements Cloneable {
      */
     public void setExceptionListener(final ExceptionListener exceptionListener) {
         this.exceptionListener = exceptionListener;
+    }
+
+    /**
+     * Get the creator to use for externalized objects.  If none was configured, returns the result of
+     * {@link #getCreator()}.
+     *
+     * @return the creator
+     */
+    public Creator getExternalizedCreator() {
+        final Creator result = externalizedCreator;
+        return result == null ? creator : result;
+    }
+
+    /**
+     * Set the creator to use for externalized objects.
+     *
+     * @param externalizedCreator the creator
+     */
+    public void setExternalizedCreator(final Creator externalizedCreator) {
+        this.externalizedCreator = externalizedCreator;
+    }
+
+    /**
+     * Get the creator to use for serialized objects.  If none was configured, returns the result of
+     * {@link #getCreator()}.
+     *
+     * @return the creator
+     */
+    public Creator getSerializedCreator() {
+        final Creator result = serializedCreator;
+        return result == null ? creator : result;
+    }
+
+    /**
+     * Set the creator to use for serialized objects.
+     *
+     * @param serializedCreator the creator
+     */
+    public void setSerializedCreator(final Creator serializedCreator) {
+        this.serializedCreator = serializedCreator;
     }
 
     /**

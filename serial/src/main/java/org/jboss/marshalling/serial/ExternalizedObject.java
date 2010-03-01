@@ -32,10 +32,10 @@ import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.Creator;
 
 /**
- * An externalized object.  This wrapper allows an object that was written with an {@code Externalizer} to be
- * read by standard Java serialization.  Note that if an externalized object's child object graph ever refers
- * to the original object, there will be an error in the reconstructed object graph such that those references
- * will refer to this wrapper object rather than the properly externalized object.
+ * An externalized object.  This wrapper allows an object that was written with an {@code Externalizer} to be read by
+ * standard Java serialization.  Note that if an externalized object's child object graph ever refers to the original
+ * object, there will be an error in the reconstructed object graph such that those references will refer to this
+ * wrapper object rather than the properly externalized object.
  */
 public final class ExternalizedObject implements Externalizable, Creator {
 
@@ -52,17 +52,21 @@ public final class ExternalizedObject implements Externalizable, Creator {
         this.obj = obj;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void writeExternal(final ObjectOutput out) throws IOException {
-    	out.writeObject(obj.getClass());
+        out.writeObject(obj.getClass());
         out.writeObject(externalizer);
         externalizer.writeExternal(obj, out);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-    	Class<?> subject = (Class<?>)in.readObject();
-    	externalizer = (Externalizer) in.readObject();
+        Class<?> subject = (Class<?>) in.readObject();
+        externalizer = (Externalizer) in.readObject();
         final Object o = externalizer.createExternal(subject, in, this);
         externalizer.readExternal(o, in);
         obj = o;
@@ -72,13 +76,16 @@ public final class ExternalizedObject implements Externalizable, Creator {
      * Return the externalized object after {@code readExternal()} completes.
      *
      * @return the externalized object
+     *
      * @throws ObjectStreamException never
      */
-    private Object readResolve() throws ObjectStreamException {
+    protected Object readResolve() {
         return obj;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public <T> T create(final Class<T> clazz) throws InvalidClassException {
         try {
             return clazz.newInstance();

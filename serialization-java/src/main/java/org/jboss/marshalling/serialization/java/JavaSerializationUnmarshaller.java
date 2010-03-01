@@ -81,10 +81,10 @@ public class JavaSerializationUnmarshaller extends AbstractUnmarshaller
            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                public Void run() throws IOException {
                    if (streamHeader == null) {
-                      jsis = new JavaSerializationInputStream(JavaSerializationUnmarshaller.this, classResolver, classTable, objectResolver, objectTable, creator);
+                      jsis = new JavaSerializationInputStream(JavaSerializationUnmarshaller.this, classResolver, classTable, objectResolver, objectTable, serializedCreator);
                    }
                    else {
-                      jsis = new JavaSerializationInputStream(JavaSerializationUnmarshaller.this, streamHeader, classResolver, classTable, objectResolver, objectTable, creator);
+                      jsis = new JavaSerializationInputStream(JavaSerializationUnmarshaller.this, streamHeader, classResolver, classTable, objectResolver, objectTable, serializedCreator);
                       jsis.completeConstruction();
                    }
                    return null;

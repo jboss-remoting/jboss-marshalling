@@ -39,8 +39,10 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
     protected final ClassResolver classResolver;
     /** The configured object resolver. */
     protected final ObjectResolver objectResolver;
-    /** The configured object creator. */
-    protected final Creator creator;
+    /** The configured serialized object creator. */
+    protected final Creator serializedCreator;
+    /** The configured serialized object creator. */
+    protected final Creator externalizedCreator;
     /** The configured class table. */
     protected final ClassTable classTable;
     /** The configured object table. */
@@ -67,8 +69,10 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
         this.classResolver = classResolver == null ? marshallerFactory.getDefaultClassResolver() : classResolver;
         final ObjectResolver objectResolver = configuration.getObjectResolver();
         this.objectResolver = objectResolver == null ? marshallerFactory.getDefaultObjectResolver() : objectResolver;
-        final Creator creator = configuration.getCreator();
-        this.creator = creator == null ? marshallerFactory.getDefaultCreator() : creator;
+        final Creator serializedCreator = configuration.getSerializedCreator();
+        this.serializedCreator = serializedCreator == null ? marshallerFactory.getDefaultSerializedCreator() : serializedCreator;
+        final Creator externalizedCreator = configuration.getExternalizedCreator();
+        this.externalizedCreator = externalizedCreator == null ? marshallerFactory.getDefaultExternalizedCreator() : externalizedCreator;
         final ClassTable classTable = configuration.getClassTable();
         this.classTable = classTable == null ? marshallerFactory.getDefaultClassTable() : classTable;
         final ObjectTable objectTable = configuration.getObjectTable();

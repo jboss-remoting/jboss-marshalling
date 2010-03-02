@@ -120,22 +120,17 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 final int rid;
                 if (! unshared && (rid = instanceCache.get(obj, -1)) != -1) {
-                    if (configuredVersion >= 2) {
-                        final int diff = rid - instanceSeq;
-                        if (diff >= -256) {
-                            write(ID_REPEAT_OBJECT_NEAR);
-                            write(diff);
-                        } else if (diff >= -65536) {
-                            write(ID_REPEAT_OBJECT_NEARISH);
-                            writeShort(diff);
-                        } else {
-                            write(ID_REPEAT_OBJECT_FAR);
-                            writeInt(rid);
-                        }
-                        return;
+                    final int diff = rid - instanceSeq;
+                    if (diff >= -256) {
+                        write(ID_REPEAT_OBJECT_NEAR);
+                        write(diff);
+                    } else if (diff >= -65536) {
+                        write(ID_REPEAT_OBJECT_NEARISH);
+                        writeShort(diff);
+                    } else {
+                        write(ID_REPEAT_OBJECT_FAR);
+                        writeInt(rid);
                     }
-                    write(ID_REPEAT_OBJECT_FAR);
-                    writeInt(rid);
                     return;
                 }
                 final ObjectTable.Writer objectTableWriter;
@@ -154,34 +149,32 @@ public class RiverMarshaller extends AbstractMarshaller {
                 // First, non-replaceable classes
                 if (id == ID_CLASS_CLASS) {
                     final Class<?> classObj = (Class<?>) obj;
-                    if (configuredVersion >= 2) {
-                        // In V2, if a class is one we have an entry for, we just write that byte directly.
-                        // These guys can't be written directly though, otherwise they'll get confused with the objects
-                        // of the corresponding type.
-                        final int cid = BASIC_CLASSES_V2.get(classObj, -1);
-                        switch (cid) {
-                            case -1:
-                            case ID_SINGLETON_MAP_OBJECT:
-                            case ID_SINGLETON_SET_OBJECT:
-                            case ID_SINGLETON_LIST_OBJECT:
-                            case ID_EMPTY_MAP_OBJECT:
-                            case ID_EMPTY_SET_OBJECT:
-                            case ID_EMPTY_LIST_OBJECT: {
-                                 break;
-                            }
+                    // If a class is one we have an entry for, we just write that byte directly.
+                    // These guys can't be written directly though, otherwise they'll get confused with the objects
+                    // of the corresponding type.
+                    final int cid = BASIC_CLASSES_V2.get(classObj, -1);
+                    switch (cid) {
+                        case -1:
+                        case ID_SINGLETON_MAP_OBJECT:
+                        case ID_SINGLETON_SET_OBJECT:
+                        case ID_SINGLETON_LIST_OBJECT:
+                        case ID_EMPTY_MAP_OBJECT:
+                        case ID_EMPTY_SET_OBJECT:
+                        case ID_EMPTY_LIST_OBJECT: {
+                            // If the class is one of the above special object types, then we write a
+                            // full NEW_OBJECT+CLASS_CLASS header followed by the class byte, or if there is none, write
+                            // the full class descriptor.
+                            write(ID_NEW_OBJECT);
+                            writeClassClass(classObj);
+                            return;
+                        }
 
-                            default: {
-                                write(cid);
-                                return;
-                            }
+                        default: {
+                            write(cid);
+                            return;
                         }
                     }
-                    // If we're V1, or the class is one of the above special object types, then we write a
-                    // full NEW_OBJECT+CLASS_CLASS header followed by the class byte, or if there is none, write
-                    // the full class descriptor.
-                    write(ID_NEW_OBJECT);
-                    writeClassClass(classObj);
-                    return;
+                    // not reached
                 }
                 isEnum = obj instanceof Enum;
                 isArray = objClass.isArray();
@@ -221,117 +214,63 @@ public class RiverMarshaller extends AbstractMarshaller {
             // Now replaceable classes
             switch (id) {
                 case ID_BYTE_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_BYTE_OBJECT);
-                        writeByte(((Byte) obj).byteValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_BYTE_CLASS);
-                        writeByte(((Byte) obj).byteValue());
-                    }
+                    write(ID_BYTE_OBJECT);
+                    writeByte(((Byte) obj).byteValue());
                     return;
                 }
                 case ID_BOOLEAN_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(((Boolean) obj).booleanValue() ? ID_BOOLEAN_OBJECT_TRUE : ID_BOOLEAN_OBJECT_FALSE);
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_BOOLEAN_CLASS);
-                        writeBoolean(((Boolean) obj).booleanValue());
-                    }
+                    write(((Boolean) obj).booleanValue() ? ID_BOOLEAN_OBJECT_TRUE : ID_BOOLEAN_OBJECT_FALSE);
                     return;
                 }
                 case ID_CHARACTER_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_CHARACTER_OBJECT);
-                        writeChar(((Character) obj).charValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_CHARACTER_CLASS);
-                        writeChar(((Character) obj).charValue());
-                    }
+                    write(ID_CHARACTER_OBJECT);
+                    writeChar(((Character) obj).charValue());
                     return;
                 }
                 case ID_DOUBLE_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_DOUBLE_OBJECT);
-                        writeDouble(((Double) obj).doubleValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_DOUBLE_CLASS);
-                        writeDouble(((Double) obj).doubleValue());
-                    }
+                    write(ID_DOUBLE_OBJECT);
+                    writeDouble(((Double) obj).doubleValue());
                     return;
                 }
                 case ID_FLOAT_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_FLOAT_OBJECT);
-                        writeFloat(((Float) obj).floatValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_FLOAT_CLASS);
-                        writeFloat(((Float) obj).floatValue());
-                    }
+                    write(ID_FLOAT_OBJECT);
+                    writeFloat(((Float) obj).floatValue());
                     return;
                 }
                 case ID_INTEGER_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_INTEGER_OBJECT);
-                        writeInt(((Integer) obj).intValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_INTEGER_CLASS);
-                        writeInt(((Integer) obj).intValue());
-                    }
+                    write(ID_INTEGER_OBJECT);
+                    writeInt(((Integer) obj).intValue());
                     return;
                 }
                 case ID_LONG_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_LONG_OBJECT);
-                        writeLong(((Long) obj).longValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_LONG_CLASS);
-                        writeLong(((Long) obj).longValue());
-                    }
+                    write(ID_LONG_OBJECT);
+                    writeLong(((Long) obj).longValue());
                     return;
                 }
                 case ID_SHORT_CLASS: {
-                    if (configuredVersion >= 2) {
-                        write(ID_SHORT_OBJECT);
-                        writeShort(((Short) obj).shortValue());
-                    } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_SHORT_CLASS);
-                        writeShort(((Short) obj).shortValue());
-                    }
+                    write(ID_SHORT_OBJECT);
+                    writeShort(((Short) obj).shortValue());
                     return;
                 }
                 case ID_STRING_CLASS: {
                     final String string = (String) obj;
-                    if (configuredVersion >= 2) {
-                        final int len = string.length();
-                        if (len == 0) {
-                            write(ID_STRING_EMPTY);
-                            // don't cache empty strings
-                            return;
-                        } else if (len <= 256) {
-                            write(ID_STRING_SMALL);
-                            write(len);
-                        } else if (len <= 65336) {
-                            write(ID_STRING_MEDIUM);
-                            writeShort(len);
-                        } else {
-                            write(ID_STRING_LARGE);
-                            writeInt(len);
-                        }
-                        shallowFlush();
-                        UTFUtils.writeUTFBytes(byteOutput, string);
+                    final int len = string.length();
+                    if (len == 0) {
+                        write(ID_STRING_EMPTY);
+                        // don't cache empty strings
+                        return;
+                    } else if (len <= 256) {
+                        write(ID_STRING_SMALL);
+                        write(len);
+                    } else if (len <= 65336) {
+                        write(ID_STRING_MEDIUM);
+                        writeShort(len);
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_STRING_CLASS);
-                        writeString(string);
+                        write(ID_STRING_LARGE);
+                        writeInt(len);
                     }
+                    shallowFlush();
+                    UTFUtils.writeUTFBytes(byteOutput, string);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                         instanceSeq++;
@@ -346,30 +285,23 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final byte[] bytes = (byte[]) obj;
                     final int len = bytes.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_BYTE);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_BYTE);
-                            write(bytes, 0, len);
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_BYTE);
-                            write(bytes, 0, len);
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_BYTE);
-                            write(bytes, 0, len);
-                        }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_BYTE);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_BYTE);
+                        write(bytes, 0, len);
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_BYTE);
+                        write(bytes, 0, len);
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_BYTE_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_BYTE);
                         write(bytes, 0, len);
                     }
                     if (unshared) {
@@ -383,30 +315,23 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final boolean[] booleans = (boolean[]) obj;
                     final int len = booleans.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_BOOLEAN);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_BOOLEAN);
-                            writeBooleanArray(booleans);
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_BOOLEAN);
-                            writeBooleanArray(booleans);
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_BOOLEAN);
-                            writeBooleanArray(booleans);
-                        }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_BOOLEAN);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_BOOLEAN);
+                        writeBooleanArray(booleans);
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_BOOLEAN);
+                        writeBooleanArray(booleans);
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_BOOLEAN_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_BOOLEAN);
                         writeBooleanArray(booleans);
                     }
                     if (unshared) {
@@ -420,36 +345,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final char[] chars = (char[]) obj;
                     final int len = chars.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_CHAR);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_CHAR);
-                            for (int i = 0; i < len; i ++) {
-                                writeChar(chars[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_CHAR);
-                            for (int i = 0; i < len; i ++) {
-                                writeChar(chars[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_CHAR);
-                            for (int i = 0; i < len; i ++) {
-                                writeChar(chars[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_CHAR);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_CHAR);
+                        for (int i = 0; i < len; i ++) {
+                            writeChar(chars[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_CHAR);
+                        for (int i = 0; i < len; i ++) {
+                            writeChar(chars[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_CHAR_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_CHAR);
                         for (int i = 0; i < len; i ++) {
                             writeChar(chars[i]);
                         }
@@ -465,36 +381,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final short[] shorts = (short[]) obj;
                     final int len = shorts.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_SHORT);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_SHORT);
-                            for (int i = 0; i < len; i ++) {
-                                writeShort(shorts[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_SHORT);
-                            for (int i = 0; i < len; i ++) {
-                                writeShort(shorts[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_SHORT);
-                            for (int i = 0; i < len; i ++) {
-                                writeShort(shorts[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_SHORT);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_SHORT);
+                        for (int i = 0; i < len; i ++) {
+                            writeShort(shorts[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_SHORT);
+                        for (int i = 0; i < len; i ++) {
+                            writeShort(shorts[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_SHORT_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_SHORT);
                         for (int i = 0; i < len; i ++) {
                             writeShort(shorts[i]);
                         }
@@ -510,36 +417,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final int[] ints = (int[]) obj;
                     final int len = ints.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_INT);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_INT);
-                            for (int i = 0; i < len; i ++) {
-                                writeInt(ints[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_INT);
-                            for (int i = 0; i < len; i ++) {
-                                writeInt(ints[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_INT);
-                            for (int i = 0; i < len; i ++) {
-                                writeInt(ints[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_INT);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_INT);
+                        for (int i = 0; i < len; i ++) {
+                            writeInt(ints[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_INT);
+                        for (int i = 0; i < len; i ++) {
+                            writeInt(ints[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_INT_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_INT);
                         for (int i = 0; i < len; i ++) {
                             writeInt(ints[i]);
                         }
@@ -555,36 +453,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final long[] longs = (long[]) obj;
                     final int len = longs.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_LONG);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_LONG);
-                            for (int i = 0; i < len; i ++) {
-                                writeLong(longs[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_LONG);
-                            for (int i = 0; i < len; i ++) {
-                                writeLong(longs[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_LONG);
-                            for (int i = 0; i < len; i ++) {
-                                writeLong(longs[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_LONG);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_LONG);
+                        for (int i = 0; i < len; i ++) {
+                            writeLong(longs[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_LONG);
+                        for (int i = 0; i < len; i ++) {
+                            writeLong(longs[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_LONG_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_LONG);
                         for (int i = 0; i < len; i ++) {
                             writeLong(longs[i]);
                         }
@@ -600,36 +489,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     final float[] floats = (float[]) obj;
                     final int len = floats.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_FLOAT);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_FLOAT);
-                            for (int i = 0; i < len; i ++) {
-                                writeFloat(floats[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_FLOAT);
-                            for (int i = 0; i < len; i ++) {
-                                writeFloat(floats[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_FLOAT);
-                            for (int i = 0; i < len; i ++) {
-                                writeFloat(floats[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_FLOAT);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_FLOAT);
+                        for (int i = 0; i < len; i ++) {
+                            writeFloat(floats[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_FLOAT);
+                        for (int i = 0; i < len; i ++) {
+                            writeFloat(floats[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_FLOAT_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_FLOAT);
                         for (int i = 0; i < len; i ++) {
                             writeFloat(floats[i]);
                         }
@@ -643,36 +523,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                     instanceCache.put(obj, instanceSeq++);
                     final double[] doubles = (double[]) obj;
                     final int len = doubles.length;
-                    if (configuredVersion >= 2) {
-                        if (len == 0) {
-                            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                            write(ID_PRIM_DOUBLE);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                            write(len);
-                            write(ID_PRIM_DOUBLE);
-                            for (int i = 0; i < len; i ++) {
-                                writeDouble(doubles[i]);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                            writeShort(len);
-                            write(ID_PRIM_DOUBLE);
-                            for (int i = 0; i < len; i ++) {
-                                writeDouble(doubles[i]);
-                            }
-                        } else {
-                            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                            writeInt(len);
-                            write(ID_PRIM_DOUBLE);
-                            for (int i = 0; i < len; i ++) {
-                                writeDouble(doubles[i]);
-                            }
+                    if (len == 0) {
+                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                        write(ID_PRIM_DOUBLE);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                        write(len);
+                        write(ID_PRIM_DOUBLE);
+                        for (int i = 0; i < len; i ++) {
+                            writeDouble(doubles[i]);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                        writeShort(len);
+                        write(ID_PRIM_DOUBLE);
+                        for (int i = 0; i < len; i ++) {
+                            writeDouble(doubles[i]);
                         }
                     } else {
-                        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                        write(ID_DOUBLE_ARRAY_CLASS);
+                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                         writeInt(len);
+                        write(ID_PRIM_DOUBLE);
                         for (int i = 0; i < len; i ++) {
                             writeDouble(doubles[i]);
                         }
@@ -882,36 +753,27 @@ public class RiverMarshaller extends AbstractMarshaller {
                 instanceCache.put(obj, instanceSeq++);
                 final Object[] objects = (Object[]) obj;
                 final int len = objects.length;
-                if (configuredVersion >= 2) {
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        writeClass(objClass.getComponentType());
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        writeClass(objClass.getComponentType());
-                        for (int i = 0; i < len; i++) {
-                            doWriteObject(objects[i], unshared);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        writeClass(objClass.getComponentType());
-                        for (int i = 0; i < len; i++) {
-                            doWriteObject(objects[i], unshared);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        writeClass(objClass.getComponentType());
-                        for (int i = 0; i < len; i++) {
-                            doWriteObject(objects[i], unshared);
-                        }
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    writeClass(objClass.getComponentType());
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    writeClass(objClass.getComponentType());
+                    for (int i = 0; i < len; i++) {
+                        doWriteObject(objects[i], unshared);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    writeClass(objClass.getComponentType());
+                    for (int i = 0; i < len; i++) {
+                        doWriteObject(objects[i], unshared);
                     }
                 } else {
-                    write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                    writeObjectArrayClass(objClass);
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                     writeInt(len);
+                    writeClass(objClass.getComponentType());
                     for (int i = 0; i < len; i++) {
                         doWriteObject(objects[i], unshared);
                     }
@@ -991,20 +853,15 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     private static IdentityIntMap<Class<?>> getBasicClasses(final int configuredVersion) {
-        switch (configuredVersion) {
-            case 1: return BASIC_CLASSES_V1;
-            case 2: return BASIC_CLASSES_V2;
-            case 3: return BASIC_CLASSES_V3;
-            default: return BASIC_CLASSES_V1;
-        }
+        return configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES_V3;
     }
 
     private static Class<? extends Enum> getEnumMapKeyType(final Object obj) {
-        return getAccessableEnumFieldValue(ENUM_MAP_KEY_TYPE_FIELD, obj);
+        return getAccessibleEnumFieldValue(ENUM_MAP_KEY_TYPE_FIELD, obj);
     }
 
     private static Class<? extends Enum> getEnumSetElementType(final Object obj) {
-        return getAccessableEnumFieldValue(ENUM_SET_ELEMENT_TYPE_FIELD, obj);
+        return getAccessibleEnumFieldValue(ENUM_SET_ELEMENT_TYPE_FIELD, obj);
     }
 
     private static Enum[] getEnumSetElements(final Object obj) {
@@ -1016,7 +873,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    private static Class<? extends Enum> getAccessableEnumFieldValue(final Field field, final Object obj) {
+    private static Class<? extends Enum> getAccessibleEnumFieldValue(final Field field, final Object obj) {
         try {
             return ((Class<?>) field.get(obj)).asSubclass(Enum.class);
         } catch (IllegalAccessException e) {
@@ -1221,7 +1078,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(ID_ENUM_TYPE_CLASS);
             writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
-            doAnnotateClass(objClass);
+            classResolver.annotateClass(this, objClass);
         }
     }
 
@@ -1243,7 +1100,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V1;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V3;
 
@@ -1289,8 +1145,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(int[].class, ID_INT_ARRAY_CLASS);
         map.put(long[].class, ID_LONG_ARRAY_CLASS);
         map.put(short[].class, ID_SHORT_ARRAY_CLASS);
-
-        BASIC_CLASSES_V1 = map.clone();
 
         map.put(ArrayList.class, ID_CC_ARRAY_LIST);
         map.put(LinkedList.class, ID_CC_LINKED_LIST);
@@ -1395,7 +1249,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             } else {
                 write(ID_PLAIN_CLASS);
                 writeString(classResolver.getClassName(objClass));
-                doAnnotateClass(objClass);
+                classResolver.annotateClass(this, objClass);
                 classCache.put(objClass, classSeq++);
             }
         }
@@ -1419,19 +1273,17 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
         i = classCache.get(objClass, -1);
         if (i != -1) {
-            if (configuredVersion >= 2) {
-                final int diff = i - classSeq;
-                if (diff >= -256) {
-                    write(ID_REPEAT_CLASS_NEAR);
-                    write(diff);
-                } else if (diff >= -65536) {
-                    write(ID_REPEAT_CLASS_NEARISH);
-                    writeShort(diff);
-                }
-                return true;
+            final int diff = i - classSeq;
+            if (diff >= -256) {
+                write(ID_REPEAT_CLASS_NEAR);
+                write(diff);
+            } else if (diff >= -65536) {
+                write(ID_REPEAT_CLASS_NEARISH);
+                writeShort(diff);
+            } else {
+                write(ID_REPEAT_CLASS_FAR);
+                writeInt(i);
             }
-            write(ID_REPEAT_CLASS_FAR);
-            writeInt(i);
             return true;
         }
         return false;
@@ -1459,7 +1311,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeString(classResolver.getClassName(objClass));
             writeLong(info.getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
-            doAnnotateClass(objClass);
+            classResolver.annotateClass(this, objClass);
             final SerializableField[] fields = info.getFields();
             final int cnt = fields.length;
             writeInt(cnt);
@@ -1494,7 +1346,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeString(classResolver.getClassName(objClass));
             writeLong(registry.lookup(objClass).getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
-            doAnnotateClass(objClass);
+            classResolver.annotateClass(this, objClass);
         }
     }
 
@@ -1514,18 +1366,9 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(ID_EXTERNALIZER_CLASS);
             writeString(classResolver.getClassName(objClass));
             classCache.put(objClass, classSeq++);
-            doAnnotateClass(objClass);
-        }
-        writeObject(externalizer);
-    }
-
-    protected void doAnnotateClass(final Class<?> objClass) throws IOException {
-        if (configuredVersion == 1) {
-            classResolver.annotateClass(getBlockMarshaller(), objClass);
-            writeEndBlock();
-        } else {
             classResolver.annotateClass(this, objClass);
         }
+        writeObject(externalizer);
     }
 
     public void clearInstanceCache() throws IOException {

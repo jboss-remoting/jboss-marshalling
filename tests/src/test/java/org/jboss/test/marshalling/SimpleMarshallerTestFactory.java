@@ -28,7 +28,6 @@ import org.testng.annotations.Test;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import static org.jboss.marshalling.Pair.create;
 import org.jboss.marshalling.Pair;
 import java.util.Collection;
@@ -47,9 +46,6 @@ public final class SimpleMarshallerTestFactory {
     public static Object[][] parameters() {
 
         final MarshallerFactory riverMarshallerFactory = Marshalling.getMarshallerFactory("river");
-        final TestMarshallerProvider riverTestMarshallerProviderV1 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 1);
-        final TestUnmarshallerProvider riverTestUnmarshallerProviderV1 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 1);
-
         final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 2);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 2);
 
@@ -65,14 +61,8 @@ public final class SimpleMarshallerTestFactory {
 
         @SuppressWarnings("unchecked")
         final List<Pair<TestMarshallerProvider, TestUnmarshallerProvider>> marshallerProviderPairs = Arrays.asList(
-                // river - v1 writer, v1 reader
-                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV1),
-                // river - v1 writer, v2 reader
-                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV2),
                 // river - v2 writer, v2 reader
                 create(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV2),
-                // river - v1 writer, v3 reader
-                create(riverTestMarshallerProviderV1, riverTestUnmarshallerProviderV3),
                 // river - v2 writer, v3 reader
                 create(riverTestMarshallerProviderV2, riverTestUnmarshallerProviderV3),
                 // river - v3 writer, v3 reader

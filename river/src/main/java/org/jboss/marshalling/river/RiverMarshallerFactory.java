@@ -59,6 +59,6 @@ public class RiverMarshallerFactory extends AbstractMarshallerFactory {
     }
 
     protected int getDefaultVersion() {
-        return 2;
+        return 3;
     }
 }

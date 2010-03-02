@@ -28,7 +28,7 @@ import java.util.Collections;
  *
  */
 public final class Protocol {
-    public static final int MIN_VERSION = 1;
+    public static final int MIN_VERSION = 2;
     public static final int MAX_VERSION = 3;
 
     public static final int ID_NULL                     = 0x01;

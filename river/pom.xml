@@ -34,13 +34,13 @@
     <name>JBoss Marshalling River</name>
     <description>JBoss Marshalling River Implementation</description>
     <groupId>org.jboss.marshalling</groupId>
-    <artifactId>river</artifactId>
+    <artifactId>jboss-marshalling-river</artifactId>
     <version>${jbmar.version}</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>marshalling-api</artifactId>
+            <artifactId>jboss-marshalling</artifactId>
             <version>${jbmar.version}</version>
         </dependency>
     </dependencies>

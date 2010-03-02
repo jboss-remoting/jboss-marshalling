@@ -40,17 +40,17 @@
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>marshalling-api</artifactId>
+            <artifactId>jboss-marshalling</artifactId>
             <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>river</artifactId>
+            <artifactId>jboss-marshalling-river</artifactId>
             <version>${jbmar.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>serial</artifactId>
+            <artifactId>jboss-marshalling-serial</artifactId>
             <version>${jbmar.version}</version>
         </dependency>
         <dependency>

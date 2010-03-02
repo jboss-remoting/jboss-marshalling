@@ -34,7 +34,7 @@
     <name>JBoss Marshalling API</name>
     <description>JBoss Marshalling API</description>
     <groupId>org.jboss.marshalling</groupId>
-    <artifactId>marshalling-api</artifactId>
+    <artifactId>jboss-marshalling</artifactId>
     <version>${jbmar.version}</version>
     <packaging>jar</packaging>
     <dependencies>

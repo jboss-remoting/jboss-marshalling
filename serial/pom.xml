@@ -34,13 +34,13 @@
     <name>JBoss Marshalling Serial</name>
     <description>JBoss Marshalling Serial Implementation</description>
     <groupId>org.jboss.marshalling</groupId>
-    <artifactId>serial</artifactId>
+    <artifactId>jboss-marshalling-serial</artifactId>
     <version>${jbmar.version}</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>marshalling-api</artifactId>
+            <artifactId>jboss-marshalling</artifactId>
             <version>${jbmar.version}</version>
         </dependency>
     </dependencies>

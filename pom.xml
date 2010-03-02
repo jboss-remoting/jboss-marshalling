@@ -34,7 +34,7 @@
     <name>JBoss Marshalling Parent</name>
     <description>JBoss Marshalling Parent POM</description>
     <groupId>org.jboss.marshalling</groupId>
-    <artifactId>jboss-marshalling</artifactId>
+    <artifactId>jboss-marshalling-parent</artifactId>
     <packaging>pom</packaging>
     <version>${jbmar.version}</version>
     <modules>

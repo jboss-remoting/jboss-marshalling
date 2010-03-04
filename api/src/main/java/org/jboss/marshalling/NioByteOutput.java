@@ -37,8 +37,6 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
 
     private final BufferWriter bufferWriterTask;
 
-    private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-
     /**
      * Construct a new instance.  The internal buffers will have a capacity of {@code bufferSize}.  The
      * given {@code bufferWriterTask} will be called to send buffers, flush the output stream, and handle the
@@ -108,7 +106,9 @@ public class NioByteOutput extends OutputStream implements ByteOutput {
             buffer.flip();
             send(buffer, eof);
         } else if (eof) {
-            send(EMPTY_BUFFER, eof);
+            final ByteBuffer buffer1 = getBuffer();
+            buffer1.flip();
+            send(buffer1, eof);
         }
     }
 

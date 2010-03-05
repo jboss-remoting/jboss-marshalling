@@ -119,18 +119,22 @@ public class SerializingCloner implements ObjectCloner {
     private final IdentityHashMap<Object, Object> clones = new IdentityHashMap<Object, Object>();
 
     public void reset() {
-        clones.clear();
+        synchronized (this) {
+            clones.clear();
+        }
     }
 
     public Object clone(final Object orig) throws IOException, ClassNotFoundException {
-        boolean ok = false;
-        try {
-            final Object clone = clone(orig, true);
-            ok = true;
-            return clone;
-        } finally {
-            if (! ok) {
-                reset();
+        synchronized (this) {
+            boolean ok = false;
+            try {
+                final Object clone = clone(orig, true);
+                ok = true;
+                return clone;
+            } finally {
+                if (! ok) {
+                    reset();
+                }
             }
         }
     }

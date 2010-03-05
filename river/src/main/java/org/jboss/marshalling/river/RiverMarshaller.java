@@ -60,6 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractMarshaller;
+import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
 import org.jboss.marshalling.Externalizer;
@@ -1390,8 +1391,8 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    protected void doStart() throws IOException {
-        super.doStart();
+    public void start(final ByteOutput byteOutput) throws IOException {
+        super.start(byteOutput);
         writeByte(configuredVersion);
     }
 

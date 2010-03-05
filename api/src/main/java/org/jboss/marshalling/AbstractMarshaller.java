@@ -23,13 +23,12 @@
 package org.jboss.marshalling;
 
 import java.io.IOException;
-import java.io.NotActiveException;
 
 /**
  * An abstract implementation of the {@code Marshaller} interface.  Most of the
  * write methods delegate directly to the current data output.
  */
-public abstract class AbstractMarshaller implements Marshaller {
+public abstract class AbstractMarshaller extends AbstractObjectOutput implements Marshaller {
 
     /** The configured class externalizer factory. */
     protected final ClassExternalizerFactory classExternalizerFactory;
@@ -51,8 +50,6 @@ public abstract class AbstractMarshaller implements Marshaller {
     protected final ExceptionListener exceptionListener;
     /** The configured version to write. */
     protected final int configuredVersion;
-    /** The current byte output. */
-    protected ByteOutput byteOutput;
 
     /**
      * Construct a new marshaller instance.
@@ -61,6 +58,7 @@ public abstract class AbstractMarshaller implements Marshaller {
      * @param configuration
      */
     protected AbstractMarshaller(final AbstractMarshallerFactory marshallerFactory, final MarshallingConfiguration configuration) {
+        super(calcBufferSize(marshallerFactory, configuration));
         final ClassExternalizerFactory classExternalizerFactory = configuration.getClassExternalizerFactory();
         this.classExternalizerFactory = classExternalizerFactory == null ? marshallerFactory.getDefaultClassExternalizerFactory() : classExternalizerFactory;
         final StreamHeader streamHeader = configuration.getStreamHeader();
@@ -81,335 +79,25 @@ public abstract class AbstractMarshaller implements Marshaller {
         this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
+    }
+
+    private static int calcBufferSize(final AbstractMarshallerFactory marshallerFactory, final MarshallingConfiguration configuration) {
         final int minBufSize = marshallerFactory.getMinimumBufferSize();
         final int bufferSize = configuration.getBufferSize();
-        this.bufferSize = bufferSize == -1 ? marshallerFactory.getDefaultBufferSize() : bufferSize < minBufSize ? minBufSize : bufferSize;
-    }
-
-    private static NotActiveException notActiveException() {
-        return new NotActiveException("Output not started");
-    }
-
-    protected final int bufferSize;
-    private byte[] buffer;
-    private int position;
-
-    /** {@inheritDoc} */
-    public void write(final int v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int position = this.position;
-            if (position == buffer.length) {
-                flush();
-                buffer[0] = (byte) v;
-                this.position = 1;
-            } else {
-                buffer[position] = (byte) v;
-                this.position = position + 1;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void write(final byte[] bytes) throws IOException {
-        write(bytes, 0, bytes.length);
-    }
-
-    /** {@inheritDoc} */
-    public void write(final byte[] bytes, final int off, int len) throws IOException {
-        final int bl = buffer.length;
-        final int position = this.position;
-        if (len > bl - position || len > bl >> 3) {
-            flush();
-            byteOutput.write(bytes, off, len);
-        } else {
-            System.arraycopy(bytes, off, buffer, position, len);
-            this.position = position + len;
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeBoolean(final boolean v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining == 0) {
-                flush();
-                buffer[0] = (byte) (v ? 1 : 0);
-                position = 1;
-            } else {
-                buffer[position++] = (byte) (v ? 1 : 0); 
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeByte(final int v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining == 0) {
-                flush();
-                buffer[0] = (byte) v;
-                position = 1;
-            } else {
-                buffer[position++] = (byte) v;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeShort(final int v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining < 2) {
-                flush();
-                buffer[0] = (byte) (v >> 8);
-                buffer[1] = (byte) v;
-                position = 2;
-            } else {
-                final int s = position;
-                position = s + 2;
-                buffer[s]   = (byte) (v >> 8);
-                buffer[s+1] = (byte) v;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeChar(final int v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining < 2) {
-                flush();
-                buffer[0] = (byte) (v >> 8);
-                buffer[1] = (byte) v;
-                position = 2;
-            } else {
-                final int s = position;
-                position = s + 2;
-                buffer[s]   = (byte) (v >> 8);
-                buffer[s+1] = (byte) v;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeInt(final int v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining < 4) {
-                flush();
-                buffer[0] = (byte) (v >> 24);
-                buffer[1] = (byte) (v >> 16);
-                buffer[2] = (byte) (v >> 8);
-                buffer[3] = (byte) v;
-                position = 4;
-            } else {
-                final int s = position;
-                position = s + 4;
-                buffer[s]   = (byte) (v >> 24);
-                buffer[s+1] = (byte) (v >> 16);
-                buffer[s+2] = (byte) (v >> 8);
-                buffer[s+3] = (byte) v;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeLong(final long v) throws IOException {
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining < 8) {
-                flush();
-                buffer[0] = (byte) (v >> 56L);
-                buffer[1] = (byte) (v >> 48L);
-                buffer[2] = (byte) (v >> 40L);
-                buffer[3] = (byte) (v >> 32L);
-                buffer[4] = (byte) (v >> 24L);
-                buffer[5] = (byte) (v >> 16L);
-                buffer[6] = (byte) (v >> 8L);
-                buffer[7] = (byte) v;
-                position = 8;
-            } else {
-                final int s = position;
-                position = s + 8;
-                buffer[s]   = (byte) (v >> 56L);
-                buffer[s+1] = (byte) (v >> 48L);
-                buffer[s+2] = (byte) (v >> 40L);
-                buffer[s+3] = (byte) (v >> 32L);
-                buffer[s+4] = (byte) (v >> 24L);
-                buffer[s+5] = (byte) (v >> 16L);
-                buffer[s+6] = (byte) (v >> 8L);
-                buffer[s+7] = (byte) v;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeFloat(final float v) throws IOException {
-        final int bits = Float.floatToIntBits(v);
-        try {
-            final byte[] buffer = this.buffer;
-            final int remaining = buffer.length - position;
-            if (remaining < 4) {
-                flush();
-                buffer[0] = (byte) (bits >> 24);
-                buffer[1] = (byte) (bits >> 16);
-                buffer[2] = (byte) (bits >> 8);
-                buffer[3] = (byte) bits;
-                position = 4;
-            } else {
-                final int s = position;
-                position = s + 4;
-                buffer[s]   = (byte) (bits >> 24);
-                buffer[s+1] = (byte) (bits >> 16);
-                buffer[s+2] = (byte) (bits >> 8);
-                buffer[s+3] = (byte) bits;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeDouble(final double v) throws IOException {
-        final long bits = Double.doubleToLongBits(v);
-        try {
-            final int remaining = buffer.length - position;
-            if (remaining < 8) {
-                flush();
-                buffer[0] = (byte) (bits >> 56L);
-                buffer[1] = (byte) (bits >> 48L);
-                buffer[2] = (byte) (bits >> 40L);
-                buffer[3] = (byte) (bits >> 32L);
-                buffer[4] = (byte) (bits >> 24L);
-                buffer[5] = (byte) (bits >> 16L);
-                buffer[6] = (byte) (bits >> 8L);
-                buffer[7] = (byte) bits;
-                position = 8;
-            } else {
-                final int s = position;
-                position = s + 8;
-                buffer[s]   = (byte) (bits >> 56L);
-                buffer[s+1] = (byte) (bits >> 48L);
-                buffer[s+2] = (byte) (bits >> 40L);
-                buffer[s+3] = (byte) (bits >> 32L);
-                buffer[s+4] = (byte) (bits >> 24L);
-                buffer[s+5] = (byte) (bits >> 16L);
-                buffer[s+6] = (byte) (bits >> 8L);
-                buffer[s+7] = (byte) bits;
-            }
-        } catch (NullPointerException e) {
-            throw notActiveException();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeBytes(final String s) throws IOException {
-        final int len = s.length();
-        for (int i = 0; i < len; i ++) {
-            write(s.charAt(i));
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeChars(final String s) throws IOException {
-        final int len = s.length();
-        for (int i = 0; i < len; i ++) {
-            writeChar(s.charAt(i));
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void writeUTF(final String s) throws IOException {
-        writeShort(UTFUtils.getShortUTFLength(s));
-        UTFUtils.writeUTFBytes(this, s);
-    }
-
-    /** {@inheritDoc} */
-    public void flush() throws IOException {
-        final int pos = position;
-        final ByteOutput byteOutput = this.byteOutput;
-        if (byteOutput != null) {
-            if (pos > 0) {
-                byteOutput.write(buffer, 0, pos);
-            }
-            position = 0;
-            byteOutput.flush();
-        }
-    }
-
-    /**
-     * This shallow flush will write the internal buffer out to the {@code ByteOutput}, but will not flush it.
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    protected void shallowFlush() throws IOException {
-        final int pos = position;
-        final ByteOutput byteOutput = this.byteOutput;
-        if (byteOutput != null) {
-            if (pos > 0) {
-                byteOutput.write(buffer, 0, pos);
-            }
-            position = 0;
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void close() throws IOException {
-        finish();
+        return bufferSize == -1 ? marshallerFactory.getDefaultBufferSize() : bufferSize < minBufSize ? minBufSize : bufferSize;
     }
 
     /** {@inheritDoc} */
     public void start(final ByteOutput byteOutput) throws IOException {
         this.byteOutput = byteOutput;
         buffer = new byte[bufferSize];
-        doStart();
+        streamHeader.writeHeader(this);
     }
-
-    /** {@inheritDoc} */
-    public void finish() throws IOException {
-        try {
-            flush();
-        } finally {
-            buffer = null;
-            byteOutput = null;
-            clearClassCache();
-        }
-    }
-
-    /**
-     * Implementation of the actual object-writing method.
-     *
-     * @param obj the object to write
-     * @param unshared {@code true} if the instance is unshared, {@code false} if it is shared
-     * @throws IOException if an I/O error occurs
-     */
-    protected abstract void doWriteObject(Object obj, boolean unshared) throws IOException;
 
     /** {@inheritDoc} */
     public final void writeObjectUnshared(final Object obj) throws IOException {
         try {
-            doWriteObject(obj, true);
+            super.writeObjectUnshared(obj);
         } catch (IOException e) {
             TraceInformation.addObjectInformation(e, obj);
             exceptionListener.handleMarshallingException(e, obj);
@@ -424,7 +112,7 @@ public abstract class AbstractMarshaller implements Marshaller {
     /** {@inheritDoc} */
     public final void writeObject(final Object obj) throws IOException {
         try {
-            doWriteObject(obj, false);
+            super.writeObject(obj);
         } catch (IOException e) {
             TraceInformation.addObjectInformation(e, obj);
             exceptionListener.handleMarshallingException(e, obj);
@@ -436,12 +124,17 @@ public abstract class AbstractMarshaller implements Marshaller {
         }
     }
 
-    /**
-     * Perform any marshaller-specific start activity.  This implementation simply writes the stream header.
-     *
-     * @throws IOException if I/O exception occurs
-     */
-    protected void doStart() throws IOException {
-        streamHeader.writeHeader(this);
+    /** {@inheritDoc} */
+    public void finish() throws IOException {
+        try {
+            super.finish();
+        } finally {
+            clearClassCache();
+        }
+    }
+
+    /** {@inheritDoc} */
+    public void close() throws IOException {
+        finish();
     }
 }

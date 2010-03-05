@@ -553,17 +553,16 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
     public void start(final ByteOutput byteOutput) throws IOException {
         blockMarshaller = new BlockMarshaller(this, bufferSize < MIN_BUFFER_SIZE ? MIN_BUFFER_SIZE : bufferSize);
         super.start(byteOutput);
-    }
-
-    protected void doStart() throws IOException {
-        super.doStart();
         writeShort(configuredVersion);
     }
 
     public void finish() throws IOException {
-        super.finish();
-        blockMarshaller = null;
-        oos = null;
+        try {
+            super.finish();
+        } finally {
+            blockMarshaller = null;
+            oos = null;
+        }
     }
 
     public void flush() throws IOException {

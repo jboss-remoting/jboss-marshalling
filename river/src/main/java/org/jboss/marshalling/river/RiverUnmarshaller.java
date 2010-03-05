@@ -68,6 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractUnmarshaller;
+import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
@@ -1120,8 +1121,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    protected void doStart() throws IOException {
-        super.doStart();
+    public void start(final ByteInput byteInput) throws IOException {
+        super.start(byteInput);
         int version = readUnsignedByte();
         if (version < MIN_VERSION || version > configuredVersion || version > MAX_VERSION) {
             throw new IOException("Unsupported protocol version " + version);

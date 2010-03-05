@@ -532,10 +532,6 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         depth = 0;
         blockUnmarshaller = new BlockUnmarshaller(this);
         super.start(byteInput);
-    }
-
-    protected void doStart() throws IOException {
-        super.doStart();
         int version = readUnsignedShort();
         if (version > 5) {
             throw new IOException("Unsupported protocol version " + version);

@@ -25,34 +25,28 @@ package org.jboss.marshalling.cloner;
 import java.io.IOException;
 
 /**
- * An object cloner.  Creates a (possibly deep) clone of an object.  Unlike Marshallers and Unmarshallers, ObjectCloners
- * are thread-safe and can be used to clone object graphs concurrently.
+ * An interface which allows extending a cloner to types that it would not otherwise support.
  */
-public interface ObjectCloner {
+public interface CloneTable {
 
     /**
-     * Clear the cloner state and any caches.
-     */
-    void reset();
-
-    /**
-     * Create a deep clone of the given object.
+     * Attempt to clone the given object.  If no clone can be made or acquired from this table, return {@code null}.
      *
-     * @param orig the original object
-     * @return the deep clone
-     * @throws java.io.IOException if a serialization error occurs
+     * @param original the original
+     * @param objectCloner the object cloner
+     * @param classCloner the class cloner
+     * @return the clone or {@code null} if none can be acquired
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class is not found
      */
-    Object clone(Object orig) throws IOException, ClassNotFoundException;
+    Object clone(Object original, ObjectCloner objectCloner, ClassCloner classCloner) throws IOException, ClassNotFoundException;
 
     /**
-     * The identity object cloner.  Always returns the same object it is given.
+     * A null clone table.
      */
-    ObjectCloner IDENTITY = new ObjectCloner() {
-        public void reset() {
-        }
-
-        public Object clone(final Object orig) {
-            return orig;
+    CloneTable NULL = new CloneTable() {
+        public Object clone(final Object original, final ObjectCloner objectCloner, final ClassCloner classCloner) throws IOException, ClassNotFoundException {
+            return null;
         }
     };
 }

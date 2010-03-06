@@ -27,14 +27,14 @@ import org.jboss.marshalling.ObjectResolver;
 
 public final class ClonerConfiguration implements Cloneable {
 
-    private ObjectCloner delegate;
+    private CloneTable cloneTable;
     private ObjectResolver objectResolver;
     private ClassCloner classCloner;
     private Creator externalizedCreator;
     private Creator serializedCreator;
     private int bufferSize;
 
-    protected ClonerConfiguration clone() {
+    public ClonerConfiguration clone() {
         try {
             return (ClonerConfiguration) super.clone();
         } catch (CloneNotSupportedException e) {
@@ -42,12 +42,12 @@ public final class ClonerConfiguration implements Cloneable {
         }
     }
 
-    public ObjectCloner getDelegate() {
-        return delegate;
+    public CloneTable getCloneTable() {
+        return cloneTable;
     }
 
-    public void setDelegate(final ObjectCloner delegate) {
-        this.delegate = delegate;
+    public void setCloneTable(final CloneTable cloneTable) {
+        this.cloneTable = cloneTable;
     }
 
     public ObjectResolver getObjectResolver() {

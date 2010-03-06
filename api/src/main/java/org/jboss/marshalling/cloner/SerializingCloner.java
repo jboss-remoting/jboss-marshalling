@@ -84,8 +84,8 @@ import org.jboss.marshalling.util.ShortReadField;
 /**
  * An object cloner which uses serialization methods to clone objects.
  */
-public class SerializingCloner implements ObjectCloner {
-    private final ObjectCloner delegate;
+class SerializingCloner implements ObjectCloner {
+    private final CloneTable delegate;
     private final ObjectResolver objectResolver;
     private final ClassCloner classCloner;
     private final Creator externalizedCreator;
@@ -99,9 +99,9 @@ public class SerializingCloner implements ObjectCloner {
      *
      * @param configuration the configuration to use
      */
-    public SerializingCloner(final ClonerConfiguration configuration) {
-        final ObjectCloner delegate = configuration.getDelegate();
-        this.delegate = delegate == null ? ObjectCloner.NULL : delegate;
+    SerializingCloner(final ClonerConfiguration configuration) {
+        final CloneTable delegate = configuration.getCloneTable();
+        this.delegate = delegate == null ? CloneTable.NULL : delegate;
         final ObjectResolver objectResolver = configuration.getObjectResolver();
         this.objectResolver = objectResolver == null ? Marshalling.nullObjectResolver() : objectResolver;
         final ClassCloner classCloner = configuration.getClassCloner();
@@ -148,13 +148,14 @@ public class SerializingCloner implements ObjectCloner {
         if (cached != null) {
             return cached;
         }
+        final ClassCloner classCloner = this.classCloner;
         if (orig instanceof Class) {
             final Class classObj = (Class) orig;
             final Class<?> clonedClass = Proxy.isProxyClass(classObj) ? classCloner.cloneProxy(classObj) : classCloner.clone(classObj);
             clones.put(orig, clonedClass);
             return clonedClass;
         }
-        if ((cached = delegate.clone(orig)) != null) {
+        if ((cached = delegate.clone(orig, this, classCloner)) != null) {
             clones.put(orig, cached);
             return cached;
         }
@@ -346,16 +347,40 @@ public class SerializingCloner implements ObjectCloner {
     }
 
     private static Object simpleClone(final Object orig, final Class<? extends Object> objClass) {
-        final int idx = SIMPLY_CLONED.get(objClass, -1);
+        final int idx = PRIMITIVE_ARRAYS.get(objClass, -1);
         switch (idx) {
-            case 0: return ((boolean[]) orig).clone();
-            case 1: return ((byte[]) orig).clone();
-            case 2: return ((short[]) orig).clone();
-            case 3: return ((int[]) orig).clone();
-            case 4: return ((long[]) orig).clone();
-            case 5: return ((float[]) orig).clone();
-            case 6: return ((double[]) orig).clone();
-            case 7: return ((char[]) orig).clone();
+            case 0: {
+                final boolean[] booleans = (boolean[]) orig;
+                return booleans.length == 0 ? orig : booleans.clone();
+            }
+            case 1: {
+                final byte[] bytes = (byte[]) orig;
+                return bytes.length == 0 ? orig : bytes.clone();
+            }
+            case 2: {
+                final short[] shorts = (short[]) orig;
+                return shorts.length == 0 ? orig : shorts.clone();
+            }
+            case 3: {
+                final int[] ints = (int[]) orig;
+                return ints.length == 0 ? orig : ints.clone();
+            }
+            case 4: {
+                final long[] longs = (long[]) orig;
+                return longs.length == 0 ? orig : longs.clone();
+            }
+            case 5: {
+                final float[] floats = (float[]) orig;
+                return floats.length == 0 ? orig : floats.clone();
+            }
+            case 6: {
+                final double[] doubles = (double[]) orig;
+                return doubles.length == 0 ? orig : doubles.clone();
+            }
+            case 7: {
+                final char[] chars = (char[]) orig;
+                return chars.length == 0 ? orig : chars.clone();
+            }
             default: return null; // fall out
         }
     }
@@ -373,7 +398,7 @@ public class SerializingCloner implements ObjectCloner {
     }
 
     private static final Set<Class<?>> UNCLONED;
-    private static final IdentityIntMap<Class<?>> SIMPLY_CLONED;
+    private static final IdentityIntMap<Class<?>> PRIMITIVE_ARRAYS;
 
     private static final Field proxyInvocationHandler;
 
@@ -410,7 +435,7 @@ public class SerializingCloner implements ObjectCloner {
         map.put(float[].class, 5);
         map.put(double[].class, 6);
         map.put(char[].class, 7);
-        SIMPLY_CLONED = map;
+        PRIMITIVE_ARRAYS = map;
         proxyInvocationHandler = AccessController.doPrivileged(new PrivilegedAction<Field>() {
             public Field run() {
                 try {

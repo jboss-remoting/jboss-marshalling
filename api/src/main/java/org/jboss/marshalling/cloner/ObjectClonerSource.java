@@ -22,37 +22,27 @@
 
 package org.jboss.marshalling.cloner;
 
-import java.io.IOException;
-
 /**
- * An object cloner.  Creates a (possibly deep) clone of an object.  Unlike Marshallers and Unmarshallers, ObjectCloners
- * are thread-safe and can be used to clone object graphs concurrently.
+ * A source for object cloners.  Use in applications where the configuration of cloners must be abstracted
+ * away from their creation.
  */
-public interface ObjectCloner {
+public interface ObjectClonerSource {
 
     /**
-     * Clear the cloner state and any caches.
-     */
-    void reset();
-
-    /**
-     * Create a deep clone of the given object.
+     * Create a new object cloner.
      *
-     * @param orig the original object
-     * @return the deep clone
-     * @throws java.io.IOException if a serialization error occurs
+     * @return a new object cloner
      */
-    Object clone(Object orig) throws IOException, ClassNotFoundException;
+    ObjectCloner createNew();
 
     /**
-     * The identity object cloner.  Always returns the same object it is given.
+     * An object cloner which returns the identity cloner.
+     *
+     * @see ObjectCloner#IDENTITY
      */
-    ObjectCloner IDENTITY = new ObjectCloner() {
-        public void reset() {
-        }
-
-        public Object clone(final Object orig) {
-            return orig;
+    ObjectClonerSource IDENTITY = new ObjectClonerSource() {
+        public ObjectCloner createNew() {
+            return ObjectCloner.IDENTITY;
         }
     };
 }

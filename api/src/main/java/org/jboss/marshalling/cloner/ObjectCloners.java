@@ -22,37 +22,41 @@
 
 package org.jboss.marshalling.cloner;
 
-import java.io.IOException;
-
 /**
- * An object cloner.  Creates a (possibly deep) clone of an object.  Unlike Marshallers and Unmarshallers, ObjectCloners
- * are thread-safe and can be used to clone object graphs concurrently.
+ * A class which may be used to got cloner factory instances.
  */
-public interface ObjectCloner {
+public final class ObjectCloners {
 
-    /**
-     * Clear the cloner state and any caches.
-     */
-    void reset();
-
-    /**
-     * Create a deep clone of the given object.
-     *
-     * @param orig the original object
-     * @return the deep clone
-     * @throws java.io.IOException if a serialization error occurs
-     */
-    Object clone(Object orig) throws IOException, ClassNotFoundException;
-
-    /**
-     * The identity object cloner.  Always returns the same object it is given.
-     */
-    ObjectCloner IDENTITY = new ObjectCloner() {
-        public void reset() {
-        }
-
-        public Object clone(final Object orig) {
-            return orig;
+    private static final ObjectClonerFactory CLONEABLE = new ObjectClonerFactory() {
+        public ObjectCloner createCloner(final ClonerConfiguration configuration) {
+            return new CloneableCloner(configuration);
         }
     };
+
+    private static final ObjectClonerFactory SERIALIZING = new ObjectClonerFactory() {
+        public ObjectCloner createCloner(final ClonerConfiguration configuration) {
+            return new SerializingCloner(configuration);
+        }
+    };
+
+    private ObjectCloners() {
+    }
+
+    /**
+     * Get the cloneable object cloner factory.
+     *
+     * @return the cloneable object cloner factory
+     */
+    public static ObjectClonerFactory getCloneableObjectClonerFactory() {
+        return CLONEABLE;
+    }
+
+    /**
+     * Get the serializing object cloner factory.
+     *
+     * @return the serializing object cloner factory
+     */
+    public static ObjectClonerFactory getSerializingObjectClonerFactory() {
+        return SERIALIZING;
+    }
 }

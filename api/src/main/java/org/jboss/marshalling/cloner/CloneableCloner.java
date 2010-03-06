@@ -31,7 +31,21 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.IdentityHashMap;
 
-public class CloneableCloner implements ObjectCloner {
+/**
+ * An object cloner which clones objects that implement {@link Cloneable}.
+ */
+class CloneableCloner implements ObjectCloner {
+    private final CloneTable cloneTable;
+
+    /**
+     * Create a new instance.
+     *
+     * @param configuration the configuration
+     */
+    CloneableCloner(final ClonerConfiguration configuration) {
+        final CloneTable cloneTable = configuration.getCloneTable();
+        this.cloneTable = cloneTable == null ? CloneTable.NULL : cloneTable;
+    }
 
     private static final Method CLONE = AccessController.doPrivileged(new PrivilegedAction<Method>() {
         public Method run() {
@@ -46,28 +60,38 @@ public class CloneableCloner implements ObjectCloner {
         }
     });
 
+    /** {@inheritDoc} */
     public void reset() {
-        clones.clear();
+        synchronized (this) {
+            clones.clear();
+        }
     }
 
     private final IdentityHashMap<Object, Object> clones = new IdentityHashMap<Object, Object>();
 
+    /** {@inheritDoc} */
     public Object clone(final Object orig) throws IOException, ClassNotFoundException {
-        if (orig == null) {
-            return null;
-        }
-        Object cached;
-        if ((cached = clones.get(orig)) != null) {
-            return cached;
-        }
-        try {
-            final Object clone = CLONE.invoke(orig);
-            clones.put(orig, clone);
-            return clone;
-        } catch (IllegalAccessException e) {
-            throw new InvalidClassException(orig.getClass().getName(), "Can't access clone() method: " + e);
-        } catch (InvocationTargetException e) {
-            throw new InvalidObjectException("Error invoking clone() method: " + e);
+        synchronized (this) {
+            if (orig == null) {
+                return null;
+            }
+            Object cached;
+            if ((cached = clones.get(orig)) != null) {
+                return cached;
+            }
+            if ((cached = cloneTable.clone(cached, this, ClassCloner.IDENTITY)) != null) {
+                clones.put(orig, cached);
+                return cached;
+            }
+            try {
+                final Object clone = CLONE.invoke(orig);
+                clones.put(orig, clone);
+                return clone;
+            } catch (IllegalAccessException e) {
+                throw new InvalidClassException(orig.getClass().getName(), "Can't access clone() method: " + e);
+            } catch (InvocationTargetException e) {
+                throw new InvalidObjectException("Error invoking clone() method: " + e);
+            }
         }
     }
 }

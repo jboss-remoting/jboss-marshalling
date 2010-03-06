@@ -59,4 +59,20 @@ public final class ObjectCloners {
     public static ObjectClonerFactory getSerializingObjectClonerFactory() {
         return SERIALIZING;
     }
+
+    /**
+     * Get an object cloner source which creates cloners with a static configuration.
+     *
+     * @param factory the cloner factory to use
+     * @param configuration the configuration to use for all cloners
+     * @return the cloner source
+     */
+    public static ObjectClonerSource createObjectClonerSource(final ObjectClonerFactory factory, final ClonerConfiguration configuration) {
+        final ClonerConfiguration finalConfig = configuration.clone();
+        return new ObjectClonerSource() {
+            public ObjectCloner createNew() {
+                return factory.createCloner(finalConfig);
+            }
+        };
+    }
 }

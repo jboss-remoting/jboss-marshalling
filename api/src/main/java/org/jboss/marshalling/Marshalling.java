@@ -32,9 +32,6 @@ import java.io.Serializable;
 import java.io.ObjectOutput;
 import java.io.ObjectInput;
 import java.nio.ByteBuffer;
-import java.nio.BufferUnderflowException;
-import java.nio.BufferOverflowException;
-import java.nio.ReadOnlyBufferException;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
 import java.lang.reflect.Constructor;
@@ -94,7 +91,7 @@ public final class Marshalling {
         }
 
         public String toString() {
-            return "null StreamHeader";
+            return "Null StreamHeader";
         }
     };
 
@@ -189,50 +186,7 @@ public final class Marshalling {
      * @return the byte input wrapper
      */
     public static ByteInput createByteInput(final ByteBuffer buffer) {
-        return new ByteInput() {
-            public int read() throws IOException {
-                try {
-                    return buffer.get() & 0xff;
-                } catch (BufferUnderflowException e) {
-                    return -1;
-                }
-            }
-
-            public int read(final byte[] b) throws IOException {
-                return read(b, 0, b.length);
-            }
-
-            public int read(final byte[] b, final int off, final int len) throws IOException {
-                if (len == 0) {
-                    return 0;
-                }
-                final int rem = buffer.remaining();
-                if (rem == 0) {
-                    return -1;
-                }
-                final int c = Math.min(len, rem);
-                buffer.get(b, 0, c);
-                return c;
-            }
-
-            public int available() throws IOException {
-                return buffer.remaining();
-            }
-
-            public long skip(final long n) throws IOException {
-                if (n > 0L) {
-                    final long c = Math.min((long) buffer.remaining(), n);
-                    buffer.position(buffer.position() + (int) c);
-                    return c;
-                } else {
-                    return 0L;
-                }
-            }
-
-            public void close() throws IOException {
-                buffer.clear();
-            }
-        };
+        return new ByteBufferInput(buffer);
     }
 
     /**
@@ -242,31 +196,7 @@ public final class Marshalling {
      * @return the byte input wrapper
      */
     public static ByteInput createByteInput(final InputStream inputStream) {
-        return new ByteInput() {
-            public int read() throws IOException {
-                return inputStream.read();
-            }
-
-            public int read(final byte[] b) throws IOException {
-                return inputStream.read(b);
-            }
-
-            public int read(final byte[] b, final int off, final int len) throws IOException {
-                return inputStream.read(b, off, len);
-            }
-
-            public int available() throws IOException {
-                return inputStream.available();
-            }
-
-            public long skip(final long n) throws IOException {
-                return inputStream.skip(n);
-            }
-
-            public void close() throws IOException {
-                inputStream.close();
-            }
-        };
+        return inputStream instanceof ByteInput ? (ByteInput) inputStream : new InputStreamByteInput(inputStream);
     }
 
     /**
@@ -276,39 +206,7 @@ public final class Marshalling {
      * @return the input stream wrapper
      */
     public static InputStream createInputStream(final ByteInput byteInput) {
-        return new InputStream() {
-            public int read() throws IOException {
-                return byteInput.read();
-            }
-
-            public int read(final byte[] b) throws IOException {
-                return byteInput.read(b);
-            }
-
-            public int read(final byte[] b, final int off, final int len) throws IOException {
-                return byteInput.read(b, off, len);
-            }
-
-            public long skip(final long n) throws IOException {
-                return byteInput.skip(n);
-            }
-
-            public int available() throws IOException {
-                return byteInput.available();
-            }
-
-            public void close() throws IOException {
-                byteInput.close();
-            }
-        };
-    }
-
-    private static EOFException writePastEnd() {
-        return new EOFException("Write past end of buffer");
-    }
-
-    private static IOException readOnlyBuffer() {
-        return new IOException("Read only buffer");
+        return byteInput instanceof InputStream ? (InputStream) byteInput : new ByteInputStream(byteInput);
     }
 
     /**
@@ -318,44 +216,7 @@ public final class Marshalling {
      * @return the byte output wrapper
      */
     public static ByteOutput createByteOutput(final ByteBuffer buffer) {
-        return new ByteOutput() {
-            public void write(final int b) throws IOException {
-                try {
-                    buffer.put((byte)b);
-                } catch (BufferOverflowException e) {
-                    throw writePastEnd();
-                } catch (ReadOnlyBufferException e) {
-                    throw readOnlyBuffer();
-                }
-            }
-
-            public void write(final byte[] b) throws IOException {
-                try {
-                    buffer.put(b);
-                } catch (BufferOverflowException e) {
-                    throw writePastEnd();
-                } catch (ReadOnlyBufferException e) {
-                    throw readOnlyBuffer();
-                }
-            }
-
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                try {
-                    buffer.put(b, off, len);
-                } catch (BufferOverflowException e) {
-                    throw writePastEnd();
-                } catch (ReadOnlyBufferException e) {
-                    throw readOnlyBuffer();
-                }
-            }
-
-            public void close() throws IOException {
-                buffer.clear();
-            }
-
-            public void flush() throws IOException {
-            }
-        };
+        return new ByteBufferOutput(buffer);
     }
 
     /**
@@ -365,27 +226,7 @@ public final class Marshalling {
      * @return the byte output wrapper
      */
     public static ByteOutput createByteOutput(final OutputStream outputStream) {
-        return new ByteOutput() {
-            public void write(final int b) throws IOException {
-                outputStream.write(b);
-            }
-
-            public void write(final byte[] b) throws IOException {
-                outputStream.write(b);
-            }
-
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                outputStream.write(b, off, len);
-            }
-
-            public void close() throws IOException {
-                outputStream.close();
-            }
-
-            public void flush() throws IOException {
-                outputStream.flush();
-            }
-        };
+        return outputStream instanceof ByteOutput ? (ByteOutput) outputStream : new OutputStreamByteOutput(outputStream);
     }
 
     /**
@@ -395,32 +236,16 @@ public final class Marshalling {
      * @return the output stream wrapper
      */
     public static OutputStream createOutputStream(final ByteOutput byteOutput) {
-        return new OutputStream() {
-            public void write(final int b) throws IOException {
-                byteOutput.write(b);
-            }
-
-            public void write(final byte[] b) throws IOException {
-                byteOutput.write(b);
-            }
-
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                byteOutput.write(b, off, len);
-            }
-
-            public void flush() throws IOException {
-                byteOutput.flush();
-            }
-
-            public void close() throws IOException {
-                byteOutput.close();
-            }
-        };
+        return byteOutput instanceof OutputStream ? (OutputStream)byteOutput : new ByteOutputStream(byteOutput);
     }
 
     private static final ClassExternalizerFactory NULL_CLASS_EXTERNALIZER_FACTORY = new ClassExternalizerFactory() {
         public Externalizer getExternalizer(final Class<?> type) {
             return null;
+        }
+
+        public String toString() {
+            return "Null class externalizer factory";
         }
     };
 
@@ -441,6 +266,10 @@ public final class Marshalling {
         public Object writeReplace(final Object original) {
             return original;
         }
+
+        public String toString() {
+            return "Null object resolver";
+        }
     };
 
     /**
@@ -460,6 +289,10 @@ public final class Marshalling {
         public Object readObject(final Unmarshaller unmarshaller) throws IOException, ClassNotFoundException {
             return null;
         }
+
+        public String toString() {
+            return "Null object table";
+        }
     };
 
     /**
@@ -478,6 +311,10 @@ public final class Marshalling {
 
         public Class<?> readClass(final Unmarshaller unmarshaller) throws IOException, ClassNotFoundException {
             return null;
+        }
+
+        public String toString() {
+            return "Null class table";
         }
     };
 
@@ -564,6 +401,10 @@ public final class Marshalling {
         }
 
         public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
+        }
+
+        public String toString() {
+            return "Null externalizer";
         }
     };
 

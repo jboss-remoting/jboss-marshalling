@@ -25,22 +25,20 @@ package org.jboss.marshalling;
 import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 
-public class SimpleDataInput extends InputStream implements DataInput, ByteInput {
+public class SimpleDataInput extends ByteInputStream implements DataInput {
 
-    /** The current byte input. */
-    protected ByteInput byteInput;
     protected final byte[] buffer;
     protected int position;
     protected int limit;
 
     public SimpleDataInput(int bufferSize) {
-        buffer = new byte[bufferSize];
+        this(bufferSize, null);
     }
 
     public SimpleDataInput(int bufferSize, ByteInput byteInput) {
-        this(bufferSize);
+        super(byteInput);
+        buffer = new byte[bufferSize];
         this.byteInput = byteInput;
     }
 

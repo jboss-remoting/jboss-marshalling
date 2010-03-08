@@ -30,9 +30,9 @@ import java.io.OutputStream;
  * Usually the {@link Marshalling#createByteOutput(OutputStream)} method should be used to create instances because
  * it can detect when the target already implements {@code ByteOutput}.
  */
-public class ByteOutputStream extends OutputStream implements ByteOutput {
+public class ByteOutputStream extends SimpleByteOutput {
 
-    private final ByteOutput byteOutput;
+    protected volatile ByteOutput byteOutput;
 
     /**
      * Construct a new instance.

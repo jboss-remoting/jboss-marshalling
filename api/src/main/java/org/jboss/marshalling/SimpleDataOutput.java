@@ -25,23 +25,21 @@ package org.jboss.marshalling;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.NotActiveException;
-import java.io.OutputStream;
 
-public class SimpleDataOutput extends OutputStream implements DataOutput, ByteOutput {
+public class SimpleDataOutput extends ByteOutputStream implements DataOutput {
 
-    /** The current byte output. */
-    protected ByteOutput byteOutput;
     protected final int bufferSize;
     protected byte[] buffer;
     private int position;
 
     public SimpleDataOutput(final int bufferSize) {
-        this.bufferSize = bufferSize;
+        this(bufferSize, null);
     }
 
     public SimpleDataOutput(final int bufferSize, final ByteOutput byteOutput) {
-        this(bufferSize);
+        super(byteOutput);
         this.byteOutput = byteOutput;
+        this.bufferSize = bufferSize;
         buffer = new byte[bufferSize];
     }
 

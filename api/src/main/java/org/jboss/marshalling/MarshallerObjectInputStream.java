@@ -31,12 +31,12 @@ import java.io.ObjectStreamClass;
 
 /**
  * A marshaller's object input stream.  Used by marshallers for compatibility with Java serialization.  Instances of
- * this class may be passed in to the overriden serialization methods for a class implementing {@link java.io.Serializable}.
+ * this class may be passed in to the overridden serialization methods for a class implementing {@link java.io.Serializable}.
  * <p>
- * This class is not part of the marshalling API; rather it is intended for marshaller implementors to make it easier
+ * This class is not part of the marshalling API; rather it is intended for marshaller implementers to make it easier
  * to develop Java serialization-compatible marshallers.
  */
-public abstract class MarshallerObjectInputStream extends ObjectInputStream {
+public abstract class MarshallerObjectInputStream extends ObjectInputStream implements ByteInput {
     private final Unmarshaller input;
 
     /**

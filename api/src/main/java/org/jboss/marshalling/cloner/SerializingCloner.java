@@ -36,6 +36,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -44,6 +45,7 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -169,8 +171,8 @@ class SerializingCloner implements ObjectCloner {
                 return Enum.valueOf(cloneClass, ((Enum) orig).name());
             }
         }
+        final Class<?> clonedClass = (Class<?>) clone(objClass);
         if (Proxy.isProxyClass(objClass)) {
-            final Class<?> clonedClass = (Class<?>) clone(objClass);
             return Proxy.newProxyInstance(clonedClass.getClassLoader(), clonedClass.getInterfaces(), (InvocationHandler) clone(getInvocationHandler(orig)));
         }
         if (UNCLONED.contains(objClass)) {
@@ -181,15 +183,25 @@ class SerializingCloner implements ObjectCloner {
             if (simpleClone != null) return simpleClone;
             // must be an object array
             final Object[] origArray = (Object[]) orig;
+            final int len = origArray.length;
+            final boolean sameClass = objClass == clonedClass;
+            if (sameClass && len == 0) {
+                clones.put(orig, orig);
+                return orig;
+            }
             if (UNCLONED.contains(objClass.getComponentType())) {
                 final Object[] clone = origArray.clone();
                 clones.put(orig, clone);
                 return clone;
             }
+            final Object[] clone;
+            if (sameClass) {
+                clone = origArray.clone();
+            } else {
+                clone = (Object[])Array.newInstance(clonedClass.getComponentType(), len);
+            }
             // deep clone
-            final Object[] clone = origArray.clone();
             clones.put(orig, clone);
-            final int len = clone.length;
             for (int i = 0; i < len; i++) {
                 clone[i] = clone(origArray[i]);
             }
@@ -276,7 +288,7 @@ class SerializingCloner implements ObjectCloner {
                 storeFields(cloneInfo, clone, fields);
             }
         } else {
-            prepareFields(clone, fields);
+            prepareFields(orig, fields);
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, new StepObjectInputStream(new ArrayDeque<Step>(), fields, clone, cloneInfo));

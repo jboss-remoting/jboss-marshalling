@@ -92,7 +92,7 @@ public final class SerializableField {
     }
 
     /**
-     * Get the reflection {@code Field} for this serializable field.  The resultant field will be accessable.
+     * Get the reflection {@code Field} for this serializable field.  The resultant field will be accessible.
      *
      * @return the reflection field
      */

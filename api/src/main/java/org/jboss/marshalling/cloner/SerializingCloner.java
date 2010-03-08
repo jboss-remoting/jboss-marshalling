@@ -276,7 +276,7 @@ class SerializingCloner implements ObjectCloner {
                 storeFields(cloneInfo, clone, fields);
             }
         } else {
-            prepareFields(cloneInfo, fields);
+            prepareFields(clone, fields);
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, new StepObjectInputStream(new ArrayDeque<Step>(), fields, clone, cloneInfo));

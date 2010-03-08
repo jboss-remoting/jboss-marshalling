@@ -57,8 +57,10 @@ public final class TraceInformation extends Throwable {
         Throwable c;
         while (! (t instanceof TraceInformation)) {
             c = t.getCause();
-            if (c == null) {
+            if (c == null) try {
                 t.initCause(c = new TraceInformation());
+            } catch (RuntimeException e) {
+                // ignored
             }
             t = c;
         }

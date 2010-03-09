@@ -24,6 +24,7 @@ package org.jboss.marshalling;
 
 import java.io.ObjectInput;
 import java.io.IOException;
+import java.io.ObjectOutput;
 
 /**
  * An externalizer base class which handles object creation in a default fashion.
@@ -43,5 +44,13 @@ public abstract class AbstractExternalizer implements Externalizer {
      */
     public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
         return defaultCreator.create(subjectType);
+    }
+
+    /** {@inheritDoc}  This default implementation does nothing. */
+    public void writeExternal(final Object subject, final ObjectOutput output) throws IOException {
+    }
+
+    /** {@inheritDoc}  This default implementation does nothing. */
+    public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
     }
 }

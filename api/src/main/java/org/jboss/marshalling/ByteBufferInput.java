@@ -89,6 +89,5 @@ public class ByteBufferInput extends InputStream implements ByteInput {
 
     /** {@inheritDoc} */
     public void close() throws IOException {
-        buffer.clear();
     }
 }

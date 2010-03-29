@@ -86,9 +86,8 @@ public class ByteBufferOutput extends OutputStream implements ByteOutput {
         }
     }
 
-    /** {@inheritDoc}  This implementation will cause the underlying buffer to be cleared. */
+    /** {@inheritDoc} */
     public void close() throws IOException {
-        buffer.clear();
     }
 
     /** {@inheritDoc} */

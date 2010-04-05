@@ -2493,77 +2493,58 @@ public final class SimpleMarshallerTests extends TestBase {
     }
 
     static class Parent implements Serializable {
+
         private String id;
         private Child1 child1Obj;
 
         public Parent(String id, Child1 child1Obj) {
-           this.id = id;
-           this.child1Obj = child1Obj;
+            this.id = id;
+            this.child1Obj = child1Obj;
         }
 
         public String getId() {
-           return id;
+            return id;
         }
 
-       public Child1 getChild1Obj() {
-           return child1Obj;
-       }
+        public Child1 getChild1Obj() {
+            return child1Obj;
+        }
     }
 
-   static class Child1 extends Parent {
-       private int someInt;
+    static class Child1 extends Parent {
 
-       public Child1(int someInt, String parentStr) {
-           super(parentStr, null);
-           this.someInt = someInt;
-       }
-   }
+        private int someInt;
 
-   static class Child2 extends Parent {
-       private int someInt;
+        public Child1(int someInt, String parentStr) {
+            super(parentStr, null);
+            this.someInt = someInt;
+        }
+    }
 
-       public Child2(int someInt, String parentStr, Child1 child1Obj) {
-           super(parentStr, child1Obj);
-           this.someInt = someInt;
-       }
-   }
+    static class Child2 extends Parent {
 
-   @Test
-   public void testNestedSubclass() throws Throwable {
-      Child1 child1Obj = new Child1(1234, "1234");
-      final Child2 child2Obj = new Child2(2345, "2345", child1Obj);
+        private int someInt;
 
-      runReadWriteTest(new ReadWriteTest() {
-          public void runWrite(final Marshaller marshaller) throws Throwable {
-              marshaller.writeObject(child2Obj);
-          }
+        public Child2(int someInt, String parentStr, Child1 child1Obj) {
+            super(parentStr, child1Obj);
+            this.someInt = someInt;
+        }
+    }
 
-          public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-              final Object newTest = unmarshaller.readObject();
-              assertSame("Consecutive reads not identical", newTest, unmarshaller.readObject());
-              assertEquals("Read object != written object", child2Obj, newTest);
-          }
-      });
-      
-//
-//
-//      ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
-//      marshaller.start(Marshalling.createByteOutput(baos));
-//      try {
-//         marshaller.writeObject(child2Obj);
-//      } finally {
-//         marshaller.finish();
-//      }
-//
-//      byte[] bytes = baos.toByteArray();
-//
-//      ByteArrayInputStream bais = new ByteArrayInputStream(bytes, 0, bytes.length);
-//      unmarshaller.start(Marshalling.createByteInput(bais));
-//      try {
-//         unmarshaller.readObject();
-//      } finally {
-//         unmarshaller.finish();
-//      }
-   }
-   
+    @Test
+    public void testNestedSubclass() throws Throwable {
+        Child1 child1Obj = new Child1(1234, "1234");
+        final Child2 child2Obj = new Child2(2345, "2345", child1Obj);
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(child2Obj);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final Object newTest = unmarshaller.readObject();
+                assertSame("Consecutive reads not identical", newTest, unmarshaller.readObject());
+                assertEquals("Read object != written object", child2Obj, newTest);
+            }
+        });
+    }
 }

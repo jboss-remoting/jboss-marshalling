@@ -25,8 +25,21 @@ package org.jboss.marshalling.river;
 /**
  *
  */
-public final class IncompleteClassDescriptor extends ClassDescriptor {
-    public IncompleteClassDescriptor(final Class<?> type, final int typeID) {
-        super(type, typeID);
+public class SimpleClassDescriptor extends ClassDescriptor {
+    private final Class<?> type;
+    private int typeID;
+    // non-public (due to security)
+
+    public SimpleClassDescriptor(final Class<?> type, final int typeID) {
+        this.type = type;
+        this.typeID = typeID;
+    }
+
+    public Class<?> getType() {
+        return type;
+    }
+
+    public int getTypeID() {
+        return typeID;
     }
 }

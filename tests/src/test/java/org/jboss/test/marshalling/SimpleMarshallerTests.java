@@ -2525,6 +2525,7 @@ public final class SimpleMarshallerTests extends TestBase {
 
         private String id;
         private Child1 child1Obj;
+        private static final long serialVersionUID = -1417329412107563636L;
 
         public Parent(String id, Child1 child1Obj) {
             this.id = id;
@@ -2538,34 +2539,85 @@ public final class SimpleMarshallerTests extends TestBase {
         public Child1 getChild1Obj() {
             return child1Obj;
         }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof Parent && equals((Parent) obj);
+        }
+
+        public boolean equals(final Parent obj) {
+            return obj != null && (id == null ? obj.id == null : id.equals(obj.id)) && (child1Obj == null ? obj.child1Obj == null : child1Obj.equals(obj.child1Obj));
+        }
+
+        public String getFieldString() {
+            return String.format("id=%s,child1=%s", id, child1Obj);
+        }
+
+        public String toString() {
+            return String.format("%s{%s}", getClass().getSimpleName(), getFieldString());
+        }
     }
 
     static class Child1 extends Parent {
 
         private int someInt;
+        private static final long serialVersionUID = -1989376997581386909L;
 
         public Child1(int someInt, String parentStr) {
             super(parentStr, null);
             this.someInt = someInt;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof Child1 && equals((Child1) obj);
+        }
+
+        public boolean equals(final Parent obj) {
+            return obj instanceof Child1 && equals((Child1) obj);
+        }
+
+        public boolean equals(final Child1 obj) {
+            return super.equals((Parent) obj) && someInt == obj.someInt;
+        }
+
+        public String getFieldString() {
+            return String.format("%s,someInt=%d", super.getFieldString(), Integer.valueOf(someInt));
         }
     }
 
     static class Child2 extends Parent {
 
         private int someInt;
+        private static final long serialVersionUID = 5406289444171915286L;
 
         public Child2(int someInt, String parentStr, Child1 child1Obj) {
             super(parentStr, child1Obj);
             this.someInt = someInt;
         }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof Child2 && equals((Child2) obj);
+        }
+
+        public boolean equals(final Parent obj) {
+            return obj instanceof Child2 && equals((Child2) obj);
+        }
+
+        public boolean equals(final Child2 obj) {
+            return super.equals((Parent) obj) && someInt == obj.someInt;
+        }
+
+        public String getFieldString() {
+            return String.format("%s,someInt=%d", super.getFieldString(), Integer.valueOf(someInt));
+        }
     }
 
     @Test
     public void testNestedSubclass() throws Throwable {
-        Child1 child1Obj = new Child1(1234, "1234");
+        final Child1 child1Obj = new Child1(1234, "1234");
         final Child2 child2Obj = new Child2(2345, "2345", child1Obj);
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(child2Obj);
                 marshaller.writeObject(child2Obj);
             }
 

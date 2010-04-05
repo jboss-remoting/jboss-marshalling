@@ -28,41 +28,17 @@ import org.jboss.marshalling.reflect.SerializableClass;
 /**
  *
  */
-public final class SerializableClassDescriptor extends ClassDescriptor {
-    private final SerializableClass serializableClass;
-    private final ClassDescriptor superClassDescriptor;
-    private final SerializableField[] fields;
-    private final boolean gap;
+public abstract class SerializableClassDescriptor extends ClassDescriptor {
 
-    public SerializableClassDescriptor(final SerializableClass serializableClass, final ClassDescriptor superClassDescriptor, final SerializableField[] fields, final int classType) throws ClassNotFoundException {
-        super(serializableClass.getSubjectClass(), classType);
-        this.serializableClass = serializableClass;
-        this.superClassDescriptor = superClassDescriptor;
-        this.fields = fields;
-        gap = false;
-    }
+    protected SerializableClassDescriptor() {}
 
-    public SerializableClassDescriptor(final SerializableClass serializableClass, final ClassDescriptor superClassDescriptor) throws ClassNotFoundException {
-        super(serializableClass.getSubjectClass(), Protocol.ID_SERIALIZABLE_CLASS);
-        this.serializableClass = serializableClass;
-        this.superClassDescriptor = superClassDescriptor;
-        fields = SerializableClass.NOFIELDS;
-        gap = true;
-    }
+    public abstract Class<?> getType();
 
-    public ClassDescriptor getSuperClassDescriptor() {
-        return superClassDescriptor;
-    }
+    public abstract int getTypeID();
 
-    public SerializableField[] getFields() {
-        return fields;
-    }
+    public abstract ClassDescriptor getSuperClassDescriptor();
 
-    public SerializableClass getSerializableClass() {
-        return serializableClass;
-    }
+    public abstract SerializableField[] getFields();
 
-    public boolean isGap() {
-        return gap;
-    }
+    public abstract SerializableClass getSerializableClass();
 }

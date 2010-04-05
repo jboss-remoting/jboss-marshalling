@@ -769,7 +769,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_ENUM_TYPE_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(type, ID_ENUM_TYPE_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -777,7 +777,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_EXTERNALIZABLE_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(type, ID_EXTERNALIZABLE_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -786,7 +786,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
                 final Externalizer externalizer = (Externalizer) readObject();
-                final ClassDescriptor descriptor = new ExternalizerClassDescriptor(type, externalizer);
+                final SimpleClassDescriptor descriptor = new ExternalizerClassDescriptor(type, externalizer);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -794,7 +794,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_PLAIN_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(type, ID_PLAIN_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -802,7 +802,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final int idx = classCache.size();
                 classCache.add(null);
                 final Class<?> type = readClassTableClass();
-                final ClassDescriptor descriptor = new ClassDescriptor(type, ID_PROXY_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(type, ID_PROXY_CLASS);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -812,14 +812,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final Class<?> type = readClassTableClass();
                 final SerializableClass serializableClass = registry.lookup(type);
                 int descType = serializableClass.hasWriteObject() ? ID_WRITE_OBJECT_CLASS : ID_SERIALIZABLE_CLASS;
-                final ClassDescriptor descriptor = new SerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte()), serializableClass.getFields(), descType);
+                final ClassDescriptor descriptor = new BasicSerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte()), serializableClass.getFields(), descType);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
             case ID_PLAIN_CLASS: {
                 final String className = readString();
                 final Class<?> clazz = doResolveClass(className, 0L);
-                final ClassDescriptor descriptor = new ClassDescriptor(clazz, ID_PLAIN_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(clazz, ID_PLAIN_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
@@ -831,12 +831,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final ClassDescriptor descriptor;
                 if (version == 1) {
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(blockUnmarshaller, interfaces), ID_PROXY_CLASS);
+                    descriptor = new SimpleClassDescriptor(classResolver.resolveProxyClass(blockUnmarshaller, interfaces), ID_PROXY_CLASS);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
                 } else {
                     // v2 does not require a block for this
-                    descriptor = new ClassDescriptor(classResolver.resolveProxyClass(this, interfaces), ID_PROXY_CLASS);
+                    descriptor = new SimpleClassDescriptor(classResolver.resolveProxyClass(this, interfaces), ID_PROXY_CLASS);
                 }
                 classCache.add(descriptor);
                 return descriptor;
@@ -849,7 +849,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final long uid = readLong();
                 final Class<?> clazz = doResolveClass(className, uid);
                 final Class<?> superClazz = clazz.getSuperclass();
-                classCache.set(idx, new IncompleteClassDescriptor(clazz, classType));
+                final FutureSerializableClassDescriptor descriptor = new FutureSerializableClassDescriptor(clazz, classType);
+                classCache.set(idx, descriptor);
                 final int cnt = readInt();
                 final String[] names = new String[cnt];
                 final ClassDescriptor[] descriptors = new ClassDescriptor[cnt];
@@ -867,13 +868,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     Class<?> cl = superClazz;
                     while (cl != superType) {
-                        superDescriptor = new SerializableClassDescriptor(registry.lookup(cl), superDescriptor);
+                        superDescriptor = new SerializableGapClassDescriptor(registry.lookup(cl), superDescriptor);
                         cl = cl.getSuperclass();
                     }
                 } else if (superClazz != null) {
                     Class<?> cl = superClazz;
                     while (Serializable.class.isAssignableFrom(cl)) {
-                        superDescriptor = new SerializableClassDescriptor(registry.lookup(cl), superDescriptor);
+                        superDescriptor = new SerializableGapClassDescriptor(registry.lookup(cl), superDescriptor);
                         cl = cl.getSuperclass();
                     }
                 }
@@ -882,15 +883,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 for (int i = 0; i < cnt; i ++) {
                     fields[i] = serializableClass.getSerializableField(names[i], descriptors[i].getType(), unshareds[i]);
                 }
-                final ClassDescriptor descriptor = new SerializableClassDescriptor(serializableClass, superDescriptor, fields, classType);
-                classCache.set(idx, descriptor);
+                descriptor.setResult(new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, classType));
                 return descriptor;
             }
             case ID_EXTERNALIZABLE_CLASS: {
                 final String className = readString();
                 final long uid = readLong();
                 final Class<?> clazz = doResolveClass(className, uid);
-                final ClassDescriptor descriptor = new ClassDescriptor(clazz, ID_EXTERNALIZABLE_CLASS);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(clazz, ID_EXTERNALIZABLE_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
@@ -900,19 +900,19 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.add(null);
                 final Class<?> clazz = doResolveClass(className, 0L);
                 final Externalizer externalizer = (Externalizer) readObject();
-                final ClassDescriptor descriptor = new ExternalizerClassDescriptor(clazz, externalizer);
+                final SimpleClassDescriptor descriptor = new ExternalizerClassDescriptor(clazz, externalizer);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
 
             case ID_ENUM_TYPE_CLASS: {
-                final ClassDescriptor descriptor = new ClassDescriptor(doResolveClass(readString(), 0L), ID_ENUM_TYPE_CLASS);
+                final ClassDescriptor descriptor = new SimpleClassDescriptor(doResolveClass(readString(), 0L), ID_ENUM_TYPE_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
             case ID_OBJECT_ARRAY_TYPE_CLASS: {
                 final ClassDescriptor elementType = doReadClassDescriptor(readUnsignedByte());
-                final ClassDescriptor arrayDescriptor = new ClassDescriptor(Array.newInstance(elementType.getType(), 0).getClass(), ID_OBJECT_ARRAY_TYPE_CLASS);
+                final SimpleClassDescriptor arrayDescriptor = new SimpleClassDescriptor(Array.newInstance(elementType.getType(), 0).getClass(), ID_OBJECT_ARRAY_TYPE_CLASS);
                 classCache.add(arrayDescriptor);
                 return arrayDescriptor;
             }
@@ -1518,7 +1518,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
         final int typeId = descriptor.getTypeID();
         final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-        if (descriptor.isGap()) {
+        if (descriptor instanceof SerializableGapClassDescriptor) {
             if (info.hasReadObjectNoData()) {
                 info.callReadObjectNoData(obj);
             }

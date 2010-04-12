@@ -136,14 +136,16 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         if (limit == -1) {
             throw eofOnRead();
         }
+        final int position = this.position;
         int remaining = limit - position;
         if (len > remaining) {
             if (remaining > 0) {
                 System.arraycopy(buffer, position, b, off, remaining);
-                limit = position = 0;
+                limit = this.position = 0;
                 off += remaining;
                 len -= remaining;
             }
+            final ByteInput byteInput = this.byteInput;
             do {
                 remaining = byteInput.read(b, off, len);
                 if (remaining == -1) {
@@ -154,7 +156,7 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
             } while (len != 0);
         } else try {
             System.arraycopy(buffer, position, b, off, len);
-            position += len;
+            this.position = position + len;
         } catch (NullPointerException e) {
             throw eofOnRead();
         }

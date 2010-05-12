@@ -148,7 +148,7 @@ public abstract class AbstractUnmarshaller implements Unmarshaller {
             System.arraycopy(buffer, position, b, off, remaining);
             this.limit = this.position = 0;
             final int res = byteInput.read(b, off + remaining, len - remaining);
-            return res == -1 ? remaining : res + remaining;
+            return res == -1 ? (remaining == 0 ? -1 : remaining) : res + remaining;
         } else {
             System.arraycopy(buffer, position, b, off, len);
             this.position += len;

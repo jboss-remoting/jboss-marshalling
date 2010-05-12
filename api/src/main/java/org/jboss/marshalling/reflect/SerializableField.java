@@ -102,13 +102,13 @@ public final class SerializableField {
             final Field field = lookupField();
             if (field != null) {
                 fieldRefRef.compareAndSet(null, new WeakReference<Field>(field));
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        field.setAccessible(true);
+                        return null;
+                    }
+                });
             }
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    field.setAccessible(true);
-                    return null;
-                }
-            });
             return field;
         } else {
             final Field field = fieldRef.get();

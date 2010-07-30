@@ -42,10 +42,8 @@ import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
 import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.river.RiverUnmarshaller;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
-import static org.testng.AssertJUnit.assertEquals;
 
 import org.testng.SkipException;
 import java.util.Arrays;
@@ -548,6 +546,32 @@ public final class SimpleMarshallerTests extends TestBase {
         }
     }
 
+    public static final class TestExternalizableConstructed implements Externalizable {
+
+        private final boolean ran;
+
+        private static final long serialVersionUID = 2776810457096829768L;
+
+        public TestExternalizableConstructed() {
+            ran = false;
+        }
+
+        public TestExternalizableConstructed(final ObjectInput in) throws IOException {
+            assertEquals(54321, in.readInt());
+            assertEquals("Hello!", in.readUTF());
+            assertTrue("No EOF", in.read() == -1);
+            ran = true;
+        }
+
+        public void writeExternal(final ObjectOutput out) throws IOException {
+            out.writeInt(54321);
+            out.writeUTF("Hello!");
+        }
+
+        public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        }
+    }
+
     @Test
     public void testExternalizable() throws Throwable {
         final TestExternalizable ext = new TestExternalizable();
@@ -558,6 +582,26 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final TestExternalizable extn = (TestExternalizable) unmarshaller.readObject();
+                assertTrue("No EOF", unmarshaller.read() == -1);
+                assertTrue("readExternal was not run", extn.ran);
+            }
+        });
+        assertFalse("readExternal was run on the original", ext.ran);
+    }
+
+    @Test
+    public void testExternalizableConstructed() throws Throwable {
+        final TestExternalizableConstructed ext = new TestExternalizableConstructed();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(ext);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+                    throw new SkipException("Test not relevant for " + unmarshaller);
+                }
+                final TestExternalizableConstructed extn = (TestExternalizableConstructed) unmarshaller.readObject();
                 assertTrue("No EOF", unmarshaller.read() == -1);
                 assertTrue("readExternal was not run", extn.ran);
             }

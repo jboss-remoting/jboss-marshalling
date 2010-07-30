@@ -99,8 +99,8 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(populateMap(256, mapMaker.make()));
         list.add(populateMap(257, mapMaker.make()));
         list.add(populateMap(8000, mapMaker.make()));
-        list.add(populateMap(65536, mapMaker.make()));
-        list.add(populateMap(65537, mapMaker.make()));
+//        list.add(populateMap(65536, mapMaker.make())); // too slow
+//        list.add(populateMap(65537, mapMaker.make())); // too slow
 //        list.add(populateMap(800000, mapMaker.make())); // too slow
     }
 
@@ -111,8 +111,8 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(populateCollection(256, collectionMaker.make()));
         list.add(populateCollection(257, collectionMaker.make()));
         list.add(populateCollection(8000, collectionMaker.make()));
-        list.add(populateCollection(65536, collectionMaker.make()));
-        list.add(populateCollection(65537, collectionMaker.make()));
+//        list.add(populateCollection(65536, collectionMaker.make())); // too slow
+//        list.add(populateCollection(65537, collectionMaker.make())); // too slow
 //        list.add(populateCollection(800000, collectionMaker.make())); // too slow
     }
 

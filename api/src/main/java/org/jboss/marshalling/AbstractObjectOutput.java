@@ -44,7 +44,7 @@ public abstract class AbstractObjectOutput extends SimpleDataOutput implements O
      *
      * @param obj the object to write
      * @param unshared {@code true} if the instance is unshared, {@code false} if it is shared
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      */
     protected abstract void doWriteObject(Object obj, boolean unshared) throws IOException;
 

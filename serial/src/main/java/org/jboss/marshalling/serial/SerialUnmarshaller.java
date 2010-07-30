@@ -254,8 +254,14 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     }
                     final Object obj;
                     final int idx;
+                    final Class<?> objClass = descriptor.getType();
+                    final SerializableClass sc = registry.lookup(objClass);
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
-                        obj = externalizedCreator.create(descriptor.getType());
+                        if (sc.hasObjectInputConstructor()) {
+                            obj = sc.callObjectInputConstructor(blockUnmarshaller);
+                        } else {
+                            obj = sc.callNoArgConstructor();
+                        }
                         idx = instanceCache.size();
                         instanceCache.add(unshared ? UNSHARED : obj);
                         if (obj instanceof Externalizable) {
@@ -272,7 +278,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                             throw new InvalidObjectException("Created object should be Externalizable but it is not");
                         }
                     } else {
-                        obj = serializedCreator.create(descriptor.getType());
+                        obj = serializedCreator.create(objClass);
                         if (obj instanceof Externalizable) {
                             throw new InvalidObjectException("Created object should not be Externalizable but it is");
                         }
@@ -280,7 +286,6 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         instanceCache.add(unshared ? UNSHARED : obj);
                         doReadSerialObject(descriptor, obj);
                     }
-                    final SerializableClass sc = registry.lookup(obj.getClass());
                     if (sc.hasReadResolve()) {
                         final Object replacement = sc.callReadResolve(obj);
                         if (! unshared) instanceCache.set(idx, replacement);

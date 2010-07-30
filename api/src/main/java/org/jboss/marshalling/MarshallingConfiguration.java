@@ -32,7 +32,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private ClassResolver classResolver;
     private ObjectResolver objectResolver;
     private Creator creator;
-    private Creator externalizedCreator;
+    private Creator externalizerCreator;
     private Creator serializedCreator;
     private ClassTable classTable;
     private ObjectTable objectTable;
@@ -124,7 +124,7 @@ public final class MarshallingConfiguration implements Cloneable {
      * Get the object creator, or {@code null} if none is specified.  Used only if a more specific creator type
      * was not specified.
      *
-     * @deprecated Use {@link #getExternalizedCreator()} or {@link #getSerializedCreator()} instead.
+     * @deprecated Use {@link #getExternalizerCreator()} or {@link #getSerializedCreator()} instead.
      * @return the object creator
      */
     @Deprecated
@@ -136,7 +136,7 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the object creator, or {@code null} to use the default.  Used only if a more specific creator type
      * was not specified.
      *
-     * @deprecated Use {@link #setExternalizedCreator(Creator)} or {@link #setSerializedCreator(Creator)} instead.
+     * @deprecated Use {@link #setExternalizerCreator(Creator)} or {@link #setSerializedCreator(Creator)} instead.
      * @param creator the object creator
      */
     @Deprecated
@@ -279,18 +279,18 @@ public final class MarshallingConfiguration implements Cloneable {
      *
      * @return the creator
      */
-    public Creator getExternalizedCreator() {
-        final Creator result = externalizedCreator;
+    public Creator getExternalizerCreator() {
+        final Creator result = externalizerCreator;
         return result == null ? creator : result;
     }
 
     /**
      * Set the creator to use for externalized objects.
      *
-     * @param externalizedCreator the creator
+     * @param externalizerCreator the creator
      */
-    public void setExternalizedCreator(final Creator externalizedCreator) {
-        this.externalizedCreator = externalizedCreator;
+    public void setExternalizerCreator(final Creator externalizerCreator) {
+        this.externalizerCreator = externalizerCreator;
     }
 
     /**

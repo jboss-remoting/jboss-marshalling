@@ -1184,10 +1184,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_EXTERNALIZABLE_CLASS: {
                     final Class<?> type = descriptor.getType();
                     final SerializableClass serializableClass = registry.lookup(type);
-                    final Externalizable obj = (Externalizable) externalizedCreator.create(type);
+                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+                    final Externalizable obj;
+                    if (serializableClass.hasObjectInputConstructor()) {
+                        obj = (Externalizable) serializableClass.callObjectInputConstructor(blockUnmarshaller);
+                    } else {
+                        obj = (Externalizable) serializableClass.callNoArgConstructor();
+                    }
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
-                    final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
                     obj.readExternal(blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
@@ -1207,7 +1212,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClass serializableClass = registry.lookup(type);
                     final Object obj;
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj = externalizer.createExternal(type, blockUnmarshaller, externalizedCreator);
+                    obj = externalizer.createExternal(type, blockUnmarshaller, externalizerCreator);
                     instanceCache.set(idx, obj);
                     externalizer.readExternal(obj, blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();

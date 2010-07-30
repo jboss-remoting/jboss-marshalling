@@ -22,6 +22,8 @@
 
 package org.jboss.marshalling.reflect;
 
+import java.io.ObjectInput;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -52,6 +54,8 @@ public final class SerializableClass {
     private final LazyWeakMethodRef readObject;
     private final LazyWeakMethodRef readObjectNoData;
     private final LazyWeakMethodRef readResolve;
+    private final LazyWeakConstructorRef noArgConstructor;
+    private final LazyWeakConstructorRef objectInputConstructor;
     private final SerializableField[] fields;
     private final long effectiveSerialVersionUID;
 
@@ -88,6 +92,16 @@ public final class SerializableClass {
         readResolve = LazyWeakMethodRef.getInstance(new MethodFinder() {
             public Method get(final Class<?> clazz) {
                 return lookupInheritableMethod(clazz, "readResolve");
+            }
+        }, subjectRef);
+        noArgConstructor = LazyWeakConstructorRef.getInstance(new ConstructorFinder() {
+            public <T> Constructor<T> get(final Class<T> clazz) {
+                return lookupPublicConstructor(clazz);
+            }
+        }, subjectRef);
+        objectInputConstructor = LazyWeakConstructorRef.getInstance(new ConstructorFinder() {
+            public <T> Constructor<T> get(final Class<T> clazz) {
+                return lookupPublicConstructor(clazz, ObjectInput.class);
             }
         }, subjectRef);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
@@ -353,6 +367,68 @@ public final class SerializableClass {
     }
 
     /**
+     * Determine whether this class has a public no-arg constructor.
+     *
+     * @return {@code true} if there is such a constructor
+     */
+    public boolean hasNoArgConstructor() {
+        return noArgConstructor != null;
+    }
+
+    /**
+     * Invoke the public no-arg constructor on this class.
+     *
+     * @return the new instance
+     * @throws IOException if an I/O error occurs
+     */
+    public Object callNoArgConstructor() throws IOException {
+        return invokeConstructor(noArgConstructor);
+    }
+
+    /**
+     * Determine whether this class has a public constructor accepting an ObjectInput.
+     *
+     * @return {@code true} if there is such a constructor
+     */
+    public boolean hasObjectInputConstructor() {
+        return objectInputConstructor != null;
+    }
+
+    /**
+     * Invoke the public constructor accepting an ObjectInput.
+     *
+     * @param objectInput the ObjectInput to pass to the constructor
+     * @return the new instance
+     * @throws IOException if an I/O error occurs
+     */
+    public Object callObjectInputConstructor(final ObjectInput objectInput) throws IOException {
+        return invokeConstructor(objectInputConstructor, objectInput);
+    }
+
+    private static Object invokeConstructor(LazyWeakConstructorRef ref, Object... args) throws IOException {
+        try {
+            return ref.getConstructor().newInstance(args);
+        } catch (InvocationTargetException e) {
+            final Throwable te = e.getTargetException();
+            if (te instanceof IOException) {
+                throw (IOException)te;
+            } else if (te instanceof RuntimeException) {
+                throw (RuntimeException)te;
+            } else if (te instanceof Error) {
+                throw (Error)te;
+            } else {
+                throw new IllegalStateException("Unexpected exception", te);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Class is unexpectedly missing or changed");
+        } catch (InstantiationException e) {
+            throw new IllegalStateException("Instantiation failed unexpectedly");
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Constructor is unexpectedly inaccessible");
+        }
+    }
+
+    /**
      * Get the effective serial version UID of this class.
      *
      * @return the serial version UID
@@ -369,6 +445,18 @@ public final class SerializableClass {
      */
     public Class<?> getSubjectClass() throws ClassNotFoundException {
         return dereference(subjectRef);
+    }
+
+    private static <T> Constructor<T> lookupPublicConstructor(final Class<T> subject, final Class<?>... params) {
+        return AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
+            public Constructor<T> run() {
+                try {
+                    return subject.getConstructor(params);
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+            }
+        });
     }
 
     private static Method lookupPrivateMethod(final Class<?> subject, final String name, final Class<?>... params) {
@@ -464,6 +552,10 @@ public final class SerializableClass {
         Method get(Class<?> clazz);
     }
 
+    private interface ConstructorFinder {
+        <T> Constructor<T> get(Class<T> clazz);
+    }
+
     static Class<?> dereference(final WeakReference<Class<?>> classRef) throws ClassNotFoundException {
         final Class<?> clazz = classRef.get();
         if (clazz == null) {
@@ -511,6 +603,50 @@ public final class SerializableClass {
                 throw new NullPointerException("method is null (was non-null on last check)");
             }
             final WeakReference<Method> newVal = new WeakReference<Method>(method);
+            refUpdater.compareAndSet(this, weakReference, newVal);
+            return method;
+        }
+    }
+
+    private static class LazyWeakConstructorRef {
+        private volatile WeakReference<Constructor> ref;
+        private final ConstructorFinder finder;
+        private final WeakReference<Class<?>> classRef;
+
+        private static final AtomicReferenceFieldUpdater<LazyWeakConstructorRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakConstructorRef.class, WeakReference.class, "ref");
+
+        private LazyWeakConstructorRef(final ConstructorFinder finder, final Constructor initial, final WeakReference<Class<?>> classRef) {
+            this.finder = finder;
+            this.classRef = classRef;
+            ref = new WeakReference<Constructor>(initial);
+        }
+
+        private static LazyWeakConstructorRef getInstance(ConstructorFinder finder, WeakReference<Class<?>> classRef) {
+            final Class<?> clazz = classRef.get();
+            if (clazz == null) {
+                throw new NullPointerException("clazz is null (no strong reference held to class when serialization info was acquired");
+            }
+            final Constructor constructor = finder.get(clazz);
+            if (constructor == null) {
+                return null;
+            }
+            return new LazyWeakConstructorRef(finder, constructor, classRef);
+        }
+
+        private Constructor getConstructor() throws ClassNotFoundException {
+            final WeakReference<Constructor> weakReference = ref;
+            if (weakReference != null) {
+                final Constructor method = weakReference.get();
+                if (method != null) {
+                    return method;
+                }
+            }
+            final Class<?> clazz = dereference(classRef);
+            final Constructor method = finder.get(clazz);
+            if (method == null) {
+                throw new NullPointerException("method is null (was non-null on last check)");
+            }
+            final WeakReference<Constructor> newVal = new WeakReference<Constructor>(method);
             refUpdater.compareAndSet(this, weakReference, newVal);
             return method;
         }

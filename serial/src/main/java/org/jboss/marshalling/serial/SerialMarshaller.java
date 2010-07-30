@@ -283,7 +283,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
 
     private void writeSerialData(Class<?> objClass, Object obj) throws IOException {
         final Class<?> superClass = objClass.getSuperclass();
-        if (superClass != null && Serializable.class.isAssignableFrom(objClass)) {
+        if (superClass != null && Serializable.class.isAssignableFrom(superClass)) {
             writeSerialData(superClass, obj);
         }
         final SerializableClass sc = registry.lookup(objClass);

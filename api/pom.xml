@@ -26,29 +26,32 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jbmar.version>1.3.0.CR4-SNAPSHOT</jbmar.version>
-    </properties>
-
     <name>JBoss Marshalling API</name>
     <description>JBoss Marshalling API</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling</artifactId>
-    <version>${jbmar.version}</version>
+    <version>1.3.0.CR4-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <licenses>
-        <license>
-            <name>LGPL 2.1</name>
-            <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <organization>
-        <name>JBoss, a division of Red Hat, Inc.</name>
-        <url>http://www.jboss.org/</url>
-    </organization>
+
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>5</version>
+    </parent>
+
+    <properties>
+        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.6</maven.compiler.source>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>org.jboss.modules</groupId>
+            <artifactId>jboss-modules</artifactId>
+            <version>1.0.0.Beta1</version>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
@@ -57,34 +60,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.0.2</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jboss.maven.plugins</groupId>
@@ -101,7 +87,7 @@
                 <configuration>
                     <bytecodeInjections>
                         <bytecodeInjection>
-                            <expression>${jbmar.version}</expression>
+                            <expression>${project.version}</expression>
                             <targetMembers>
                                 <methodBodyReturn>
                                     <className>org.jboss.marshalling.Version</className>
@@ -114,7 +100,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -125,27 +110,17 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.6.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <detectJavaApiLink>false</detectJavaApiLink>
                     <doclet>net.gleamynode.apiviz.APIviz</doclet>
                     <docletArtifact>
                         <groupId>org.jboss.apiviz</groupId>
                         <artifactId>apiviz</artifactId>
-                        <version>1.2.5.GA</version>
+                        <version>1.3.1.GA</version>
                     </docletArtifact>
-                    <doctitle><![CDATA[JBoss Marshalling ]]>${version}</doctitle>
-                    <header><![CDATA[JBoss Marshalling ]]>${version}</header>
-                    <footer><![CDATA[JBoss Marshalling ]]>${version}</footer>
+                    <doctitle>${project.name} ${project.version}</doctitle>
+                    <header>${project.name} ${project.version}</header>
+                    <footer>${project.name} ${project.version}</footer>
                     <bottom><![CDATA[<i>Copyright &#169; 2010 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>
@@ -154,11 +129,4 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <repository>
-            <id>repository.jboss.org</id>
-            <name>JBoss Maven2 Repository</name>
-            <url>http://repository.jboss.org/repos/maven2</url>
-        </repository>
-    </distributionManagement>
 </project>

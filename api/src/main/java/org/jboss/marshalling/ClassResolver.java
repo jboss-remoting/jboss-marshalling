@@ -25,7 +25,7 @@ package org.jboss.marshalling;
 import java.io.IOException;
 
 /**
- * A class annotater and resolver.  Instances of this interface have the opportunity
+ * A class annotator and resolver.  Instances of this interface have the opportunity
  * to append information (such as classloader information, or class bytes) to a written
  * class descriptor.  This information can then be used on unmarshalling to aid in the
  * selection (or creation) of the proper {@code Class} based on the class descriptor and
@@ -51,7 +51,7 @@ public interface ClassResolver {
      * @see java.io.ObjectOutputStream#annotateProxyClass(Class)
      *
      * @param marshaller the marshaller to write to
-     * @param proxyClass the chass that was written
+     * @param proxyClass the class that was written
      * @throws IOException if an error occurs
      */
     void annotateProxyClass(Marshaller marshaller, Class<?> proxyClass) throws IOException;

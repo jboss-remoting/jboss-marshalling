@@ -93,7 +93,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
         return loader;
     }
 
-    /** {@inheritDoc}  The base implemenation returns the name of the class. */
+    /** {@inheritDoc}  The base implementation returns the name of the class. */
     public String getClassName(final Class<?> clazz) throws IOException {
         return clazz.getName();
     }

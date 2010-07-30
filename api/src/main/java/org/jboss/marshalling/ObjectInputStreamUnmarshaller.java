@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling;
 
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 
@@ -173,5 +174,31 @@ public class ObjectInputStreamUnmarshaller implements Unmarshaller {
 
     /** {@inheritDoc} */
     public void finish() throws IOException {
+    }
+
+    /** {@inheritDoc} */
+    public <T> T readObject(final Class<T> type) throws ClassNotFoundException, IOException {
+        final Object obj = readObject();
+        try {
+            return type.cast(obj);
+        } catch (ClassCastException e) {
+            throw wrongType(e, type, obj.getClass());
+        }
+    }
+
+    /** {@inheritDoc} */
+    public <T> T readObjectUnshared(final Class<T> type) throws ClassNotFoundException, IOException {
+        final Object obj = readObjectUnshared();
+        try {
+            return type.cast(obj);
+        } catch (ClassCastException e) {
+            throw wrongType(e, type, obj.getClass());
+        }
+    }
+
+    private static InvalidObjectException wrongType(final ClassCastException e, final Class<?> expected, final Class<?> actual) {
+        final InvalidObjectException ioe = new InvalidObjectException("Object is of the wrong type (expected " + expected + ", got " + actual + ")");
+        ioe.initCause(e);
+        return ioe;
     }
 }

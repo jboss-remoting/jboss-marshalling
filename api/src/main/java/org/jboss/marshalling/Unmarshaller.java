@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling;
 
+import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.IOException;
 
@@ -33,9 +34,34 @@ public interface Unmarshaller extends ObjectInput, ByteInput {
      * Read and return an unshared object.
      *
      * @return an unshared object
+     * @throws ClassNotFoundException if the class of a serialized object cannot be found
      * @throws IOException if an error occurs
      */
     Object readObjectUnshared() throws ClassNotFoundException, IOException;
+
+    /**
+     * Read and return an object, cast to a specific type.
+     * 
+     * @param type the object class
+     * @param <T> the object type
+     * @return the object read from the stream
+     * @throws ClassNotFoundException if the class of a serialized object cannot be found
+     * @throws InvalidObjectException if the object is not of the expected type
+     * @throws IOException if an error occurs
+     */
+    <T> T readObject(Class<T> type) throws ClassNotFoundException, IOException;
+
+    /**
+     * Read and return an unshared object, cast to a specific type.
+     *
+     * @param type the object class
+     * @param <T> the object type
+     * @return an unshared object
+     * @throws ClassNotFoundException if the class of a serialized object cannot be found
+     * @throws InvalidObjectException if the object is not of the expected type
+     * @throws IOException if an error occurs
+     */
+    <T> T readObjectUnshared(Class<T> type) throws ClassNotFoundException, IOException;
 
     /**
      * Begin unmarshalling from a stream.

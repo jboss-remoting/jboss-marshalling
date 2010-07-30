@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling.serial;
 
+import java.io.InvalidObjectException;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.Marshalling;
@@ -335,5 +336,29 @@ public final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStre
 
     public void close() throws IOException {
         throw new IllegalStateException("close() may not be called in this context");
+    }
+
+    public <T> T readObject(final Class<T> type) throws ClassNotFoundException, IOException {
+        final Object obj = readObject(false);
+        try {
+            return type.cast(obj);
+        } catch (ClassCastException e) {
+            throw wrongType(e, type, obj.getClass());
+        }
+    }
+
+    public <T> T readObjectUnshared(final Class<T> type) throws ClassNotFoundException, IOException {
+        final Object obj = readObject(true);
+        try {
+            return type.cast(obj);
+        } catch (ClassCastException e) {
+            throw wrongType(e, type, obj.getClass());
+        }
+    }
+
+    private static InvalidObjectException wrongType(final ClassCastException e, final Class<?> expected, final Class<?> actual) {
+        final InvalidObjectException ioe = new InvalidObjectException("Object is of the wrong type (expected " + expected + ", got " + actual + ")");
+        ioe.initCause(e);
+        return ioe;
     }
 }

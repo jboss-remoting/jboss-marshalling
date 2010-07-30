@@ -37,9 +37,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
@@ -473,14 +473,16 @@ public final class SerializableClass {
     }
 
     private static class LazyWeakMethodRef {
-        private final AtomicReference<WeakReference<Method>> ref;
+        private volatile WeakReference<Method> ref;
         private final MethodFinder finder;
         private final WeakReference<Class<?>> classRef;
+
+        private static final AtomicReferenceFieldUpdater<LazyWeakMethodRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakMethodRef.class, WeakReference.class, "ref");
 
         private LazyWeakMethodRef(final MethodFinder finder, final Method initial, final WeakReference<Class<?>> classRef) {
             this.finder = finder;
             this.classRef = classRef;
-            ref = new AtomicReference<WeakReference<Method>>(new WeakReference<Method>(initial));
+            ref = new WeakReference<Method>(initial);
         }
 
         private static LazyWeakMethodRef getInstance(MethodFinder finder, WeakReference<Class<?>> classRef) {
@@ -496,7 +498,7 @@ public final class SerializableClass {
         }
 
         private Method getMethod() throws ClassNotFoundException {
-            final WeakReference<Method> weakReference = ref.get();
+            final WeakReference<Method> weakReference = ref;
             if (weakReference != null) {
                 final Method method = weakReference.get();
                 if (method != null) {
@@ -509,7 +511,7 @@ public final class SerializableClass {
                 throw new NullPointerException("method is null (was non-null on last check)");
             }
             final WeakReference<Method> newVal = new WeakReference<Method>(method);
-            ref.compareAndSet(weakReference, newVal);
+            refUpdater.compareAndSet(this, weakReference, newVal);
             return method;
         }
     }

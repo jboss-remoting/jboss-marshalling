@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.ServiceLoader;
 
 /**
- * Static utility methods for simplfying use of marshallers.
+ * Static utility methods for simplifying use of marshallers.
  */
 public final class Marshalling {
 

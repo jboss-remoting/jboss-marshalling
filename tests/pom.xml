@@ -30,7 +30,7 @@
     <description>JBoss Marshalling Test Suite</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>tests</artifactId>
-    <version>1.3.0.CR4</version>
+    <version>1.3.0.CR5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>

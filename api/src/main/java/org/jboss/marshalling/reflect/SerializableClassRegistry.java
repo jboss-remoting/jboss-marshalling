@@ -64,7 +64,7 @@ public final class SerializableClassRegistry {
      * Look up serialization information for a class.  The resultant object will be cached.
      *
      * @param subject the class to look up
-     * @return the serializable class informatio
+     * @return the serializable class information
      */
     public SerializableClass lookup(final Class<?> subject) {
         SerializableClass info = cache.get(subject);

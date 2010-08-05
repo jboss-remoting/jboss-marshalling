@@ -26,36 +26,32 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <jbmar.version>1.2.2.CR1-SNAPSHOT</jbmar.version>
-    </properties>
-
     <name>JBoss Marshalling Tests</name>
     <description>JBoss Marshalling Test Suite</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>tests</artifactId>
-    <version>${jbmar.version}</version>
+    <version>1.2.2.CR1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>marshalling-api</artifactId>
-            <version>${jbmar.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>river</artifactId>
-            <version>${jbmar.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serial</artifactId>
-            <version>${jbmar.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>serialization-java</artifactId>
-            <version>${jbmar.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>
@@ -77,6 +73,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -90,6 +87,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.4.3</version>
                 <configuration>
                     <includes>
                         <include>**/*TestFactory.java</include>
@@ -99,6 +97,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.4</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

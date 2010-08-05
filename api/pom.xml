@@ -26,15 +26,11 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <jbmar.version>1.2.2.CR1-SNAPSHOT</jbmar.version>
-    </properties>
-
     <name>JBoss Marshalling API</name>
     <description>JBoss Marshalling API</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>marshalling-api</artifactId>
-    <version>${jbmar.version}</version>
+    <version>1.2.2.CR1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
     </dependencies>
@@ -51,6 +47,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -81,9 +78,9 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
-                    <doctitle><![CDATA[JBoss Marshalling ]]>${version}</doctitle>
-                    <header><![CDATA[JBoss Marshalling ]]>${version}</header>
-                    <footer><![CDATA[JBoss Marshalling ]]>${version}</footer>
+                    <doctitle><![CDATA[JBoss Marshalling ]]>${project.version}</doctitle>
+                    <header><![CDATA[JBoss Marshalling ]]>${project.version}</header>
+                    <footer><![CDATA[JBoss Marshalling ]]>${project.version}</footer>
                     <bottom><![CDATA[<i>Copyright &#169; 2010 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>

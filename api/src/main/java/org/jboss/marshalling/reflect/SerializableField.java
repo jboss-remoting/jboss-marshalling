@@ -79,7 +79,9 @@ public final class SerializableField {
             return AccessController.doPrivileged(new PrivilegedAction<Field>() {
                 public Field run() {
                     try {
-                        return clazz.getDeclaredField(name);
+                        final Field field = clazz.getDeclaredField(name);
+                        field.setAccessible(true);
+                        return field;
                     } catch (NoSuchFieldException e) {
                         missing = true;
                         return null;
@@ -102,12 +104,6 @@ public final class SerializableField {
             final Field field = lookupField();
             if (field != null) {
                 fieldRefRef.compareAndSet(null, new WeakReference<Field>(field));
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        field.setAccessible(true);
-                        return null;
-                    }
-                });
             }
             return field;
         } else {
@@ -115,20 +111,15 @@ public final class SerializableField {
             if (field != null) {
                 return field;
             }
-            return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-                public Field run() {
-                    final Field newField = lookupField();
-                    final WeakReference<Field> newFieldRef;
-                    if (newField == null) {
-                        newFieldRef = null;
-                    } else {
-                        newField.setAccessible(true);
-                        newFieldRef = new WeakReference<Field>(newField);
-                    }
-                    fieldRefRef.compareAndSet(fieldRef, newFieldRef);
-                    return newField;
-                }
-            });
+            final Field newField = lookupField();
+            final WeakReference<Field> newFieldRef;
+            if (newField == null) {
+                newFieldRef = null;
+            } else {
+                newFieldRef = new WeakReference<Field>(newField);
+            }
+            fieldRefRef.compareAndSet(fieldRef, newFieldRef);
+            return newField;
         }
     }
 

@@ -30,7 +30,7 @@
     <description>JBoss Marshalling API</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling</artifactId>
-    <version>1.3.0.CR5</version>
+    <version>1.3.0.CR6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>

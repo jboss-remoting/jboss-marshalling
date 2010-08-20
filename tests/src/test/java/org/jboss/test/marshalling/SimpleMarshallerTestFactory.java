@@ -40,7 +40,7 @@ import java.util.ArrayList;
 /**
  *
  */
-@Test
+@Test(dataProvider="baseProvider")
 public final class SimpleMarshallerTestFactory {
 
     @DataProvider(name = "baseProvider")

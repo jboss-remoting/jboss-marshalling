@@ -639,7 +639,9 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 case ID_DOUBLE_ARRAY_CLASS: {
-                    instanceCache.put(obj, instanceSeq++);
+                    if (! unshared) {
+                        instanceCache.put(obj, instanceSeq++);
+                    }
                     final double[] doubles = (double[]) obj;
                     final int len = doubles.length;
                     if (configuredVersion >= 2) {

@@ -22,33 +22,36 @@
 
 package org.jboss.test.marshalling;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.RandomAccess;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.LinkedHashSet;
-import java.util.Queue;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.SortedMap;
-import java.util.RandomAccess;
-import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ConcurrentHashMap;
+
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
@@ -57,7 +60,7 @@ import org.testng.annotations.Test;
 /**
  *
  */
-@Test
+@Test(dataProvider = "singleObjectProvider")
 public final class SingleObjectMarshallerTestFactory {
 
     @DataProvider(name = "singleObjectProvider")
@@ -90,7 +93,7 @@ public final class SingleObjectMarshallerTestFactory {
         }
         return collection;
     }
- 
+
     private static void populateAllMapSizes(List<Object> list, Maker<Map<Integer,Object>> mapMaker) {
         list.add(populateMap(0, mapMaker.make()));
         list.add(populateMap(1, mapMaker.make()));
@@ -121,6 +124,7 @@ public final class SingleObjectMarshallerTestFactory {
         populateAllMapSizes(list, linkedHashMapMaker);
         populateAllMapSizes(list, identityHashMapMaker);
         populateAllMapSizes(list, treeMapMaker);
+        populateAllMapSizes(list, treeMapCompMaker);
     }
 
     private static void populateAllCollections(List<Object> list) {
@@ -129,6 +133,7 @@ public final class SingleObjectMarshallerTestFactory {
         populateAllCollectionSizes(list, hashSetMaker);
         populateAllCollectionSizes(list, linkedHashSetMaker);
         populateAllCollectionSizes(list, treeSetMaker);
+        populateAllCollectionSizes(list, treeSetCompMaker);
     }
 
     private static void populate(List<Object> list) {
@@ -247,6 +252,12 @@ public final class SingleObjectMarshallerTestFactory {
         }
     };
 
+    private static final Maker<Map<Integer,Object>> treeMapCompMaker = new Maker<Map<Integer,Object>>() {
+        public Map<Integer, Object> make() {
+            return new TreeMap<Integer, Object>(new IntComp());
+        }
+    };
+
     private static final Maker<Map<Integer,Object>> linkedHashMapMaker = new Maker<Map<Integer,Object>>() {
         public Map<Integer, Object> make() {
             return new LinkedHashMap<Integer, Object>();
@@ -288,6 +299,20 @@ public final class SingleObjectMarshallerTestFactory {
             return new TreeSet<Integer>();
         }
     };
+
+    private static final Maker<Collection<Integer>> treeSetCompMaker = new Maker<Collection<Integer>>() {
+        public Collection<Integer> make() {
+            return new TreeSet<Integer>(new IntComp());
+        }
+    };
+
+    private static final class IntComp implements Comparator<Integer>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        public int compare(Integer i1, Integer i2) {
+            return i2 == null ? 1 : i1.compareTo(i2);
+        }
+    }
 
     private interface Maker<T> {
         T make();

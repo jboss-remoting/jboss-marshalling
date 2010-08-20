@@ -2643,4 +2643,72 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    static class ClassTableSuper implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        int someInt = 123;
+        String someString = "test";
+    }
+
+    static class ClassTableSub extends ClassTableSuper {
+        private static final long serialVersionUID = -1732733608096099080L;
+
+        float fl = 0.125f;
+        String str2 = "blah";
+    }
+
+    @Test
+    public void testClassTableHierarchy() throws Throwable {
+        final ClassTable classTable = new ClassTable() {
+            public Writer getClassWriter(final Class<?> clazz) throws IOException {
+                return clazz == ClassTableSuper.class ? new Writer() {
+                    public void writeClass(final Marshaller marshaller, final Class<?> clazz) throws IOException {
+                        marshaller.writeByte(1);
+                    }
+                } : clazz == ClassTableSub.class ? new Writer() {
+                    public void writeClass(final Marshaller marshaller, final Class<?> clazz) throws IOException {
+                        marshaller.writeByte(2);
+                    }
+                } : null;
+            }
+
+            public Class<?> readClass(final Unmarshaller unmarshaller) throws IOException, ClassNotFoundException {
+                switch (unmarshaller.readByte()) {
+                    case 1:
+                        return ClassTableSuper.class;
+                    case 2:
+                        return ClassTableSub.class;
+                    default:
+                        throw new IllegalStateException();
+                }
+            }
+        };
+        final ClassTableSub sub = new ClassTableSub();
+        final ClassTableSuper sup = new ClassTableSuper();
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassTable(classTable);
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(sub);
+                marshaller.writeObject(sup);
+                marshaller.writeObject("check");
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final ClassTableSub sub1 = unmarshaller.readObject(ClassTableSub.class);
+                final ClassTableSuper sup1 = unmarshaller.readObject(ClassTableSuper.class);
+                assertEquals("check", unmarshaller.readObject());
+                assertEquals(sub.someInt, sub1.someInt);
+                assertEquals(sub.someString, sub1.someString);
+                assertEquals(sub.fl, sub1.fl, 0.0f);
+                assertEquals(sub.str2, sub1.str2);
+                assertEquals(sup.someInt, sup1.someInt);
+                assertEquals(sup.someString, sup1.someString);
+            }
+        });
+    }
 }

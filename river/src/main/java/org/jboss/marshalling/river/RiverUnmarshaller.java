@@ -629,51 +629,57 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
-                            return readCollectionData(unshared, len, new ArrayList(len));
+                            return readCollectionData(unshared, -1, len, new ArrayList(len));
                         }
                         case ID_CC_HASH_SET: {
-                            return readCollectionData(unshared, len, new HashSet(len));
+                            return readCollectionData(unshared, -1, len, new HashSet(len));
                         }
                         case ID_CC_LINKED_HASH_SET: {
-                            return readCollectionData(unshared, len, new LinkedHashSet(len));
+                            return readCollectionData(unshared, -1, len, new LinkedHashSet(len));
                         }
                         case ID_CC_LINKED_LIST: {
-                            return readCollectionData(unshared, len, new LinkedList());
+                            return readCollectionData(unshared, -1, len, new LinkedList());
                         }
                         case ID_CC_TREE_SET: {
-                            return readCollectionData(unshared, len, new TreeSet((Comparator)doReadNestedObject(false, "java.util.TreeSet comparator")));
+                            int idx = instanceCache.size();
+                            instanceCache.add(null);
+                            Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
+                            return readCollectionData(unshared, idx, len, new TreeSet(comp));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return readCollectionData(unshared, len, EnumSet.noneOf(elementType));
+                            return readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType));
                         }
                         case ID_CC_VECTOR: {
-                            return readCollectionData(unshared, len, new Vector(len));
+                            return readCollectionData(unshared, -1, len, new Vector(len));
                         }
                         case ID_CC_STACK: {
-                            return readCollectionData(unshared, len, new Stack());
+                            return readCollectionData(unshared, -1, len, new Stack());
                         }
 
                         case ID_CC_HASH_MAP: {
-                            return readMapData(unshared, len, new HashMap(len));
+                            return readMapData(unshared, -1, len, new HashMap(len));
                         }
                         case ID_CC_HASHTABLE: {
-                            return readMapData(unshared, len, new Hashtable(len));
+                            return readMapData(unshared, -1, len, new Hashtable(len));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
-                            return readMapData(unshared, len, new IdentityHashMap(len));
+                            return readMapData(unshared, -1, len, new IdentityHashMap(len));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
-                            return readMapData(unshared, len, new LinkedHashMap(len));
+                            return readMapData(unshared, -1, len, new LinkedHashMap(len));
                         }
                         case ID_CC_TREE_MAP: {
-                            return readMapData(unshared, len, new TreeMap((Comparator)doReadNestedObject(false, "java.util.TreeMap comparator")));
+                            int idx = instanceCache.size();
+                            instanceCache.add(null);
+                            Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
+                            return readMapData(unshared, idx, len, new TreeMap(comp));
                         }
                         case ID_CC_ENUM_MAP: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return readMapData(unshared, len, new EnumMap(elementType));
+                            return readMapData(unshared, -1, len, new EnumMap(elementType));
                         }
                         default: {
                             throw new StreamCorruptedException("Unexpected byte found when reading a collection type: " + leadByte);
@@ -718,38 +724,44 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readCollectionData(final boolean unshared, final int len, final Collection target) throws ClassNotFoundException, IOException {
+    private Object readCollectionData(final boolean unshared, int cacheIdx, final int len, final Collection target) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
-        idx = instanceCache.size();
-        instanceCache.add(target);
+
+        if (cacheIdx == -1) {
+            idx = instanceCache.size();
+            instanceCache.add(target);
+        } else {
+            idx = cacheIdx;
+        }
+
         for (int i = 0; i < len; i ++) {
-            target.add(doReadCollectionObject(false, idx, len));
+            target.add(doReadCollectionObject(false, i, len));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
-        if (unshared) {
-            instanceCache.set(idx, null);
-        } else if (target != resolvedObject) {
-            instanceCache.set(idx, resolvedObject);
-        }
+        instanceCache.set(idx, unshared ? null : resolvedObject);
+
         return resolvedObject;
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readMapData(final boolean unshared, final int len, final Map target) throws ClassNotFoundException, IOException {
+    private Object readMapData(final boolean unshared, int cacheIdx, final int len, final Map target) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
-        idx = instanceCache.size();
-        instanceCache.add(target);
+
+        if (cacheIdx == -1) {
+            idx = instanceCache.size();
+            instanceCache.add(target);
+        } else {
+            idx = cacheIdx;
+        }
+
         for (int i = 0; i < len; i ++) {
-            target.put(doReadMapObject(false, idx, len, true), doReadMapObject(false, idx, len, false));
+            target.put(doReadMapObject(false, i, len, true), doReadMapObject(false, i, len, false));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
-        if (unshared) {
-            instanceCache.set(idx, null);
-        } else if (target != resolvedObject) {
-            instanceCache.set(idx, resolvedObject);
-        }
+        instanceCache.set(idx, unshared ? null : resolvedObject);
+
         return resolvedObject;
     }
 

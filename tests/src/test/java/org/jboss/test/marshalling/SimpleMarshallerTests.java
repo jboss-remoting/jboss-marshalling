@@ -22,63 +22,74 @@
 
 package org.jboss.test.marshalling;
 
-import org.jboss.marshalling.ByteInput;
-import org.jboss.marshalling.ByteOutput;
-import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.ObjectResolver;
-import org.jboss.marshalling.StreamHeader;
-import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.ObjectTable;
-import org.jboss.marshalling.ClassTable;
-import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.Creator;
-import org.jboss.marshalling.ClassExternalizerFactory;
-import org.jboss.marshalling.Externalize;
-import org.jboss.marshalling.SimpleClassResolver;
-import org.jboss.marshalling.ObjectOutputStreamMarshaller;
-import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
-import org.jboss.marshalling.AnnotationClassExternalizerFactory;
-import org.jboss.marshalling.FieldSetter;
-import org.jboss.marshalling.river.RiverUnmarshaller;
-import org.testng.annotations.Test;
-import static org.testng.AssertJUnit.*;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertFalse;
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.assertNotSame;
+import static org.testng.AssertJUnit.assertNull;
+import static org.testng.AssertJUnit.assertSame;
+import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.fail;
 
-import org.testng.SkipException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Random;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.NotSerializableException;
-import java.io.IOException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
 import java.io.Externalizable;
-import java.io.ObjectOutput;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
 import java.io.ObjectInput;
-import java.io.ObjectStreamField;
 import java.io.ObjectInputStream;
 import java.io.ObjectInputValidation;
-import java.io.InvalidObjectException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jboss.marshalling.AnnotationClassExternalizerFactory;
+import org.jboss.marshalling.ByteInput;
+import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.ClassExternalizerFactory;
+import org.jboss.marshalling.ClassTable;
+import org.jboss.marshalling.Creator;
+import org.jboss.marshalling.Externalize;
+import org.jboss.marshalling.Externalizer;
+import org.jboss.marshalling.FieldSetter;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
+import org.jboss.marshalling.ObjectOutputStreamMarshaller;
+import org.jboss.marshalling.ObjectResolver;
+import org.jboss.marshalling.ObjectTable;
+import org.jboss.marshalling.SimpleClassResolver;
+import org.jboss.marshalling.StreamHeader;
+import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.river.RiverUnmarshaller;
+import org.testng.SkipException;
+import org.testng.annotations.Test;
 
 /**
  *
  */
 public final class SimpleMarshallerTests extends TestBase {
-                                    
+
     public SimpleMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
         super(testMarshallerProvider, testUnmarshallerProvider, configuration);
     }
@@ -1320,6 +1331,34 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEOF(unmarshaller);
             }
         });
+    }
+
+    @Test
+    public void testTreeComp() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+                TreeMap<Integer, Integer> tree = new TreeMap<Integer, Integer>(new IntComp());
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(tree.comparator());
+                tree.put(1, 1);
+                marshaller.writeObject(tree);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                unmarshaller.readObject();
+                TreeMap x = (TreeMap) unmarshaller.readObject();
+                assertEquals(tree, x);
+                assertTrue(x.comparator() instanceof IntComp);
+            }
+        });
+    }
+
+    public static class IntComp implements Comparator<Integer>, Serializable {
+
+        public int compare(Integer o1, Integer o2) {
+            return o1 == null ? 1 : o1.compareTo(o2);
+        }
+
     }
 
     public interface Adder {

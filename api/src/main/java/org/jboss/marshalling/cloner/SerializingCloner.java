@@ -235,8 +235,8 @@ class SerializingCloner implements ObjectCloner {
             if (! (clone instanceof Serializable)) {
                 throw new NotSerializableException(cloneClass.getName());
             }
-            initSerializableClone(orig, info, clone, cloneClass);
             clones.put(orig, clone);
+            initSerializableClone(orig, info, clone, cloneClass);
         } else {
             throw new NotSerializableException(objClass.getName());
         }

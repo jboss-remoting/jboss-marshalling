@@ -57,7 +57,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2747,6 +2746,23 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertEquals(sub.str2, sub1.str2);
                 assertEquals(sup.someInt, sup1.someInt);
                 assertEquals(sup.someString, sup1.someString);
+            }
+        });
+    }
+
+    @Test
+    public void testTreeMapBackref() throws Throwable {
+        final TreeMap<Object, Object> treeMap = new TreeMap<Object, Object>();
+        treeMap.put("Hi", treeMap);
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(treeMap);
+                marshaller.writeObject(treeMap);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final TreeMap newTreeMap = unmarshaller.readObject(TreeMap.class);
+                assertSame(newTreeMap, unmarshaller.readObject(TreeMap.class));
             }
         });
     }

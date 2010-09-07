@@ -754,6 +754,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             instanceCache.add(target);
         } else {
             idx = cacheIdx;
+            instanceCache.set(idx, target);
         }
 
         for (int i = 0; i < len; i ++) {

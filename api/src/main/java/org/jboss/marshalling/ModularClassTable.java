@@ -67,8 +67,7 @@ public final class ModularClassTable implements ClassTable {
         final byte b = unmarshaller.readByte();
         switch (b) {
             case 0: {
-                final ModuleIdentifier identifier = new ModuleIdentifier(
-                        (String) unmarshaller.readObject(),
+                final ModuleIdentifier identifier = ModuleIdentifier.create(
                         (String) unmarshaller.readObject(),
                         (String) unmarshaller.readObject()
                 );
@@ -82,8 +81,7 @@ public final class ModularClassTable implements ClassTable {
                 }
             }
             case 1: {
-                final ModuleIdentifier identifier = new ModuleIdentifier(
-                        (String) unmarshaller.readObject(),
+                final ModuleIdentifier identifier = ModuleIdentifier.create(
                         (String) unmarshaller.readObject(),
                         (String) unmarshaller.readObject()
                 );
@@ -101,7 +99,7 @@ public final class ModularClassTable implements ClassTable {
                 for (int i = 0; i < len; i ++) {
                     interfaces[i] = Class.forName((String) unmarshaller.readObject(), false, classLoader);
                 }
-                return Proxy.getProxyClass(classLoader, interfaces); 
+                return Proxy.getProxyClass(classLoader, interfaces);
             }
             default: throw new StreamCorruptedException(String.format("Invalid class type byte: %02x", Integer.valueOf(b & 0xff)));
         }
@@ -115,9 +113,8 @@ public final class ModularClassTable implements ClassTable {
                 throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
             }
             final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getGroup());
-            marshaller.writeObject(identifier.getArtifact());
-            marshaller.writeObject(identifier.getVersion());
+            marshaller.writeObject(identifier.getName());
+            marshaller.writeObject(identifier.getSlot());
             marshaller.writeObject(clazz.getName());
         }
     }
@@ -130,9 +127,8 @@ public final class ModularClassTable implements ClassTable {
                 throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
             }
             final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getGroup());
-            marshaller.writeObject(identifier.getArtifact());
-            marshaller.writeObject(identifier.getVersion());
+            marshaller.writeObject(identifier.getName());
+            marshaller.writeObject(identifier.getSlot());
             final Class<?>[] interfaces = clazz.getInterfaces();
             marshaller.writeInt(interfaces.length);
             for (Class<?> interfaze : interfaces) {

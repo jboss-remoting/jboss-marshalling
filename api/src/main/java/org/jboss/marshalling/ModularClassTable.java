@@ -30,11 +30,13 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.ModuleLoader;
 
 /**
  * A class table which implements an alternate class resolution strategy based on JBoss Modules.
  * Each class name is stored along with its corresponding module identifier, which allows the object graph
- * to be exactly reconstituted on the remote side.
+ * to be exactly reconstituted on the remote side.  This class should only be used when the marshalling
+ * and unmarshalling side share the same class files.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
@@ -43,18 +45,33 @@ public final class ModularClassTable implements ClassTable {
     private static final Writer PROXY_WRITER = new ProxyWriter();
     private static final Writer CLASS_WRITER = new ClassWriter();
 
-    private static final ModularClassTable INSTANCE = new ModularClassTable();
+    private final ModuleLoader moduleLoader;
 
     private ModularClassTable() {
+        moduleLoader = Module.getDefaultModuleLoader();
+    }
+
+    private ModularClassTable(final ModuleLoader moduleLoader) {
+        this.moduleLoader = moduleLoader;
     }
 
     /**
-     * Get the instance.
+     * Get an instance using the default module loader.
      *
      * @return the modular class table
      */
     public static ModularClassTable getInstance() {
-        return INSTANCE;
+        return new ModularClassTable();
+    }
+
+    /**
+     * Get an instance using the given module loader.
+     *
+     * @param moduleLoader the module loader to use
+     * @return the modular class table
+     */
+    public static ModularClassTable getInstance(final ModuleLoader moduleLoader) {
+        return new ModularClassTable(moduleLoader);
     }
 
     /** {@inheritDoc} */
@@ -73,7 +90,7 @@ public final class ModularClassTable implements ClassTable {
                 );
                 final String className = (String) unmarshaller.readObject();
                 try {
-                    return Module.loadClass(identifier, className, false);
+                    return Class.forName(className, false, moduleLoader.loadModule(identifier).getClassLoader());
                 } catch (ModuleLoadException e) {
                     final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
                     ce.initCause(e);
@@ -87,7 +104,7 @@ public final class ModularClassTable implements ClassTable {
                 );
                 final Module module;
                 try {
-                    module = Module.getModule(identifier);
+                    module = moduleLoader.loadModule(identifier);
                 } catch (ModuleLoadException e) {
                     final InvalidClassException ce = new InvalidClassException("Module load failed");
                     ce.initCause(e);

@@ -1,4 +1,26 @@
 /*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2010, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+/*
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/licenses/publicdomain
@@ -124,7 +146,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
+final class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         implements java.util.concurrent.ConcurrentMap<K, V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
 
@@ -385,7 +407,7 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
         @SuppressWarnings("unchecked")
         final K key() {
-            if (keyRef instanceof Reference)
+            if (keyRef instanceof KeyReference)
                 return ((Reference<K>)keyRef).get();
 
             return (K) keyRef;
@@ -397,7 +419,7 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
         @SuppressWarnings("unchecked")
         final V dereferenceValue(Object value) {
-            if (value instanceof Reference)
+            if (value instanceof KeyReference)
                 return ((Reference<V>)value).get();
 
             return (V) value;
@@ -675,7 +697,7 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                 V oldValue;
                 if (e != null) {
                     oldValue = e.value();
-                    if (!onlyIfAbsent)
+                    if (!onlyIfAbsent || oldValue == null) // null = gc AFTER stale removal
                         e.setValue(value, valueType, refQueue);
                 }
                 else {
@@ -1130,10 +1152,8 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
         // Try a few times without locking
         for (int k = 0; k < RETRIES_BEFORE_LOCK; ++k) {
-            int sum = 0;
             int mcsum = 0;
             for (int i = 0; i < segments.length; ++i) {
-                int c = segments[i].count;
                 mcsum += mc[i] = segments[i].modCount;
                 if (segments[i].containsValue(value))
                     return true;
@@ -1141,7 +1161,6 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             boolean cleanSweep = true;
             if (mcsum != 0) {
                 for (int i = 0; i < segments.length; ++i) {
-                    int c = segments[i].count;
                     if (mc[i] != segments[i].modCount) {
                         cleanSweep = false;
                         break;
@@ -1519,8 +1538,7 @@ class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         public boolean equals(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
-            @SuppressWarnings("unchecked")
-            Map.Entry e = (Map.Entry) o;
+            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             return eq(key, e.getKey()) && eq(value, e.getValue());
         }
 

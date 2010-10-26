@@ -28,7 +28,6 @@ import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputValidation;
-import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -881,7 +880,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                 } else if (superClazz != null) {
                     Class<?> cl = superClazz;
-                    while (Serializable.class.isAssignableFrom(cl)) {
+                    while (serializabilityChecker.isSerializable(cl)) {
                         superDescriptor = new SerializableGapClassDescriptor(registry.lookup(cl), superDescriptor);
                         cl = cl.getSuperclass();
                     }

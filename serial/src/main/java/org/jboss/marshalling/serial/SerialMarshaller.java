@@ -39,7 +39,6 @@ import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
-import java.io.Serializable;
 import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.InvalidClassException;
@@ -269,7 +268,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
             externalizable.writeExternal(blockMarshaller);
             doEndBlock();
             return;
-        } else if (obj instanceof Serializable) {
+        } else if (serializabilityChecker.isSerializable(objClass)) {
             write(TC_OBJECT);
             writeClassDescFor(objClass);
             final int id = instanceSeq++;
@@ -283,7 +282,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
 
     private void writeSerialData(Class<?> objClass, Object obj) throws IOException {
         final Class<?> superClass = objClass.getSuperclass();
-        if (superClass != null && Serializable.class.isAssignableFrom(superClass)) {
+        if (superClass != null && serializabilityChecker.isSerializable(superClass)) {
             writeSerialData(superClass, obj);
         }
         final SerializableClass sc = registry.lookup(objClass);
@@ -439,7 +438,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
             writeLong(0L);
             write(SC_SERIALIZABLE | SC_ENUM);
             writeShort(0);
-        } else if (Serializable.class.isAssignableFrom(forClass)) {
+        } else if (serializabilityChecker.isSerializable(forClass)) {
             final SerializableClass sc = registry.lookup(forClass);
             final long svu = sc.getEffectiveSerialVersionUID();
             writeLong(svu);
@@ -497,7 +496,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         classResolver.annotateClass(blockMarshaller, forClass);
         doEndBlock();
         final Class<?> sc = forClass.getSuperclass();
-        if (sc != null && Serializable.class.isAssignableFrom(sc) && ! forClass.isEnum()) {
+        if (sc != null && serializabilityChecker.isSerializable(sc) && ! forClass.isEnum()) {
             writeClassDescFor(sc);
         } else {
             write(TC_NULL);

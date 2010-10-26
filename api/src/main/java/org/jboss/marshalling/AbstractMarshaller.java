@@ -48,6 +48,8 @@ public abstract class AbstractMarshaller extends AbstractObjectOutput implements
     protected final ObjectTable objectTable;
     /** The configured exception listener. */
     protected final ExceptionListener exceptionListener;
+    /** The configured serializability checker. */
+    protected final SerializabilityChecker serializabilityChecker;
     /** The configured version to write. */
     protected final int configuredVersion;
 
@@ -77,6 +79,8 @@ public abstract class AbstractMarshaller extends AbstractObjectOutput implements
         this.objectTable = objectTable == null ? marshallerFactory.getDefaultObjectTable() : objectTable;
         final ExceptionListener exceptionListener = configuration.getExceptionListener();
         this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
+        final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
+        this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
     }

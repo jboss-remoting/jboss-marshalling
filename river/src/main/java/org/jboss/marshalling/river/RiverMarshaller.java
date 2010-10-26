@@ -28,7 +28,6 @@ import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutput;
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
@@ -834,7 +833,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 return;
             }
             // user type #3: serializable
-            if (obj instanceof Serializable) {
+            if (serializabilityChecker.isSerializable(objClass)) {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 writeSerializableClass(objClass);
                 instanceCache.put(obj, instanceSeq++);
@@ -950,7 +949,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected void doWriteSerializableObject(final SerializableClass info, final Object obj, final Class<?> objClass) throws IOException {
         final Class<?> superclass = objClass.getSuperclass();
-        if (Serializable.class.isAssignableFrom(superclass)) {
+        if (serializabilityChecker.isSerializable(superclass)) {
             doWriteSerializableObject(registry.lookup(superclass), obj, superclass);
         }
         if (info.hasWriteObject()) {
@@ -1237,7 +1236,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeNewProxyClass(objClass);
         } else if (objClass.isArray()) {
             writeObjectArrayClass(objClass);
-        } else if (! objClass.isInterface() && Serializable.class.isAssignableFrom(objClass)) {
+        } else if (! objClass.isInterface() && serializabilityChecker.isSerializable(objClass)) {
             if (Externalizable.class.isAssignableFrom(objClass)) {
                 writeNewExternalizableClass(objClass);
             } else {

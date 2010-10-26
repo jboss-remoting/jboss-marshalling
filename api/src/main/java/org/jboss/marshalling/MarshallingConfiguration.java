@@ -37,6 +37,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private ClassTable classTable;
     private ObjectTable objectTable;
     private ExceptionListener exceptionListener;
+    private SerializabilityChecker serializabilityChecker;
     private int instanceCount = 256;
     private int classCount = 64;
     private int bufferSize = 512;
@@ -311,6 +312,24 @@ public final class MarshallingConfiguration implements Cloneable {
      */
     public void setSerializedCreator(final Creator serializedCreator) {
         this.serializedCreator = serializedCreator;
+    }
+
+    /**
+     * Get the serializability checker.
+     *
+     * @return the serializability checker
+     */
+    public SerializabilityChecker getSerializabilityChecker() {
+        return serializabilityChecker;
+    }
+
+    /**
+     * Set the serializability checker.
+     *
+     * @param serializabilityChecker the new serializability checker
+     */
+    public void setSerializabilityChecker(final SerializabilityChecker serializabilityChecker) {
+        this.serializabilityChecker = serializabilityChecker;
     }
 
     /**

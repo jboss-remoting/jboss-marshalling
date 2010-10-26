@@ -40,7 +40,6 @@ import java.io.InvalidObjectException;
 import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.ObjectInputValidation;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.SortedMap;
@@ -514,7 +513,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         if (descriptor == null) return null;
         final Class<?> superDescrClazz = descriptor == null ? null : descriptor.getType();
         final Class<?> typeSuperclass = type.getSuperclass();
-        if (type == superDescrClazz || descriptor == null && (typeSuperclass == null || Serializable.class.isAssignableFrom(typeSuperclass))) {
+        if (type == superDescrClazz || descriptor == null && (typeSuperclass == null || serializabilityChecker.isSerializable(typeSuperclass))) {
             return descriptor;
         } else {
             return new NoDataDescriptor(type, bridge(descriptor, typeSuperclass));
@@ -594,10 +593,10 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         if (Externalizable.class.isAssignableFrom(clazz)) {
             // todo - make WRITE_METHOD depend on block mode
             return new PlainDescriptor(clazz, null, SerializableClass.NOFIELDS, SC_EXTERNALIZABLE | SC_BLOCK_DATA);
-        } else if (Serializable.class.isAssignableFrom(clazz)) {
+        } else if (serializabilityChecker.isSerializable(clazz)) {
             final Class<?> superclass = clazz.getSuperclass();
             final Descriptor parent;
-            if (superclass != null && Serializable.class.isAssignableFrom(superclass)) {
+            if (superclass != null && serializabilityChecker.isSerializable(superclass)) {
                 parent = descriptorForClass(superclass);
             } else {
                 parent = null;

@@ -23,7 +23,6 @@
 package org.jboss.marshalling;
 
 import org.jboss.marshalling.reflect.PublicReflectiveCreator;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
 
 /**

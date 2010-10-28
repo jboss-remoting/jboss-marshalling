@@ -24,12 +24,14 @@ package org.jboss.marshalling.cloner;
 
 import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.ObjectResolver;
+import org.jboss.marshalling.SerializabilityChecker;
 
 public final class ClonerConfiguration implements Cloneable {
 
     private CloneTable cloneTable;
     private ObjectResolver objectResolver;
     private ClassCloner classCloner;
+    private SerializabilityChecker serializabilityChecker;
     private Creator externalizedCreator;
     private Creator serializedCreator;
     private int bufferSize;
@@ -64,6 +66,14 @@ public final class ClonerConfiguration implements Cloneable {
 
     public void setClassCloner(final ClassCloner classCloner) {
         this.classCloner = classCloner;
+    }
+
+    public SerializabilityChecker getSerializabilityChecker() {
+        return serializabilityChecker;
+    }
+
+    public void setSerializabilityChecker(final SerializabilityChecker serializabilityChecker) {
+        this.serializabilityChecker = serializabilityChecker;
     }
 
     public Creator getExternalizedCreator() {

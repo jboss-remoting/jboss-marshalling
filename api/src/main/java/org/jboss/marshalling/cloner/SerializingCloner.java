@@ -35,7 +35,6 @@ import java.io.ObjectInputValidation;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
-import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -45,7 +44,6 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,6 +62,7 @@ import org.jboss.marshalling.MarshallerObjectInputStream;
 import org.jboss.marshalling.MarshallerObjectOutputStream;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.ObjectResolver;
+import org.jboss.marshalling.SerializabilityChecker;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.reflect.PublicReflectiveCreator;
 import org.jboss.marshalling.reflect.SerializableClass;
@@ -90,6 +89,7 @@ class SerializingCloner implements ObjectCloner {
     private final CloneTable delegate;
     private final ObjectResolver objectResolver;
     private final ClassCloner classCloner;
+    private final SerializabilityChecker serializabilityChecker;
     private final Creator externalizedCreator;
     private final Creator serializedCreator;
     private final int bufferSize;
@@ -108,6 +108,8 @@ class SerializingCloner implements ObjectCloner {
         this.objectResolver = objectResolver == null ? Marshalling.nullObjectResolver() : objectResolver;
         final ClassCloner classCloner = configuration.getClassCloner();
         this.classCloner = classCloner == null ? ClassCloner.IDENTITY : classCloner;
+        final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
+        this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
         final Creator externalizedCreator = configuration.getExternalizedCreator();
         this.externalizedCreator = externalizedCreator == null ? new PublicReflectiveCreator() : externalizedCreator;
         final Creator serializedCreator = configuration.getSerializedCreator();
@@ -229,10 +231,10 @@ class SerializingCloner implements ObjectCloner {
             final Queue<Step> steps = new ArrayDeque<Step>();
             externalizable.writeExternal(new StepObjectOutput(steps));
             ((Externalizable) clone).readExternal(new StepObjectInput(steps));
-        } else if (orig instanceof Serializable) {
+        } else if (serializabilityChecker.isSerializable(objClass)) {
             clone = serializedCreator.create((Class<?>) clone(objClass));
             final Class<?> cloneClass = clone.getClass();
-            if (! (clone instanceof Serializable)) {
+            if (! (serializabilityChecker.isSerializable(cloneClass))) {
                 throw new NotSerializableException(cloneClass.getName());
             }
             clones.put(orig, clone);
@@ -252,7 +254,7 @@ class SerializingCloner implements ObjectCloner {
     private void initSerializableClone(final Object orig, final SerializableClass info, final Object clone, final Class<?> cloneClass) throws IOException, ClassNotFoundException {
 
         final Class<?> objClass = info.getSubjectClass();
-        if (! Serializable.class.isAssignableFrom(cloneClass)) {
+        if (! serializabilityChecker.isSerializable(cloneClass)) {
             throw new NotSerializableException(cloneClass.getName());
         }
         final SerializableClass cloneInfo = registry.lookup(cloneClass);
@@ -267,10 +269,10 @@ class SerializingCloner implements ObjectCloner {
         }
         // first, init the serializable superclass, if any
         final Class<?> superClass = objClass.getSuperclass();
-        if (Serializable.class.isAssignableFrom(superClass) || Serializable.class.isAssignableFrom(cloneSuperClass)) {
+        if (serializabilityChecker.isSerializable(superClass) || serializabilityChecker.isSerializable(cloneSuperClass)) {
             initSerializableClone(orig, registry.lookup(superClass), clone, cloneSuperClass);
         }
-        if (! Serializable.class.isAssignableFrom(objClass)) {
+        if (! serializabilityChecker.isSerializable(objClass)) {
             if (cloneInfo.hasReadObjectNoData()) {
                 cloneInfo.callReadObjectNoData(clone);
             }

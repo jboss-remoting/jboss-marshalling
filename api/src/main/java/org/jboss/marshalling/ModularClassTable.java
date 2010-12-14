@@ -47,21 +47,8 @@ public final class ModularClassTable implements ClassTable {
 
     private final ModuleLoader moduleLoader;
 
-    private ModularClassTable() {
-        moduleLoader = Module.getDefaultModuleLoader();
-    }
-
     private ModularClassTable(final ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
-    }
-
-    /**
-     * Get an instance using the default module loader.
-     *
-     * @return the modular class table
-     */
-    public static ModularClassTable getInstance() {
-        return new ModularClassTable();
     }
 
     /**

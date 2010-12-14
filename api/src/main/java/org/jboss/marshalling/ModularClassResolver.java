@@ -42,21 +42,8 @@ import org.jboss.modules.ModuleLoader;
 public final class ModularClassResolver implements ClassResolver {
     private final ModuleLoader moduleLoader;
 
-    private ModularClassResolver() {
-        moduleLoader = Module.getDefaultModuleLoader();
-    }
-
     private ModularClassResolver(final ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
-    }
-
-    /**
-     * Construct a new instance using the default module loader.
-     *
-     * @return the new instance
-     */
-    public static ModularClassResolver getInstance() {
-        return new ModularClassResolver();
     }
 
     /**

@@ -71,11 +71,16 @@ public final class SerializableClassRegistry {
         if (info != null) {
             return info;
         }
-        info = AccessController.doPrivileged(new PrivilegedAction<SerializableClass>() {
-            public SerializableClass run() {
-                return new SerializableClass(subject);
-            }
-        });
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            info = AccessController.doPrivileged(new PrivilegedAction<SerializableClass>() {
+                public SerializableClass run() {
+                    return new SerializableClass(subject);
+                }
+            });
+        } else {
+            info = new SerializableClass(subject);
+        }
         final SerializableClass old = cache.putIfAbsent(subject, info);
         return old != null ? old : info;
     }

@@ -39,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -69,41 +67,13 @@ public final class SerializableClass {
     SerializableClass(Class<?> subject) {
         final WeakReference<Class<?>> subjectRef = new WeakReference<Class<?>>(subject);
         this.subjectRef = subjectRef;
-        writeObject = LazyWeakMethodRef.getInstance(new MethodFinder() {
-            public Method get(Class<?> clazz) {
-                return lookupPrivateMethod(clazz, "writeObject", ObjectOutputStream.class);
-            }
-        }, subjectRef);
-        readObject = LazyWeakMethodRef.getInstance(new MethodFinder() {
-            public Method get(final Class<?> clazz) {
-                return lookupPrivateMethod(clazz, "readObject", ObjectInputStream.class);
-            }
-        }, subjectRef);
-        readObjectNoData = LazyWeakMethodRef.getInstance(new MethodFinder() {
-            public Method get(final Class<?> clazz) {
-                return lookupPrivateMethod(clazz, "readObjectNoData");
-            }
-        }, subjectRef);
-        writeReplace = LazyWeakMethodRef.getInstance(new MethodFinder() {
-            public Method get(final Class<?> clazz) {
-                return lookupInheritableMethod(clazz, "writeReplace");
-            }
-        }, subjectRef);
-        readResolve = LazyWeakMethodRef.getInstance(new MethodFinder() {
-            public Method get(final Class<?> clazz) {
-                return lookupInheritableMethod(clazz, "readResolve");
-            }
-        }, subjectRef);
-        noArgConstructor = LazyWeakConstructorRef.getInstance(new ConstructorFinder() {
-            public <T> Constructor<T> get(final Class<T> clazz) {
-                return lookupPublicConstructor(clazz);
-            }
-        }, subjectRef);
-        objectInputConstructor = LazyWeakConstructorRef.getInstance(new ConstructorFinder() {
-            public <T> Constructor<T> get(final Class<T> clazz) {
-                return lookupPublicConstructor(clazz, ObjectInput.class);
-            }
-        }, subjectRef);
+        writeObject = LazyWeakMethodRef.getInstance(WRITE_OBJECT_FINDER, subjectRef);
+        readObject = LazyWeakMethodRef.getInstance(READ_OBJECT_FINDER, subjectRef);
+        readObjectNoData = LazyWeakMethodRef.getInstance(READ_OBJECT_NO_DATA_FINDER, subjectRef);
+        writeReplace = LazyWeakMethodRef.getInstance(WRITE_REPLACE_FINDER, subjectRef);
+        readResolve = LazyWeakMethodRef.getInstance(READ_RESOLVE_FINDER, subjectRef);
+        noArgConstructor = LazyWeakConstructorRef.getInstance(SIMPLE_CONSTRUCTOR_FINDER, subjectRef);
+        objectInputConstructor = LazyWeakConstructorRef.getInstance(OBJECT_INPUT_CONSTRUCTOR_FINDER, subjectRef);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         fields = getSerializableFields(subject);
@@ -448,79 +418,67 @@ public final class SerializableClass {
     }
 
     private static <T> Constructor<T> lookupPublicConstructor(final Class<T> subject, final Class<?>... params) {
-        return AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
-            public Constructor<T> run() {
-                try {
-                    return subject.getConstructor(params);
-                } catch (NoSuchMethodException e) {
-                    return null;
-                }
-            }
-        });
+        try {
+            return subject.getConstructor(params);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 
     private static Method lookupPrivateMethod(final Class<?> subject, final String name, final Class<?>... params) {
-        return AccessController.doPrivileged(new PrivilegedAction<Method>() {
-            public Method run() {
-                try {
-                    final Method method = subject.getDeclaredMethod(name, params);
-                    final int modifiers = method.getModifiers();
-                    if ((modifiers & Modifier.PRIVATE) == 0) {
-                        // must be private...
-                        return null;
-                    } else if ((modifiers & Modifier.STATIC) != 0) {
-                        // must NOT be static...
-                        return null;
-                    } else {
-                        method.setAccessible(true);
-                        return method;
-                    }
-                } catch (NoSuchMethodException e) {
-                    return null;
-                }
+        try {
+            final Method method = subject.getDeclaredMethod(name, params);
+            final int modifiers = method.getModifiers();
+            if ((modifiers & Modifier.PRIVATE) == 0) {
+                // must be private...
+                return null;
+            } else if ((modifiers & Modifier.STATIC) != 0) {
+                // must NOT be static...
+                return null;
+            } else {
+                method.setAccessible(true);
+                return method;
             }
-        });
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 
     private static Method lookupInheritableMethod(final Class<?> subject, final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<Method>() {
-            public Method run() {
-                Class<?> foundClass = subject;
-                Method method = null;
-                while (method == null) {
-                    try {
-                        if (foundClass == null) {
-                            return null;
-                        }
-                        method = foundClass.getDeclaredMethod(name);
-                        if (method == null) {
-                            foundClass = foundClass.getSuperclass();
-                        }
-                    } catch (NoSuchMethodException e) {
-                        foundClass = foundClass.getSuperclass();
-                        continue;
-                    }
-                }
-                final int modifiers = method.getModifiers();
-                if ((modifiers & Modifier.STATIC) != 0) {
-                    // must NOT be static..
-                    return null;
-                } else if ((modifiers & Modifier.ABSTRACT) != 0) {
-                    // must NOT be abstract...
-                    return null;
-                } else if ((modifiers & Modifier.PRIVATE) != 0 && foundClass != subject) {
-                    // not visible to the actual class
-                    return null;
-                } else if ((modifiers & (Modifier.PROTECTED | Modifier.PUBLIC)) != 0 || isSamePackage(foundClass, subject)) {
-                    // visible!
-                    method.setAccessible(true);
-                    return method;
-                } else {
-                    // package private, but not the same package
+        Class<?> foundClass = subject;
+        Method method = null;
+        while (method == null) {
+            try {
+                if (foundClass == null) {
                     return null;
                 }
+                method = foundClass.getDeclaredMethod(name);
+                if (method == null) {
+                    foundClass = foundClass.getSuperclass();
+                }
+            } catch (NoSuchMethodException e) {
+                foundClass = foundClass.getSuperclass();
+                continue;
             }
-        });
+        }
+        final int modifiers = method.getModifiers();
+        if ((modifiers & Modifier.STATIC) != 0) {
+            // must NOT be static..
+            return null;
+        } else if ((modifiers & Modifier.ABSTRACT) != 0) {
+            // must NOT be abstract...
+            return null;
+        } else if ((modifiers & Modifier.PRIVATE) != 0 && foundClass != subject) {
+            // not visible to the actual class
+            return null;
+        } else if ((modifiers & (Modifier.PROTECTED | Modifier.PUBLIC)) != 0 || isSamePackage(foundClass, subject)) {
+            // visible!
+            method.setAccessible(true);
+            return method;
+        } else {
+            // package private, but not the same package
+            return null;
+        }
     }
 
     // the package is the same if the name and classloader are both the same
@@ -649,6 +607,52 @@ public final class SerializableClass {
             final WeakReference<Constructor> newVal = new WeakReference<Constructor>(method);
             refUpdater.compareAndSet(this, weakReference, newVal);
             return method;
+        }
+    }
+
+    private static final MethodFinder WRITE_OBJECT_FINDER = new PrivateMethodFinder("writeObject", ObjectOutputStream.class);
+    private static final MethodFinder READ_OBJECT_FINDER = new PrivateMethodFinder("readObject", ObjectInputStream.class);
+    private static final MethodFinder READ_OBJECT_NO_DATA_FINDER = new PrivateMethodFinder("readObjectNoData");
+    private static final MethodFinder WRITE_REPLACE_FINDER = new InheritableMethodFinder("writeReplace");
+    private static final MethodFinder READ_RESOLVE_FINDER = new InheritableMethodFinder("readResolve");
+    private static final ConstructorFinder SIMPLE_CONSTRUCTOR_FINDER = new PublicConstructorFinder();
+    private static final ConstructorFinder OBJECT_INPUT_CONSTRUCTOR_FINDER = new PublicConstructorFinder(ObjectInput.class);
+
+    private static final class PrivateMethodFinder implements MethodFinder {
+        private final String name;
+        private final Class<?>[] params;
+
+        private PrivateMethodFinder(final String name, final Class<?>... params) {
+            this.name = name;
+            this.params = params;
+        }
+
+        public Method get(final Class<?> clazz) {
+            return lookupPrivateMethod(clazz, name, params);
+        }
+    }
+
+    private static final class InheritableMethodFinder implements MethodFinder {
+        private final String name;
+
+        private InheritableMethodFinder(final String name) {
+            this.name = name;
+        }
+
+        public Method get(final Class<?> clazz) {
+            return lookupInheritableMethod(clazz, name);
+        }
+    }
+
+    private static final class PublicConstructorFinder implements ConstructorFinder {
+        private final Class<?>[] params;
+
+        private PublicConstructorFinder(final Class<?>... params) {
+            this.params = params;
+        }
+
+        public <T> Constructor<T> get(final Class<T> clazz) {
+            return lookupPublicConstructor(clazz, params);
         }
     }
 }

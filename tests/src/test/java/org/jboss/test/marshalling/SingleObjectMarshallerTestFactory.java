@@ -136,6 +136,7 @@ public final class SingleObjectMarshallerTestFactory {
         populateAllCollectionSizes(list, linkedHashSetMaker);
         populateAllCollectionSizes(list, treeSetMaker);
         populateAllCollectionSizes(list, treeSetCompMaker);
+        populateAllCollectionSizes(list, treeSetComp2Maker);
         populateAllCollectionSizes(list, arrayDequeMaker);
     }
 
@@ -148,6 +149,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(Collections.singleton(Integer.valueOf(1234)));
         list.add(Collections.singletonList(Integer.valueOf(1234)));
         list.add(Collections.singletonMap(Integer.valueOf(1234), Long.valueOf(54321L)));
+        list.add(Collections.reverseOrder());
         list.add(Boolean.TRUE);
         list.add(Boolean.FALSE);
         list.add(Pair.create(Pair.class, Boolean.TRUE));
@@ -195,6 +197,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(Collections.singleton(null).getClass());
         list.add(Collections.singletonList(null).getClass());
         list.add(Collections.singletonMap(null, null).getClass());
+        list.add(Collections.reverseOrder().getClass());
         list.add(Collections.unmodifiableMap(new HashMap<Object, Object>()).getClass());
         list.add(Collections.unmodifiableSet(new HashSet<Object>()).getClass());
         list.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
@@ -309,6 +312,12 @@ public final class SingleObjectMarshallerTestFactory {
     private static final Maker<Collection<Integer>> treeSetCompMaker = new Maker<Collection<Integer>>() {
         public Collection<Integer> make() {
             return new TreeSet<Integer>(new IntComp());
+        }
+    };
+
+    private static final Maker<Collection<Integer>> treeSetComp2Maker = new Maker<Collection<Integer>>() {
+        public Collection<Integer> make() {
+            return new TreeSet<Integer>(Collections.reverseOrder(new IntComp()));
         }
     };
 

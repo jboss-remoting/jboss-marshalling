@@ -22,6 +22,7 @@
 
 package org.jboss.marshalling.river;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 
 /**
@@ -176,8 +177,8 @@ public final class Protocol {
     // protocol version >= 3
     public static final int ID_PAIR                     = 0x77;
     public static final int ID_CC_ARRAY_DEQUE           = 0x78;
-    // todo - ID_NAVIGABLE_MAPs
-    // todo - ID_NAVIGABLE_SETs
+    public static final int ID_REVERSE_ORDER_OBJECT     = 0x79;
+    public static final int ID_REVERSE_ORDER2_OBJECT    = 0x7a;
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
@@ -186,6 +187,10 @@ public final class Protocol {
     static final Class<?> emptyListClass = Collections.emptyList().getClass();
     static final Class<?> emptySetClass = Collections.emptySet().getClass();
     static final Class<?> emptyMapClass = Collections.emptyMap().getClass();
+
+    static final Class<?> reverseOrderClass = Collections.reverseOrder().getClass();
+    static final Class<?> reverseOrder2Class = Collections.reverseOrder(Collections.<Object>reverseOrder()).getClass();
+    static final Field reverseOrder2Field;
 
     static final Class<?> enumSetProxyClass;
 
@@ -197,6 +202,17 @@ public final class Protocol {
             throw new IllegalStateException("No standard serialization proxy found for enum set!");
         }
         enumSetProxyClass = clazz;
+        Field field = null;
+        for (Field declared : reverseOrder2Class.getDeclaredFields()) {
+            if (declared.getName().equals("cmp")) {
+                declared.setAccessible(true);
+                field = declared;
+            }
+        }
+        if (field == null) {
+            throw new IllegalStateException("No standard field found for reverse order comparator!");
+        }
+        reverseOrder2Field = field;
     }
 
     private Protocol() {

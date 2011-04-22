@@ -708,7 +708,8 @@ public class RiverMarshaller extends AbstractMarshaller {
 
                 case ID_EMPTY_MAP_OBJECT:
                 case ID_EMPTY_SET_OBJECT:
-                case ID_EMPTY_LIST_OBJECT: {
+                case ID_EMPTY_LIST_OBJECT:
+                case ID_REVERSE_ORDER_OBJECT: {
                     write(id);
                     return;
                 }
@@ -730,6 +731,16 @@ public class RiverMarshaller extends AbstractMarshaller {
                     doWriteObject(((Collection)obj).iterator().next(), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_REVERSE_ORDER2_OBJECT: {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(Protocol.reverseOrder2Field.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for reverse-order comparator");
                     }
                     return;
                 }
@@ -1192,6 +1203,8 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         map.put(Pair.class, ID_PAIR);
         map.put(ArrayDeque.class, ID_CC_ARRAY_DEQUE);
+        map.put(reverseOrderClass, ID_REVERSE_ORDER_OBJECT); // special case
+        map.put(reverseOrder2Class, ID_REVERSE_ORDER2_OBJECT); // special case
 
         BASIC_CLASSES_V3 = map;
 

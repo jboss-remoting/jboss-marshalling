@@ -119,6 +119,8 @@ public abstract class ClassDescriptor {
     static final ClassDescriptor VECTOR = getSerializableClassDescriptor(Vector.class);
     static final ClassDescriptor STACK = getSerializableClassDescriptor(Stack.class);
     static final ClassDescriptor ARRAY_DEQUE = getSerializableClassDescriptor(ArrayDeque.class);
+    static final ClassDescriptor REVERSE_ORDER = getSerializableClassDescriptor(Protocol.reverseOrderClass);
+    static final ClassDescriptor REVERSE_ORDER2 = getSerializableClassDescriptor(Protocol.reverseOrder2Class);
 
     private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject) {
         return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {

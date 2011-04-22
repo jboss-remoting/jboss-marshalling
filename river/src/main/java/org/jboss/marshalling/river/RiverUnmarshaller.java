@@ -578,6 +578,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     return resolvedObject;
                 }
+                case ID_REVERSE_ORDER2_OBJECT: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.reverseOrder((Comparator<?>) doReadNestedObject(false, "Collections#reverseOrder()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return resolvedObject;
+                }
 
                 case ID_EMPTY_LIST_OBJECT: {
                     return Collections.emptyList();
@@ -587,6 +597,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 case ID_EMPTY_MAP_OBJECT: {
                     return Collections.emptyMap();
+                }
+                case ID_REVERSE_ORDER_OBJECT: {
+                    return Collections.reverseOrder();
                 }
 
                 case ID_COLLECTION_EMPTY:
@@ -1021,6 +1034,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_EMPTY_LIST_OBJECT: {
                 return ClassDescriptor.EMPTY_LIST;
+            }
+
+            case ID_REVERSE_ORDER_OBJECT: {
+                return ClassDescriptor.REVERSE_ORDER;
+            }
+            case ID_REVERSE_ORDER2_OBJECT: {
+                return ClassDescriptor.REVERSE_ORDER2;
             }
 
             case ID_PAIR: {

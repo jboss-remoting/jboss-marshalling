@@ -179,6 +179,7 @@ public final class Protocol {
     public static final int ID_CC_ARRAY_DEQUE           = 0x78;
     public static final int ID_REVERSE_ORDER_OBJECT     = 0x79;
     public static final int ID_REVERSE_ORDER2_OBJECT    = 0x7a;
+    public static final int ID_CC_NCOPIES = 0x7b;
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
@@ -191,6 +192,8 @@ public final class Protocol {
     static final Class<?> reverseOrderClass = Collections.reverseOrder().getClass();
     static final Class<?> reverseOrder2Class = Collections.reverseOrder(Collections.<Object>reverseOrder()).getClass();
     static final Field reverseOrder2Field;
+
+    static final Class<?> nCopiesClass = Collections.nCopies(1, null).getClass();
 
     static final Class<?> enumSetProxyClass;
 

@@ -174,6 +174,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(new TimeoutException());
         list.add(new TestArrayList());
         list.add(new TestCollectionHolder());
+        list.add(Collections.nCopies(123, "This is a test!"));
         // classes to verify
         list.add(HashMap.class);
         list.add(ConcurrentHashMap.class);
@@ -236,6 +237,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(RandomAccess.class);
         list.add(Pair.class);
         list.add(ArrayDeque.class);
+        list.add(Collections.nCopies(5, null).getClass());
     }
 
     @Factory(dataProvider = "singleObjectProvider")

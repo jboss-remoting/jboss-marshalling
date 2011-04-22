@@ -548,6 +548,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return Stack.class;
                 }
 
+                case ID_CC_NCOPIES: {
+                    return nCopiesClass;
+                }
+
                 case ID_SINGLETON_LIST_OBJECT: {
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
@@ -696,6 +700,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
                             return readMapData(unshared, -1, len, new EnumMap(elementType));
+                        }
+                        case ID_CC_NCOPIES: {
+                            final int idx = instanceCache.size();
+                            instanceCache.add(null);
+                            final Object obj = Collections.nCopies(len, doReadNestedObject(false, "n-copies member object"));
+                            final Object resolvedObject = objectResolver.readResolve(obj);
+                            if (! unshared) {
+                                instanceCache.set(idx, resolvedObject);
+                            }
+                            return resolvedObject;
                         }
                         default: {
                             throw new StreamCorruptedException("Unexpected byte found when reading a collection type: " + leadByte);
@@ -1014,6 +1028,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_ARRAY_DEQUE: {
                 return ClassDescriptor.ARRAY_DEQUE;
+            }
+            case ID_CC_NCOPIES: {
+                return ClassDescriptor.NCOPIES;
             }
 
             case ID_SINGLETON_MAP_OBJECT: {

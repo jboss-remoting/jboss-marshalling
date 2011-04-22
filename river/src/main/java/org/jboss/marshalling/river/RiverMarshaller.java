@@ -44,6 +44,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -761,6 +762,31 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                case ID_CC_NCOPIES: {
+                    List<?> list = (List<?>) obj;
+                    int size = list.size();
+                    if (size == 0) {
+                        write(ID_EMPTY_LIST_OBJECT);
+                        return;
+                    }
+                    instanceCache.put(obj, instanceSeq++);
+                    if (size <= 256) {
+                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                        write(size);
+                    } else if (size <= 65536) {
+                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                        writeShort(size);
+                    } else {
+                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                        writeInt(size);
+                    }
+                    write(id);
+                    doWriteObject(list.iterator().next(), false);
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }
@@ -1205,6 +1231,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(ArrayDeque.class, ID_CC_ARRAY_DEQUE);
         map.put(reverseOrderClass, ID_REVERSE_ORDER_OBJECT); // special case
         map.put(reverseOrder2Class, ID_REVERSE_ORDER2_OBJECT); // special case
+        map.put(nCopiesClass, ID_CC_NCOPIES);
 
         BASIC_CLASSES_V3 = map;
 

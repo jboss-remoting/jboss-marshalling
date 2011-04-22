@@ -55,7 +55,12 @@ public final class Marshalling {
      * @return the marshaller factory, or {@code null} if no matching factory was found
      *
      * @see ServiceLoader
+     *
+     * @deprecated It is recommended that you use {@link #getProvidedMarshallerFactory(String)} instead; using the context
+     * class loader to find a marshalling implementation is risky at best as the user may have just about anything on their
+     * class path.
      */
+    @Deprecated
     public static MarshallerFactory getMarshallerFactory(String name) {
         return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class), name);
     }
@@ -72,6 +77,16 @@ public final class Marshalling {
      */
     public static MarshallerFactory getMarshallerFactory(String name, ClassLoader classLoader) {
         return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, classLoader), name);
+    }
+
+    /**
+     * Get a marshaller factory which is visible to this implementation, by name.  Uses the class loader of this API.
+     *
+     * @param name the name of the protocol to acquire
+     * @return the marshaller factory, or {@code null} if no matching factory was found
+     */
+    public static MarshallerFactory getProvidedMarshallerFactory(String name) {
+        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader()), name);
     }
 
     private static MarshallerFactory loadMarshallerFactory(ServiceLoader<ProviderDescriptor> loader, String name) {

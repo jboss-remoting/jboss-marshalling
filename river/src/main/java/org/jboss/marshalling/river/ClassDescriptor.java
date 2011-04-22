@@ -30,6 +30,7 @@ import java.util.AbstractList;
 import java.util.AbstractQueue;
 import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -117,6 +118,7 @@ public abstract class ClassDescriptor {
     static final ClassDescriptor COPY_ON_WRITE_ARRAY_SET = getSerializableClassDescriptor(CopyOnWriteArraySet.class);
     static final ClassDescriptor VECTOR = getSerializableClassDescriptor(Vector.class);
     static final ClassDescriptor STACK = getSerializableClassDescriptor(Stack.class);
+    static final ClassDescriptor ARRAY_DEQUE = getSerializableClassDescriptor(ArrayDeque.class);
 
     private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject) {
         return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {

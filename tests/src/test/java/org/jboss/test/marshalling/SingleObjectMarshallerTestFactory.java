@@ -23,6 +23,7 @@
 package org.jboss.test.marshalling;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -135,6 +136,7 @@ public final class SingleObjectMarshallerTestFactory {
         populateAllCollectionSizes(list, linkedHashSetMaker);
         populateAllCollectionSizes(list, treeSetMaker);
         populateAllCollectionSizes(list, treeSetCompMaker);
+        populateAllCollectionSizes(list, arrayDequeMaker);
     }
 
     private static void populate(List<Object> list) {
@@ -230,6 +232,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(SortedMap.class);
         list.add(RandomAccess.class);
         list.add(Pair.class);
+        list.add(ArrayDeque.class);
     }
 
     @Factory(dataProvider = "singleObjectProvider")
@@ -306,6 +309,12 @@ public final class SingleObjectMarshallerTestFactory {
     private static final Maker<Collection<Integer>> treeSetCompMaker = new Maker<Collection<Integer>>() {
         public Collection<Integer> make() {
             return new TreeSet<Integer>(new IntComp());
+        }
+    };
+
+    private static final Maker<Collection<Integer>> arrayDequeMaker = new Maker<Collection<Integer>>() {
+        public Collection<Integer> make() {
+            return new EqualableArrayDeque<Integer>();
         }
     };
 

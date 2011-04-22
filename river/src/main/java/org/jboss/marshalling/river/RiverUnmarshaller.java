@@ -38,6 +38,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -656,6 +657,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         case ID_CC_STACK: {
                             return readCollectionData(unshared, -1, len, new Stack());
                         }
+                        case ID_CC_ARRAY_DEQUE: {
+                            return readCollectionData(unshared, -1, len, new ArrayDeque(len));
+                        }
 
                         case ID_CC_HASH_MAP: {
                             return readMapData(unshared, -1, len, new HashMap(len));
@@ -994,6 +998,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_STACK: {
                 return ClassDescriptor.STACK;
+            }
+            case ID_CC_ARRAY_DEQUE: {
+                return ClassDescriptor.ARRAY_DEQUE;
             }
 
             case ID_SINGLETON_MAP_OBJECT: {

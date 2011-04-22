@@ -34,6 +34,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedAction;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -561,7 +562,8 @@ public class RiverMarshaller extends AbstractMarshaller {
                 case ID_CC_ARRAY_LIST:
                 case ID_CC_LINKED_LIST:
                 case ID_CC_VECTOR:
-                case ID_CC_STACK: {
+                case ID_CC_STACK:
+                case ID_CC_ARRAY_DEQUE: {
                     instanceCache.put(obj, instanceSeq++);
                     final Collection<?> collection = (Collection<?>) obj;
                     final int len = collection.size();
@@ -1189,6 +1191,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         BASIC_CLASSES_V2 = map.clone();
 
         map.put(Pair.class, ID_PAIR);
+        map.put(ArrayDeque.class, ID_CC_ARRAY_DEQUE);
 
         BASIC_CLASSES_V3 = map;
 

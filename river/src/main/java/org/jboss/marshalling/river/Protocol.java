@@ -175,8 +175,7 @@ public final class Protocol {
 
     // protocol version >= 3
     public static final int ID_PAIR                     = 0x77;
-    // todo - ID_JAVASSIST_PROXY
-    // todo - ID_DEQUEs
+    public static final int ID_CC_ARRAY_DEQUE           = 0x78;
     // todo - ID_NAVIGABLE_MAPs
     // todo - ID_NAVIGABLE_SETs
 

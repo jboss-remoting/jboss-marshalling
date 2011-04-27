@@ -30,25 +30,35 @@
     <description>JBoss Marshalling River Implementation</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-river</artifactId>
-    <version>1.3.0.CR9-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent</artifactId>
-        <version>5</version>
+        <groupId>org.jboss.marshalling</groupId>
+        <artifactId>jboss-marshalling-parent</artifactId>
+        <version>1.3.0.CR9-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 </project>

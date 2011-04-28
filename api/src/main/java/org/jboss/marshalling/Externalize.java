@@ -33,6 +33,8 @@ import java.lang.annotation.Documented;
  * Indicate that this class should be externalized by an instance of the given externalizer class.  Any externalizer
  * provided by a {@link org.jboss.marshalling.ClassExternalizerFactory ClassExternalizerFactory} will typically take
  * precedence over the externalizer specified by this annotation.
+ *
+ * @apiviz.exclude
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

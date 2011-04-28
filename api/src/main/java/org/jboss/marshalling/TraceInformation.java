@@ -24,6 +24,12 @@ package org.jboss.marshalling;
 
 import java.io.Serializable;
 
+/**
+ * A facility available to marshalling implementations which allows for detailed stack traces which trace
+ * the position in the object graph where a marshalling or unmarshalling problem has occurred.
+ *
+ * @apiviz.exclude
+ */
 public final class TraceInformation extends Throwable {
 
     private static final long serialVersionUID = 9017837359853233891L;
@@ -153,8 +159,9 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about the circumstances surrounding (un)marshalling.
+     * @apiviz.exclude
      */
-    public static abstract class Info implements Serializable {
+    public abstract static class Info implements Serializable {
 
         private static final long serialVersionUID = -5600603940887712730L;
 
@@ -182,10 +189,18 @@ public final class TraceInformation extends Throwable {
         }
     }
 
+    /**
+     * Information specific to a method execution.
+     * @apiviz.exclude
+     */
     public static final class MethodInfo extends Info implements Serializable {
 
         private static final long serialVersionUID = 646518183715279704L;
 
+        /**
+         * The type of method being executed.
+         * @apiviz.exclude
+         */
         public enum Type {
             READ_OBJECT,
             READ_OBJECT_NO_DATA,
@@ -204,6 +219,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about an object which was being (un-)marshalled at the time an exception occurred.
+     * @apiviz.exclude
      */
     public static final class ObjectInfo extends Info implements Serializable {
 
@@ -234,6 +250,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about a class which was being (un-)marshalled at the time an exception occurred.
+     * @apiviz.exclude
      */
     public static final class ClassInfo extends Info implements Serializable {
 
@@ -258,6 +275,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about an incomplete object being unmarshalled.
+     * @apiviz.exclude
      */
     public static final class IncompleteObjectInfo extends Info implements Serializable {
 
@@ -283,6 +301,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about a field which was being marshalled at the time an exception occurred.
+     * @apiviz.exclude
      */
     public static final class FieldInfo extends Info implements Serializable {
 
@@ -303,6 +322,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * Information about an index in an array or collection.
+     * @apiviz.exclude
      */
     public static final class IndexInfo extends Info implements Serializable {
 
@@ -345,6 +365,7 @@ public final class TraceInformation extends Throwable {
 
     /**
      * User information.
+     * @apiviz.exclude
      */
     public static final class UserInfo extends Info implements Serializable {
 
@@ -363,6 +384,10 @@ public final class TraceInformation extends Throwable {
         }
     }
 
+    /**
+     * The type of index for a multi-valued collection or map.
+     * @apiviz.exclude
+     */
     public enum IndexType {
         MAP_KEY,
         MAP_VALUE,

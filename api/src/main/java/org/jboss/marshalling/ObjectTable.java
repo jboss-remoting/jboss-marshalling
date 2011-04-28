@@ -51,6 +51,7 @@ public interface ObjectTable {
 
     /**
      * The object writer for a specific object.
+     * @apiviz.exclude
      */
     interface Writer {
         /**

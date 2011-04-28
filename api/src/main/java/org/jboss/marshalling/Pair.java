@@ -34,6 +34,7 @@ import java.io.ObjectInput;
  *
  * @param <A> the first value type
  * @param <B> the second value type
+ * @apiviz.exclude
  */
 @Externalize(Pair.Externalizer.class)
 public final class Pair<A, B> implements Serializable {
@@ -163,6 +164,7 @@ public final class Pair<A, B> implements Serializable {
 
     /**
      * An externalizer for {@link Pair} instances.
+     * @apiviz.exclude
      */
     public static final class Externalizer implements org.jboss.marshalling.Externalizer, Externalizable {
 

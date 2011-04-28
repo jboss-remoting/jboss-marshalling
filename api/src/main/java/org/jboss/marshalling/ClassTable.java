@@ -51,6 +51,7 @@ public interface ClassTable {
 
     /**
      * The class writer for a specific class.
+     * @apiviz.exclude
      */
     interface Writer {
         /**

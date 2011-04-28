@@ -41,6 +41,7 @@ import java.util.ServiceLoader;
 
 /**
  * Static utility methods for simplifying use of marshallers.
+ * @apiviz.landmark
  */
 public final class Marshalling {
 

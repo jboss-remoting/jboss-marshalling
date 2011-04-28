@@ -28,6 +28,7 @@ import java.io.EOFException;
 
 /**
  * Handy utility methods for dealing with strings in the modified UTF-8 format.
+ * @apiviz.exclude
  */
 public final class UTFUtils {
     private static final String INVALID_BYTE = "Invalid byte";

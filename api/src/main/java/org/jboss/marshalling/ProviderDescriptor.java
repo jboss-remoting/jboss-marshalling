@@ -30,6 +30,7 @@ package org.jboss.marshalling;
  * and populate it with the names of classes that implement this interface.
  *
  * @see java.util.ServiceLoader
+ * @apiviz.landmark
  */
 public interface ProviderDescriptor {
 

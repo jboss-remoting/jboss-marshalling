@@ -24,6 +24,7 @@ package org.jboss.marshalling;
 
 /**
  * The version of the Marshalling API.
+ * @apiviz.exclude
  */
 public final class Version {
 

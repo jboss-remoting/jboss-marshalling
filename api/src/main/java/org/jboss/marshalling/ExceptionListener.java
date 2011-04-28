@@ -27,6 +27,7 @@ package org.jboss.marshalling;
  * methods.  These methods are intended for the purpose of interjecting additional debug information into the stack
  * trace by way of the {@link TraceInformation} class.  The appropriate callback will be called in the event of an exception,
  * at every level of recursion into the marshalling or unmarshalling process.
+ * @apiviz.exclude
  */
 public interface ExceptionListener {
 

@@ -24,6 +24,7 @@ package org.jboss.marshalling;
 
 /**
  * A Marshaller configuration.
+ * @apiviz.landmark
  */
 public final class MarshallingConfiguration implements Cloneable {
 

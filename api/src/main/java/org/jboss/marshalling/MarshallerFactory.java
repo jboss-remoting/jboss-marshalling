@@ -26,14 +26,15 @@ import java.io.IOException;
 
 /**
  * The main marshaller factory.
+ * @apiviz.landmark
  */
 public interface MarshallerFactory {
     /**
      * Create an unmarshaller from this configuration.
      *
      * @return an unmarshaller
+     * @param configuration the marshalling configuration to use
      * @throws IOException if an error occurs
-     * @param configuration
      */
     Unmarshaller createUnmarshaller(MarshallingConfiguration configuration) throws IOException;
 
@@ -41,8 +42,8 @@ public interface MarshallerFactory {
      * Create a marshaller from this configuration.
      *
      * @return a marshaller
+     * @param configuration the marshalling configuration to use
      * @throws IOException if an error occurs
-     * @param configuration
      */
     Marshaller createMarshaller(MarshallingConfiguration configuration) throws IOException;
 }

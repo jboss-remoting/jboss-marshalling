@@ -30,7 +30,7 @@
     <description>JBoss Marshalling OSGi Bundle with API and implementations</description>
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-osgi</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
 
     <parent>
         <groupId>org.jboss.marshalling</groupId>
@@ -91,7 +91,8 @@
                 <configuration>
                     <instructions>
                         <Bundle-DocURL>http://jboss.org/jbossmarshalling</Bundle-DocURL>
-                        <Export-Package>org.jboss.marshalling,org.jboss.marshalling.river,org.jboss.marshalling.serial;version=${project.version};-split-package:=error}</Export-Package>
+                        <Import-Package>org.jboss.modules.*;sun.reflect.*;resolution:=optional</Import-Package>
+                        <Export-Package>org.jboss.marshalling.*;version=${project.version};-split-package:=error</Export-Package>
                     </instructions>
                 </configuration>
             </plugin>

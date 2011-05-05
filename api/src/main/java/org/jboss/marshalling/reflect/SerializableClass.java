@@ -62,6 +62,9 @@ public final class SerializableClass {
             return o1.getName().compareTo(o2.getName());
         }
     };
+    /**
+     * An empty array of fields.
+     */
     public static final SerializableField[] NOFIELDS = new SerializableField[0];
 
     SerializableClass(Class<?> subject) {
@@ -419,7 +422,9 @@ public final class SerializableClass {
 
     private static <T> Constructor<T> lookupPublicConstructor(final Class<T> subject, final Class<?>... params) {
         try {
-            return subject.getConstructor(params);
+            Constructor<T> constructor = subject.getConstructor(params);
+            constructor.setAccessible(true);
+            return constructor;
         } catch (NoSuchMethodException e) {
             return null;
         }
@@ -527,6 +532,7 @@ public final class SerializableClass {
         private final MethodFinder finder;
         private final WeakReference<Class<?>> classRef;
 
+        @SuppressWarnings("unchecked")
         private static final AtomicReferenceFieldUpdater<LazyWeakMethodRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakMethodRef.class, WeakReference.class, "ref");
 
         private LazyWeakMethodRef(final MethodFinder finder, final Method initial, final WeakReference<Class<?>> classRef) {
@@ -567,16 +573,17 @@ public final class SerializableClass {
     }
 
     private static class LazyWeakConstructorRef {
-        private volatile WeakReference<Constructor> ref;
+        private volatile WeakReference<Constructor<?>> ref;
         private final ConstructorFinder finder;
         private final WeakReference<Class<?>> classRef;
 
+        @SuppressWarnings("unchecked")
         private static final AtomicReferenceFieldUpdater<LazyWeakConstructorRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakConstructorRef.class, WeakReference.class, "ref");
 
-        private LazyWeakConstructorRef(final ConstructorFinder finder, final Constructor initial, final WeakReference<Class<?>> classRef) {
+        private LazyWeakConstructorRef(final ConstructorFinder finder, final Constructor<?> initial, final WeakReference<Class<?>> classRef) {
             this.finder = finder;
             this.classRef = classRef;
-            ref = new WeakReference<Constructor>(initial);
+            ref = new WeakReference<Constructor<?>>(initial);
         }
 
         private static LazyWeakConstructorRef getInstance(ConstructorFinder finder, WeakReference<Class<?>> classRef) {
@@ -584,27 +591,27 @@ public final class SerializableClass {
             if (clazz == null) {
                 throw new NullPointerException("clazz is null (no strong reference held to class when serialization info was acquired");
             }
-            final Constructor constructor = finder.get(clazz);
+            final Constructor<?> constructor = finder.get(clazz);
             if (constructor == null) {
                 return null;
             }
             return new LazyWeakConstructorRef(finder, constructor, classRef);
         }
 
-        private Constructor getConstructor() throws ClassNotFoundException {
-            final WeakReference<Constructor> weakReference = ref;
+        private Constructor<?> getConstructor() throws ClassNotFoundException {
+            final WeakReference<Constructor<?>> weakReference = ref;
             if (weakReference != null) {
-                final Constructor method = weakReference.get();
+                final Constructor<?> method = weakReference.get();
                 if (method != null) {
                     return method;
                 }
             }
             final Class<?> clazz = dereference(classRef);
-            final Constructor method = finder.get(clazz);
+            final Constructor<?> method = finder.get(clazz);
             if (method == null) {
                 throw new NullPointerException("method is null (was non-null on last check)");
             }
-            final WeakReference<Constructor> newVal = new WeakReference<Constructor>(method);
+            final WeakReference<Constructor<?>> newVal = new WeakReference<Constructor<?>>(method);
             refUpdater.compareAndSet(this, weakReference, newVal);
             return method;
         }

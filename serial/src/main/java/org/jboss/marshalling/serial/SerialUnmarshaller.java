@@ -258,8 +258,10 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
                         if (sc.hasObjectInputConstructor()) {
                             obj = sc.callObjectInputConstructor(blockUnmarshaller);
-                        } else {
+                        } else if (sc.hasNoArgConstructor()) {
                             obj = sc.callNoArgConstructor();
+                        } else {
+                            throw new InvalidClassException(objClass.getName(), "Class is non-public or has no public no-arg constructor");
                         }
                         idx = instanceCache.size();
                         instanceCache.add(unshared ? UNSHARED : obj);

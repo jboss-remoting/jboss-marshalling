@@ -1244,8 +1244,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final Externalizable obj;
                     if (serializableClass.hasObjectInputConstructor()) {
                         obj = (Externalizable) serializableClass.callObjectInputConstructor(blockUnmarshaller);
-                    } else {
+                    } else if (serializableClass.hasNoArgConstructor()) {
                         obj = (Externalizable) serializableClass.callNoArgConstructor();
+                    } else {
+                        throw new InvalidClassException(type.getName(), "Class is non-public or has no public no-arg constructor");
                     }
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);

@@ -35,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInput;
@@ -87,6 +88,7 @@ import org.testng.annotations.Test;
 /**
  *
  */
+@SuppressWarnings("ALL")
 public final class SimpleMarshallerTests extends TestBase {
 
     public SimpleMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
@@ -2763,6 +2765,34 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 final TreeMap newTreeMap = unmarshaller.readObject(TreeMap.class);
                 assertSame(newTreeMap, unmarshaller.readObject(TreeMap.class));
+            }
+        });
+    }
+
+    private static final class NonPublicExt implements Externalizable {
+
+        public NonPublicExt() {
+        }
+
+        public void writeExternal(final ObjectOutput out) throws IOException {
+            out.writeInt(1);
+        }
+
+        public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+            assertEquals(in.readInt(), 1);
+        }
+    }
+
+    @Test
+    public void testNonPublicExtClass() throws Throwable {
+        final NonPublicExt test = new NonPublicExt();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(test);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                unmarshaller.readObject();
             }
         });
     }

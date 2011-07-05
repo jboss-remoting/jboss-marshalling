@@ -45,14 +45,14 @@ public final class SimpleMarshallerTestFactory {
     @SuppressWarnings({ "ZeroLengthArrayAllocation" })
     public static Object[][] parameters() {
 
-        final MarshallerFactory riverMarshallerFactory = Marshalling.getMarshallerFactory("river");
+        final MarshallerFactory riverMarshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
         final TestMarshallerProvider riverTestMarshallerProviderV2 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 2);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV2 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 2);
 
         final TestMarshallerProvider riverTestMarshallerProviderV3 = new MarshallerFactoryTestMarshallerProvider(riverMarshallerFactory, 3);
         final TestUnmarshallerProvider riverTestUnmarshallerProviderV3 = new MarshallerFactoryTestUnmarshallerProvider(riverMarshallerFactory, 3);
 
-        final MarshallerFactory serialMarshallerFactory = Marshalling.getMarshallerFactory("serial");
+        final MarshallerFactory serialMarshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
         final TestMarshallerProvider serialTestMarshallerProvider = new MarshallerFactoryTestMarshallerProvider(serialMarshallerFactory);
         final TestUnmarshallerProvider serialTestUnmarshallerProvider = new MarshallerFactoryTestUnmarshallerProvider(serialMarshallerFactory);
 

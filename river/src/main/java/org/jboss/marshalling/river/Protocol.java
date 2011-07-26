@@ -207,7 +207,7 @@ public final class Protocol {
         enumSetProxyClass = clazz;
         Field field = null;
         for (Field declared : reverseOrder2Class.getDeclaredFields()) {
-            if (declared.getName().equals("cmp")) {
+            if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
                 declared.setAccessible(true);
                 field = declared;
             }

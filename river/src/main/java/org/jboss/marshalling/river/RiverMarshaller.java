@@ -314,10 +314,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                             write(ID_STRING_EMPTY);
                             // don't cache empty strings
                             return;
-                        } else if (len <= 256) {
+                        } else if (len <= 0x100) {
                             write(ID_STRING_SMALL);
                             write(len);
-                        } else if (len <= 65336) {
+                        } else if (len <= 0x10000) {
                             write(ID_STRING_MEDIUM);
                             writeShort(len);
                         } else {

@@ -26,8 +26,16 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 
+/**
+ * An abstract object input implementation.
+ */
 public abstract class AbstractObjectInput extends SimpleDataInput implements ObjectInput {
 
+    /**
+     * Construct a new instance.
+     *
+     * @param bufferSize the buffer size to use
+     */
     protected AbstractObjectInput(int bufferSize) {
         super(bufferSize);
     }

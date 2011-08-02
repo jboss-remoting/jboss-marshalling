@@ -26,16 +26,22 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for object-type fields.
  */
 public class ObjectFieldPutter extends FieldPutter {
     private Object value;
     private final boolean unshared;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param unshared {@code true} if this object should be recorded as "unshared", {@code false} otherwise
+     */
     public ObjectFieldPutter(final boolean unshared) {
         this.unshared = unshared;
     }
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         if (unshared) {
             marshaller.writeObjectUnshared(value);
@@ -44,14 +50,17 @@ public class ObjectFieldPutter extends FieldPutter {
         }
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.OBJECT;
     }
 
+    /** {@inheritDoc} */
     public Object getObject() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setObject(final Object value) {
         this.value = value;
     }

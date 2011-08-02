@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for long-type fields.
  */
 public class LongFieldPutter extends FieldPutter {
     private long value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeLong(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.LONG;
     }
 
+    /** {@inheritDoc} */
     public long getLong() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setLong(final long value) {
         this.value = value;
     }

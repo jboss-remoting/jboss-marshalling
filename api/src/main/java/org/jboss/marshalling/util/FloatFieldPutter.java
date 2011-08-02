@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for float-type fields.
  */
 public class FloatFieldPutter extends FieldPutter {
     private float value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeFloat(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.FLOAT;
     }
 
+    /** {@inheritDoc} */
     public float getFloat() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setFloat(final float value) {
         this.value = value;
     }

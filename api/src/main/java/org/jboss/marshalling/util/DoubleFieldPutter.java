@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for double-type fields.
  */
 public class DoubleFieldPutter extends FieldPutter {
     private double value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeDouble(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.DOUBLE;
     }
 
+    /** {@inheritDoc} */
     public double getDouble() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setDouble(final double value) {
         this.value = value;
     }

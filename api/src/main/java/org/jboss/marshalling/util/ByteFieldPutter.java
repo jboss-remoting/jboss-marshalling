@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for byte-type fields.
  */
 public class ByteFieldPutter extends FieldPutter {
     private byte value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeByte(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.BYTE;
     }
 
+    /** {@inheritDoc} */
     public byte getByte() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setByte(final byte value) {
         this.value = value;
     }

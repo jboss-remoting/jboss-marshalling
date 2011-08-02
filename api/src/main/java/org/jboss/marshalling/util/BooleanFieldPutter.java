@@ -26,23 +26,27 @@ import java.io.IOException;
 import org.jboss.marshalling.Marshaller;
 
 /**
- *
+ * A field putter for boolean-type fields.
  */
 public class BooleanFieldPutter extends FieldPutter {
     private boolean value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeBoolean(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.BOOLEAN;
     }
 
+    /** {@inheritDoc} */
     public void setBoolean(boolean value) {
         this.value = value;
     }
 
+    /** {@inheritDoc} */
     public boolean getBoolean() {
         return value;
     }

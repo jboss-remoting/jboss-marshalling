@@ -26,26 +26,39 @@ import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 
 /**
- *
+ * A read field whose value is a long type.
  */
 public class LongReadField extends ReadField {
 
     private final long value;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param field the serializable field
+     * @param value the value
+     */
     public LongReadField(final SerializableField field, final long value) {
         super(field.getName(), false);
         this.value = value;
     }
 
+    /**
+     * Construct a new instance with the default value.
+     *
+     * @param field the serializable field
+     */
     public LongReadField(final SerializableField field) {
         super(field.getName(), true);
         value = 0;
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.LONG;
     }
 
+    /** {@inheritDoc} */
     public long getLong() throws IOException {
         return value;
     }

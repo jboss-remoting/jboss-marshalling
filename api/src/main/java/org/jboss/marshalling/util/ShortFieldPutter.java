@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for short-type fields.
  */
 public class ShortFieldPutter extends FieldPutter {
     private short value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeShort(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.SHORT;
     }
 
+    /** {@inheritDoc} */
     public short getShort() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setShort(final short value) {
         this.value = value;
     }

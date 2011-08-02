@@ -26,26 +26,39 @@ import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 
 /**
- *
+ * A read field whose value is a double type.
  */
 public class DoubleReadField extends ReadField {
 
     private final double value;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param field the serializable field
+     * @param value the value
+     */
     public DoubleReadField(final SerializableField field, final double value) {
         super(field.getName(), false);
         this.value = value;
     }
 
+    /**
+     * Construct a new instance with the default value.
+     *
+     * @param field the serializable field
+     */
     public DoubleReadField(final SerializableField field) {
         super(field.getName(), true);
         value = 0;
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.DOUBLE;
     }
 
+    /** {@inheritDoc} */
     public double getDouble() throws IOException {
         return value;
     }

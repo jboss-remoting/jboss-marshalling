@@ -26,26 +26,39 @@ import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 
 /**
- *
+ * A read field whose value is an object type.
  */
 public class ObjectReadField extends ReadField {
 
     private final Object value;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param field the serializable field
+     * @param value the value
+     */
     public ObjectReadField(final SerializableField field, final Object value) {
         super(field.getName(), false);
         this.value = value;
     }
 
+    /**
+     * Construct a new instance with the default value.
+     *
+     * @param field the serializable field
+     */
     public ObjectReadField(final SerializableField field) {
         super(field.getName(), true);
         value = null;
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.OBJECT;
     }
 
+    /** {@inheritDoc} */
     public Object getObject() throws IOException {
         return value;
     }

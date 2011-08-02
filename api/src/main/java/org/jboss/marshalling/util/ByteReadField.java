@@ -26,26 +26,39 @@ import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 
 /**
- *
+ * A read field whose value is a byte type.
  */
 public class ByteReadField extends ReadField {
 
     private final byte value;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param field the serializable field
+     * @param value the value
+     */
     public ByteReadField(final SerializableField field, final byte value) {
         super(field.getName(), false);
         this.value = value;
     }
 
+    /**
+     * Construct a new instance with the default value.
+     *
+     * @param field the serializable field
+     */
     public ByteReadField(final SerializableField field) {
         super(field.getName(), true);
         value = 0;
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.BYTE;
     }
 
+    /** {@inheritDoc} */
     public byte getByte() throws IOException {
         return value;
     }

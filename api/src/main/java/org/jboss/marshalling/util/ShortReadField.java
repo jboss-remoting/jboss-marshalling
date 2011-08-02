@@ -26,26 +26,39 @@ import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
 
 /**
- *
+ * A read field whose value is a boolean type.
  */
 public class ShortReadField extends ReadField {
 
     private final short value;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param field the serializable field
+     * @param value the value
+     */
     public ShortReadField(final SerializableField field, final short value) {
         super(field.getName(), false);
         this.value = value;
     }
 
+    /**
+     * Construct a new instance with the default value.
+     *
+     * @param field the serializable field
+     */
     public ShortReadField(final SerializableField field) {
         super(field.getName(), true);
         value = 0;
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.SHORT;
     }
 
+    /** {@inheritDoc} */
     public short getShort() throws IOException {
         return value;
     }

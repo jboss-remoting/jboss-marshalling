@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for int-type fields.
  */
 public class IntFieldPutter extends FieldPutter {
     private int value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeInt(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.INT;
     }
 
+    /** {@inheritDoc} */
     public int getInt() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setInt(final int value) {
         this.value = value;
     }

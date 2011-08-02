@@ -26,23 +26,27 @@ import org.jboss.marshalling.Marshaller;
 import java.io.IOException;
 
 /**
- *
+ * A field putter for char-type fields.
  */
 public class CharFieldPutter extends FieldPutter {
     private char value;
 
+    /** {@inheritDoc} */
     public void write(final Marshaller marshaller) throws IOException {
         marshaller.writeChar(value);
     }
 
+    /** {@inheritDoc} */
     public Kind getKind() {
         return Kind.CHAR;
     }
 
+    /** {@inheritDoc} */
     public char getChar() {
         return value;
     }
 
+    /** {@inheritDoc} */
     public void setChar(final char value) {
         this.value = value;
     }

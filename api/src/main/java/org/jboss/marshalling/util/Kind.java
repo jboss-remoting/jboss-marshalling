@@ -23,18 +23,44 @@
 package org.jboss.marshalling.util;
 
 /**
- *
+ * The kind of field.
  */
 public enum Kind {
+    /**
+     * Field of type {@code boolean}.
+     */
     BOOLEAN,
+    /**
+     * Field of type {@code byte}.
+     */
     BYTE,
+    /**
+     * Field of type {@code char}.
+     */
     CHAR,
+    /**
+     * Field of type {@code double}.
+     */
     DOUBLE,
+    /**
+     * Field of type {@code float}.
+     */
     FLOAT,
+    /**
+     * Field of type {@code int}.
+     */
     INT,
+    /**
+     * Field of type {@code long}.
+     */
     LONG,
+    /**
+     * Field of object type.
+     */
     OBJECT,
+    /**
+     * Field of type {@code short}.
+     */
     SHORT,
     ;
-    
 }

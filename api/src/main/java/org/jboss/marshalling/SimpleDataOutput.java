@@ -26,16 +26,40 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.NotActiveException;
 
+/**
+ * A simple base implementation of {@link DataOutput} which wraps a {@link ByteOutput}.  This implementation maintains
+ * an internal buffer.
+ */
 public class SimpleDataOutput extends ByteOutputStream implements DataOutput {
 
+    /**
+     * The size of the internal buffer.
+     */
     protected final int bufferSize;
+    /**
+     * The internal buffer.
+     */
     protected byte[] buffer;
+    /**
+     * The position in the buffer.
+     */
     private int position;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param bufferSize the buffer size
+     */
     public SimpleDataOutput(final int bufferSize) {
         this(bufferSize, null);
     }
 
+    /**
+     * Construct a new instance.
+     *
+     * @param bufferSize the buffer size
+     * @param byteOutput the byte output to wrap
+     */
     public SimpleDataOutput(final int bufferSize, final ByteOutput byteOutput) {
         super(byteOutput);
         this.byteOutput = byteOutput;
@@ -43,6 +67,11 @@ public class SimpleDataOutput extends ByteOutputStream implements DataOutput {
         buffer = new byte[bufferSize];
     }
 
+    /**
+     * Construct a new instance with a default buffer size.
+     *
+     * @param byteOutput the byte output to wrap
+     */
     public SimpleDataOutput(final ByteOutput byteOutput) {
         this(8192, byteOutput);
     }

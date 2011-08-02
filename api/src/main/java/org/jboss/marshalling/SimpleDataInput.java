@@ -26,22 +26,51 @@ import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
 
+/**
+ * A simple base implementation of {@link DataInput} which wraps a {@link ByteInput}.  This implementation maintains
+ * an internal buffer.
+ */
 public class SimpleDataInput extends ByteInputStream implements DataInput {
 
+    /**
+     * The internal buffer.
+     */
     protected final byte[] buffer;
+    /**
+     * The buffer position.
+     */
     protected int position;
+    /**
+     * The buffer limit.
+     */
     protected int limit;
 
+    /**
+     * Construct a new instance which wraps nothing.
+     *
+     * @param bufferSize the internal buffer size to use
+     */
     public SimpleDataInput(int bufferSize) {
         this(bufferSize, null);
     }
 
+    /**
+     * Construct a new instance.
+     *
+     * @param bufferSize the internal buffer size to use
+     * @param byteInput the byte input to initially wrap
+     */
     public SimpleDataInput(int bufferSize, ByteInput byteInput) {
         super(byteInput);
         buffer = new byte[bufferSize];
         this.byteInput = byteInput;
     }
 
+    /**
+     * Construct a new instance.  A default buffer size is used.
+     *
+     * @param byteInput the byte input to initially wrap
+     */
     public SimpleDataInput(final ByteInput byteInput) {
         this(8192, byteInput);
     }
@@ -250,6 +279,12 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         }
     }
 
+    /**
+     * Read an unsigned byte directly.
+     *
+     * @return the unsigned byte
+     * @throws IOException if an error occurs
+     */
     protected int readUnsignedByteDirect() throws IOException {
         final int limit;
         if ((limit = this.limit) == -1) {
@@ -299,6 +334,12 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         return Float.intBitsToFloat(readIntDirect());
     }
 
+    /**
+     * Read an int value.
+     *
+     * @return the value
+     * @throws IOException if an error occurs
+     */
     protected int readIntDirect() throws IOException {
         int position = this.position;
         int remaining = limit - position;
@@ -326,16 +367,28 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         return UTFUtils.readUTFBytesByByteCount(this, readUnsignedShort());
     }
 
+    /** {@inheritDoc} */
     public void close() throws IOException {
         final ByteInput byteInput = this.byteInput;
         if (byteInput != null) byteInput.close();
     }
 
+    /**
+     * Start reading from the given input.  The internal buffer is discarded.
+     *
+     * @param byteInput the new input from which to read
+     * @throws IOException not thrown by this implementation, but may be overridden to be thrown if a problem occurs
+     */
     protected void start(final ByteInput byteInput) throws IOException {
         this.byteInput = byteInput;
         position = limit = 0;
     }
 
+    /**
+     * Finish reading from the current input.  The internal buffer is discarded, not flushed.
+     *
+     * @throws IOException not thrown by this implementation, but may be overridden to be thrown if a problem occurs
+     */
     protected void finish() throws IOException {
         limit = -1;
         position = 0;

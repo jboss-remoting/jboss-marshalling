@@ -29,8 +29,24 @@ import java.io.IOException;
  */
 public interface ClassCloner {
 
+    /**
+     * Clone the given class.
+     *
+     * @param original the class to clone
+     * @return the cloned class
+     * @throws IOException if cloning fails due to a serialization problem
+     * @throws ClassNotFoundException if cloning fails due to an unavailable class
+     */
     Class<?> clone(Class<?> original) throws IOException, ClassNotFoundException;
 
+    /**
+     * Clone the given reflection proxy class.
+     *
+     * @param proxyClass the proxy class to clone
+     * @return the cloned proxy class
+     * @throws IOException if cloning fails due to a serialization problem
+     * @throws ClassNotFoundException if cloning fails due to an unavailable class
+     */
     Class<?> cloneProxy(Class<?> proxyClass) throws IOException, ClassNotFoundException;
 
     /**

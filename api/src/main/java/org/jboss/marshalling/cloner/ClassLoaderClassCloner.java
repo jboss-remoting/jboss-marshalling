@@ -32,10 +32,16 @@ public class ClassLoaderClassCloner implements ClassCloner {
 
     private final ClassLoader destClassLoader;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param destClassLoader the class loader to use
+     */
     public ClassLoaderClassCloner(final ClassLoader destClassLoader) {
         this.destClassLoader = destClassLoader;
     }
 
+    /** {@inheritDoc} */
     public Class<?> clone(final Class<?> original) throws IOException, ClassNotFoundException {
         final String name = original.getName();
         if (name.startsWith("java.")) {
@@ -47,6 +53,7 @@ public class ClassLoaderClassCloner implements ClassCloner {
         }
     }
 
+    /** {@inheritDoc} */
     public Class<?> cloneProxy(final Class<?> proxyClass) throws IOException, ClassNotFoundException {
         final Class<?>[] origInterfaces = proxyClass.getInterfaces();
         final Class<?>[] interfaces = new Class[origInterfaces.length];

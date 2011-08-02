@@ -40,7 +40,8 @@ public interface ObjectCloner {
      *
      * @param orig the original object
      * @return the deep clone
-     * @throws java.io.IOException if a serialization error occurs
+     * @throws IOException if a serialization error occurs
+     * @throws ClassNotFoundException if a class cannot be loaded during the cloning process
      */
     Object clone(Object orig) throws IOException, ClassNotFoundException;
 

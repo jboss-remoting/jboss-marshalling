@@ -154,7 +154,7 @@ class SerializingCloner implements ObjectCloner {
         }
         final ClassCloner classCloner = this.classCloner;
         if (orig instanceof Class) {
-            final Class classObj = (Class) orig;
+            final Class<?> classObj = (Class<?>) orig;
             final Class<?> clonedClass = Proxy.isProxyClass(classObj) ? classCloner.cloneProxy(classObj) : classCloner.clone(classObj);
             clones.put(orig, clonedClass);
             return clonedClass;
@@ -166,11 +166,20 @@ class SerializingCloner implements ObjectCloner {
         final Class<? extends Object> objClass = orig.getClass();
         if (orig instanceof Enum) {
             final Class<? extends Enum> cloneClass = ((Class<?>)clone(objClass)).asSubclass(Enum.class);
-            if (cloneClass == orig) {
+
+            if (cloneClass == objClass) {
                 // same class means same enum constants
                 return orig;
             } else {
-                return Enum.valueOf(cloneClass, ((Enum) orig).name());
+                final Class<? extends Enum> cloneEnumClass;
+                //the actual object class may be a sub class of the enum class
+                final Class<?> enumClass = ((Enum) orig).getDeclaringClass();
+                if(enumClass == objClass) {
+                    cloneEnumClass = cloneClass;
+                } else{
+                    cloneEnumClass = ((Class<?>)clone(enumClass)).asSubclass(Enum.class);
+                }
+                return Enum.valueOf(cloneEnumClass, ((Enum) orig).name());
             }
         }
         final Class<?> clonedClass = (Class<?>) clone(objClass);

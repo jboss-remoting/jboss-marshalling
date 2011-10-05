@@ -24,6 +24,8 @@ package org.jboss.marshalling.cloner;
 
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
 import org.jboss.marshalling.Pair;
 import org.testng.annotations.Test;
 
@@ -35,6 +37,7 @@ public final class SerializingClonerTestCase {
     public void testImmutables() throws Throwable {
         final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
         final Object[] objects = {
+                TimeUnit.NANOSECONDS,
                 "Bananananana",
                 Boolean.TRUE,
                 Integer.valueOf(12),

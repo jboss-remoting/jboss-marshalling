@@ -26,6 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import java.util.Date;
 import org.jboss.marshalling.Pair;
 import org.testng.annotations.Test;
 
@@ -59,7 +60,8 @@ public final class SerializingClonerTestCase {
         final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
         final Object[] objects = {
                 Pair.create("First", "Second"),
-                Arrays.asList("One", Integer.valueOf(2), Boolean.TRUE, "Shoe")
+                Arrays.asList("One", Integer.valueOf(2), Boolean.TRUE, "Shoe"),
+                new DateFieldType(new Date(), true),
         };
         for (Object orig : objects) {
             final Object clone = objectCloner.clone(orig);

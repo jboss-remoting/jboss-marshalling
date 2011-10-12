@@ -165,21 +165,23 @@ class SerializingCloner implements ObjectCloner {
         }
         final Class<? extends Object> objClass = orig.getClass();
         if (orig instanceof Enum) {
+            @SuppressWarnings("unchecked")
             final Class<? extends Enum> cloneClass = ((Class<?>)clone(objClass)).asSubclass(Enum.class);
 
             if (cloneClass == objClass) {
                 // same class means same enum constants
                 return orig;
             } else {
+                @SuppressWarnings("unchecked")
                 final Class<? extends Enum> cloneEnumClass;
                 //the actual object class may be a sub class of the enum class
-                final Class<?> enumClass = ((Enum) orig).getDeclaringClass();
+                final Class<?> enumClass = ((Enum<?>) orig).getDeclaringClass();
                 if(enumClass == objClass) {
                     cloneEnumClass = cloneClass;
                 } else{
                     cloneEnumClass = ((Class<?>)clone(enumClass)).asSubclass(Enum.class);
                 }
-                return Enum.valueOf(cloneEnumClass, ((Enum) orig).name());
+                return Enum.valueOf(cloneEnumClass, ((Enum<?>) orig).name());
             }
         }
         final Class<?> clonedClass = (Class<?>) clone(objClass);
@@ -291,7 +293,9 @@ class SerializingCloner implements ObjectCloner {
         fields.defineFields(info);
         if (info.hasWriteObject()) {
             final Queue<Step> steps = new ArrayDeque<Step>();
-            info.callWriteObject(orig, new StepObjectOutputStream(steps, fields, orig));
+            final StepObjectOutputStream stepObjectOutputStream = new StepObjectOutputStream(steps, fields, orig);
+            info.callWriteObject(orig, stepObjectOutputStream);
+            stepObjectOutputStream.flush();
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, new StepObjectInputStream(steps, fields, clone, cloneInfo));
             } else {
@@ -416,7 +420,7 @@ class SerializingCloner implements ObjectCloner {
         }
     }
 
-    private static abstract class Step {
+    private abstract static class Step {
 
     }
 
@@ -472,19 +476,20 @@ class SerializingCloner implements ObjectCloner {
         });
     }
 
-    private class StepObjectOutput extends AbstractObjectOutput implements Marshaller {
+    class StepObjectOutput extends AbstractObjectOutput implements Marshaller {
 
         private final Queue<Step> steps;
         private final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         private final ByteOutput byteOutput = Marshalling.createByteOutput(byteArrayOutputStream);
 
-        public StepObjectOutput(final Queue<Step> steps) throws IOException {
+        StepObjectOutput(final Queue<Step> steps) throws IOException {
             super(SerializingCloner.this.bufferSize);
             this.steps = steps;
             start(byteOutput);
         }
 
         protected void doWriteObject(final Object obj, final boolean unshared) throws IOException {
+            super.flush();
             final ByteArrayOutputStream baos = byteArrayOutputStream;
             if (baos.size() > 0) {
                 steps.add(new ByteDataStep(baos.toByteArray()));
@@ -508,19 +513,20 @@ class SerializingCloner implements ObjectCloner {
         }
 
         public void flush() throws IOException {
+            super.flush();
             final ByteArrayOutputStream baos = byteArrayOutputStream;
             steps.add(new ByteDataStep(baos.toByteArray()));
             baos.reset();
         }
     }
 
-    private class StepObjectOutputStream extends MarshallerObjectOutputStream {
+    class StepObjectOutputStream extends MarshallerObjectOutputStream {
 
         private final Queue<Step> steps;
         private final ClonerPutField clonerPutField;
         private final Object subject;
 
-        protected StepObjectOutputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object subject) throws IOException {
+        StepObjectOutputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object subject) throws IOException {
             super(new StepObjectOutput(steps));
             this.steps = steps;
             this.clonerPutField = clonerPutField;
@@ -550,13 +556,13 @@ class SerializingCloner implements ObjectCloner {
         }
     }
 
-    private class StepObjectInputStream extends MarshallerObjectInputStream {
+    class StepObjectInputStream extends MarshallerObjectInputStream {
 
         private final ClonerPutField clonerPutField;
         private final Object clone;
         private final SerializableClass cloneInfo;
 
-        public StepObjectInputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object clone, final SerializableClass cloneInfo) throws IOException {
+        StepObjectInputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object clone, final SerializableClass cloneInfo) throws IOException {
             super(new StepObjectInput(steps));
             this.clonerPutField = clonerPutField;
             this.clone = clone;
@@ -625,11 +631,11 @@ class SerializingCloner implements ObjectCloner {
             };
         }
 
-        public void registerValidation(final ObjectInputValidation obj, final int prio) throws NotActiveException, InvalidObjectException {
+        public void registerValidation(final ObjectInputValidation obj, final int priority) throws NotActiveException, InvalidObjectException {
         }
     }
 
-    private class ClonerPutField extends ObjectOutputStream.PutField {
+    class ClonerPutField extends ObjectOutputStream.PutField {
         private final Map<String, SerializableField> fieldDefMap = new HashMap<String, SerializableField>();
         private final Map<String, ReadField> fieldMap = new HashMap<String, ReadField>();
 
@@ -691,11 +697,11 @@ class SerializingCloner implements ObjectCloner {
         }
     }
 
-    private class StepObjectInput extends AbstractObjectInput implements Unmarshaller {
+    class StepObjectInput extends AbstractObjectInput implements Unmarshaller {
 
         private final Queue<Step> steps;
 
-        public StepObjectInput(final Queue<Step> steps) throws IOException {
+        StepObjectInput(final Queue<Step> steps) throws IOException {
             super(bufferSize);
             this.steps = steps;
             if (steps.peek() instanceof ByteDataStep) {
@@ -713,6 +719,8 @@ class SerializingCloner implements ObjectCloner {
             if (step == null) {
                 throw new EOFException();
             }
+            // not really true, just IDEA being silly again
+            @SuppressWarnings("UnnecessaryThis")
             final Object clone = SerializingCloner.this.clone(((CloneStep) step).getOrig());
             step = steps.peek();
             if (step instanceof ByteDataStep) {

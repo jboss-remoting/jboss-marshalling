@@ -27,7 +27,6 @@ import java.io.InvalidClassException;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
@@ -71,33 +70,44 @@ public final class ModularClassTable implements ClassTable {
         final byte b = unmarshaller.readByte();
         switch (b) {
             case 0: {
-                final ModuleIdentifier identifier = ModuleIdentifier.create(
-                        (String) unmarshaller.readObject(),
-                        (String) unmarshaller.readObject()
-                );
-                final String className = (String) unmarshaller.readObject();
-                try {
-                    return Class.forName(className, false, moduleLoader.loadModule(identifier).getClassLoader());
-                } catch (ModuleLoadException e) {
-                    final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
-                    ce.initCause(e);
-                    throw ce;
+                final String name = (String) unmarshaller.readObject();
+                final ClassLoader classLoader;
+                final String className;
+                if (name == null) {
+                    classLoader = Module.class.getClassLoader();
+                    className = (String) unmarshaller.readObject();
+                } else {
+                    final String slot = (String) unmarshaller.readObject();
+                    final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
+                    className = (String) unmarshaller.readObject();
+                    try {
+                        classLoader = moduleLoader.loadModule(identifier).getClassLoader();
+                    } catch (ModuleLoadException e) {
+                        final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
+                        ce.initCause(e);
+                        throw ce;
+                    }
                 }
+                return Class.forName(className, false, classLoader);
             }
             case 1: {
-                final ModuleIdentifier identifier = ModuleIdentifier.create(
-                        (String) unmarshaller.readObject(),
-                        (String) unmarshaller.readObject()
-                );
-                final Module module;
-                try {
-                    module = moduleLoader.loadModule(identifier);
-                } catch (ModuleLoadException e) {
-                    final InvalidClassException ce = new InvalidClassException("Module load failed");
-                    ce.initCause(e);
-                    throw ce;
+                final String name = (String) unmarshaller.readObject();
+                final ClassLoader classLoader;
+                if (name == null) {
+                    classLoader = Module.class.getClassLoader();
+                } else {
+                    final String slot = (String) unmarshaller.readObject();
+                    final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
+                    final Module module;
+                    try {
+                        module = moduleLoader.loadModule(identifier);
+                    } catch (ModuleLoadException e) {
+                        final InvalidClassException ce = new InvalidClassException("Module load failed");
+                        ce.initCause(e);
+                        throw ce;
+                    }
+                    classLoader = module.getClassLoader();
                 }
-                final ModuleClassLoader classLoader = module.getClassLoader();
                 final int len = unmarshaller.readInt();
                 final Class<?>[] interfaces = new Class<?>[len];
                 for (int i = 0; i < len; i ++) {
@@ -114,11 +124,12 @@ public final class ModularClassTable implements ClassTable {
             marshaller.write(0);
             final Module module = Module.forClass(clazz);
             if (module == null) {
-                throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
+                marshaller.writeObject(null);
+            } else {
+                final ModuleIdentifier identifier = module.getIdentifier();
+                marshaller.writeObject(identifier.getName());
+                marshaller.writeObject(identifier.getSlot());
             }
-            final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getName());
-            marshaller.writeObject(identifier.getSlot());
             marshaller.writeObject(clazz.getName());
         }
     }
@@ -128,11 +139,12 @@ public final class ModularClassTable implements ClassTable {
             marshaller.write(1);
             final Module module = Module.forClass(clazz);
             if (module == null) {
-                throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
+                marshaller.writeObject(null);
+            } else {
+                final ModuleIdentifier identifier = module.getIdentifier();
+                marshaller.writeObject(identifier.getName());
+                marshaller.writeObject(identifier.getSlot());
             }
-            final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getName());
-            marshaller.writeObject(identifier.getSlot());
             final Class<?>[] interfaces = clazz.getInterfaces();
             marshaller.writeInt(interfaces.length);
             for (Class<?> interfaze : interfaces) {

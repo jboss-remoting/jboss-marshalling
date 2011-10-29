@@ -24,6 +24,7 @@ package org.jboss.marshalling;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.io.Serializable;
 import java.lang.reflect.Proxy;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
@@ -40,6 +41,9 @@ import org.jboss.modules.ModuleLoader;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class ModularClassResolver implements ClassResolver {
+
+    private static final NoModuleMarker MARKER = new NoModuleMarker();
+
     private final ModuleLoader moduleLoader;
 
     private ModularClassResolver(final ModuleLoader moduleLoader) {
@@ -60,11 +64,12 @@ public final class ModularClassResolver implements ClassResolver {
     public void annotateClass(final Marshaller marshaller, final Class<?> clazz) throws IOException {
         final Module module = Module.forClass(clazz);
         if (module == null) {
-            throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
+            marshaller.writeObject(MARKER);
+        } else {
+            final ModuleIdentifier identifier = module.getIdentifier();
+            marshaller.writeObject(identifier.getName());
+            marshaller.writeObject(identifier.getSlot());
         }
-        final ModuleIdentifier identifier = module.getIdentifier();
-        marshaller.writeObject(identifier.getName());
-        marshaller.writeObject(identifier.getSlot());
     }
 
     /** {@inheritDoc} */
@@ -95,16 +100,21 @@ public final class ModularClassResolver implements ClassResolver {
 
     /** {@inheritDoc} */
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String className, final long serialVersionUID) throws IOException, ClassNotFoundException {
-        final ModuleIdentifier identifier = ModuleIdentifier.create(
-                (String) unmarshaller.readObject(),
-                (String) unmarshaller.readObject()
-        );
-        try {
-            return Class.forName(className, false, moduleLoader.loadModule(identifier).getClassLoader());
-        } catch (ModuleLoadException e) {
-            final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
-            ce.initCause(e);
-            throw ce;
+        Object result = unmarshaller.readObject();
+        if(result instanceof NoModuleMarker) {
+            return Class.forName(className, false, ClassLoader.getSystemClassLoader());
+        } else {
+            final ModuleIdentifier identifier = ModuleIdentifier.create(
+                    (String) result,
+                    (String) unmarshaller.readObject()
+            );
+            try {
+                return Class.forName(className, false, moduleLoader.loadModule(identifier).getClassLoader());
+            } catch (ModuleLoadException e) {
+                final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
+                ce.initCause(e);
+                throw ce;
+            }
         }
     }
 
@@ -130,4 +140,9 @@ public final class ModularClassResolver implements ClassResolver {
         }
         return Proxy.getProxyClass(classLoader, interfaces);
     }
+
+    private static final class NoModuleMarker implements Serializable {
+
+    }
+
 }

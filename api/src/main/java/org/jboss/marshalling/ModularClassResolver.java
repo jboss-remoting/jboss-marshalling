@@ -59,11 +59,12 @@ public final class ModularClassResolver implements ClassResolver {
     public void annotateClass(final Marshaller marshaller, final Class<?> clazz) throws IOException {
         final Module module = Module.forClass(clazz);
         if (module == null) {
-            throw new InvalidClassException(clazz.getName(), "Class is not present in any module");
+            marshaller.writeObject(null);
+        } else {
+            final ModuleIdentifier identifier = module.getIdentifier();
+            marshaller.writeObject(identifier.getName());
+            marshaller.writeObject(identifier.getSlot());
         }
-        final ModuleIdentifier identifier = module.getIdentifier();
-        marshaller.writeObject(identifier.getName());
-        marshaller.writeObject(identifier.getSlot());
     }
 
     /** {@inheritDoc} */

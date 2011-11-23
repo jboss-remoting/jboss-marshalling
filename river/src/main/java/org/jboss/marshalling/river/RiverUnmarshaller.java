@@ -956,208 +956,208 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
 
             case ID_CC_ARRAY_LIST: {
-                return ClassDescriptor.CC_ARRAY_LIST;
+                return ClassDescriptors.CC_ARRAY_LIST;
             }
             case ID_CC_LINKED_LIST: {
-                return ClassDescriptor.CC_LINKED_LIST;
+                return ClassDescriptors.CC_LINKED_LIST;
             }
 
             case ID_CC_HASH_SET: {
-                return ClassDescriptor.CC_HASH_SET;
+                return ClassDescriptors.CC_HASH_SET;
             }
             case ID_CC_LINKED_HASH_SET: {
-                return ClassDescriptor.CC_LINKED_HASH_SET;
+                return ClassDescriptors.CC_LINKED_HASH_SET;
             }
             case ID_CC_TREE_SET: {
-                return ClassDescriptor.CC_TREE_SET;
+                return ClassDescriptors.CC_TREE_SET;
             }
 
             case ID_CC_IDENTITY_HASH_MAP: {
-                return ClassDescriptor.CC_IDENTITY_HASH_MAP;
+                return ClassDescriptors.CC_IDENTITY_HASH_MAP;
             }
             case ID_CC_HASH_MAP: {
-                return ClassDescriptor.CC_HASH_MAP;
+                return ClassDescriptors.CC_HASH_MAP;
             }
             case ID_CC_HASHTABLE: {
-                return ClassDescriptor.CC_HASHTABLE;
+                return ClassDescriptors.CC_HASHTABLE;
             }
             case ID_CC_LINKED_HASH_MAP: {
-                return ClassDescriptor.CC_LINKED_HASH_MAP;
+                return ClassDescriptors.CC_LINKED_HASH_MAP;
             }
             case ID_CC_TREE_MAP: {
-                return ClassDescriptor.CC_TREE_MAP;
+                return ClassDescriptors.CC_TREE_MAP;
             }
 
             case ID_CC_ENUM_SET: {
-                return ClassDescriptor.CC_ENUM_SET;
+                return ClassDescriptors.CC_ENUM_SET;
             }
             case ID_CC_ENUM_MAP: {
-                return ClassDescriptor.CC_ENUM_MAP;
+                return ClassDescriptors.CC_ENUM_MAP;
             }
 
             case ID_ABSTRACT_COLLECTION: {
-                return ClassDescriptor.ABSTRACT_COLLECTION;
+                return ClassDescriptors.ABSTRACT_COLLECTION;
             }
             case ID_ABSTRACT_LIST: {
-                return ClassDescriptor.ABSTRACT_LIST;
+                return ClassDescriptors.ABSTRACT_LIST;
             }
             case ID_ABSTRACT_QUEUE: {
-                return ClassDescriptor.ABSTRACT_QUEUE;
+                return ClassDescriptors.ABSTRACT_QUEUE;
             }
             case ID_ABSTRACT_SEQUENTIAL_LIST: {
-                return ClassDescriptor.ABSTRACT_SEQUENTIAL_LIST;
+                return ClassDescriptors.ABSTRACT_SEQUENTIAL_LIST;
             }
             case ID_ABSTRACT_SET: {
-                return ClassDescriptor.ABSTRACT_SET;
+                return ClassDescriptors.ABSTRACT_SET;
             }
 
             case ID_CC_CONCURRENT_HASH_MAP: {
-                return ClassDescriptor.CONCURRENT_HASH_MAP;
+                return ClassDescriptors.CONCURRENT_HASH_MAP;
             }
             case ID_CC_COPY_ON_WRITE_ARRAY_LIST: {
-                return ClassDescriptor.COPY_ON_WRITE_ARRAY_LIST;
+                return ClassDescriptors.COPY_ON_WRITE_ARRAY_LIST;
             }
             case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
-                return ClassDescriptor.COPY_ON_WRITE_ARRAY_SET;
+                return ClassDescriptors.COPY_ON_WRITE_ARRAY_SET;
             }
             case ID_CC_VECTOR: {
-                return ClassDescriptor.VECTOR;
+                return ClassDescriptors.VECTOR;
             }
             case ID_CC_STACK: {
-                return ClassDescriptor.STACK;
+                return ClassDescriptors.STACK;
             }
             case ID_CC_ARRAY_DEQUE: {
-                return ClassDescriptor.ARRAY_DEQUE;
+                return ClassDescriptors.ARRAY_DEQUE;
             }
             case ID_CC_NCOPIES: {
-                return ClassDescriptor.NCOPIES;
+                return ClassDescriptors.NCOPIES;
             }
 
             case ID_SINGLETON_MAP_OBJECT: {
-                return ClassDescriptor.SINGLETON_MAP;
+                return ClassDescriptors.SINGLETON_MAP;
             }
             case ID_SINGLETON_SET_OBJECT: {
-                return ClassDescriptor.SINGLETON_SET;
+                return ClassDescriptors.SINGLETON_SET;
             }
             case ID_SINGLETON_LIST_OBJECT: {
-                return ClassDescriptor.SINGLETON_LIST;
+                return ClassDescriptors.SINGLETON_LIST;
             }
 
             case ID_EMPTY_MAP_OBJECT: {
-                return ClassDescriptor.EMPTY_MAP;
+                return ClassDescriptors.EMPTY_MAP;
             }
             case ID_EMPTY_SET_OBJECT: {
-                return ClassDescriptor.EMPTY_SET;
+                return ClassDescriptors.EMPTY_SET;
             }
             case ID_EMPTY_LIST_OBJECT: {
-                return ClassDescriptor.EMPTY_LIST;
+                return ClassDescriptors.EMPTY_LIST;
             }
 
             case ID_REVERSE_ORDER_OBJECT: {
-                return ClassDescriptor.REVERSE_ORDER;
+                return ClassDescriptors.REVERSE_ORDER;
             }
             case ID_REVERSE_ORDER2_OBJECT: {
-                return ClassDescriptor.REVERSE_ORDER2;
+                return ClassDescriptors.REVERSE_ORDER2;
             }
 
             case ID_PAIR: {
-                return ClassDescriptor.PAIR;
+                return ClassDescriptors.PAIR;
             }
 
             case ID_STRING_CLASS: {
-                return ClassDescriptor.STRING_DESCRIPTOR;
+                return ClassDescriptors.STRING_DESCRIPTOR;
             }
             case ID_OBJECT_CLASS: {
-                return ClassDescriptor.OBJECT_DESCRIPTOR;
+                return ClassDescriptors.OBJECT_DESCRIPTOR;
             }
             case ID_CLASS_CLASS: {
-                return ClassDescriptor.CLASS_DESCRIPTOR;
+                return ClassDescriptors.CLASS_DESCRIPTOR;
             }
             case ID_ENUM_CLASS: {
-                return ClassDescriptor.ENUM_DESCRIPTOR;
+                return ClassDescriptors.ENUM_DESCRIPTOR;
             }
 
             case ID_BOOLEAN_ARRAY_CLASS: {
-                return ClassDescriptor.BOOLEAN_ARRAY;
+                return ClassDescriptors.BOOLEAN_ARRAY;
             }
             case ID_BYTE_ARRAY_CLASS: {
-                return ClassDescriptor.BYTE_ARRAY;
+                return ClassDescriptors.BYTE_ARRAY;
             }
             case ID_SHORT_ARRAY_CLASS: {
-                return ClassDescriptor.SHORT_ARRAY;
+                return ClassDescriptors.SHORT_ARRAY;
             }
             case ID_INT_ARRAY_CLASS: {
-                return ClassDescriptor.INT_ARRAY;
+                return ClassDescriptors.INT_ARRAY;
             }
             case ID_LONG_ARRAY_CLASS: {
-                return ClassDescriptor.LONG_ARRAY;
+                return ClassDescriptors.LONG_ARRAY;
             }
             case ID_CHAR_ARRAY_CLASS: {
-                return ClassDescriptor.CHAR_ARRAY;
+                return ClassDescriptors.CHAR_ARRAY;
             }
             case ID_FLOAT_ARRAY_CLASS: {
-                return ClassDescriptor.FLOAT_ARRAY;
+                return ClassDescriptors.FLOAT_ARRAY;
             }
             case ID_DOUBLE_ARRAY_CLASS: {
-                return ClassDescriptor.DOUBLE_ARRAY;
+                return ClassDescriptors.DOUBLE_ARRAY;
             }
 
             case ID_PRIM_BOOLEAN: {
-                return ClassDescriptor.BOOLEAN;
+                return ClassDescriptors.BOOLEAN;
             }
             case ID_PRIM_BYTE: {
-                return ClassDescriptor.BYTE;
+                return ClassDescriptors.BYTE;
             }
             case ID_PRIM_CHAR: {
-                return ClassDescriptor.CHAR;
+                return ClassDescriptors.CHAR;
             }
             case ID_PRIM_DOUBLE: {
-                return ClassDescriptor.DOUBLE;
+                return ClassDescriptors.DOUBLE;
             }
             case ID_PRIM_FLOAT: {
-                return ClassDescriptor.FLOAT;
+                return ClassDescriptors.FLOAT;
             }
             case ID_PRIM_INT: {
-                return ClassDescriptor.INT;
+                return ClassDescriptors.INT;
             }
             case ID_PRIM_LONG: {
-                return ClassDescriptor.LONG;
+                return ClassDescriptors.LONG;
             }
             case ID_PRIM_SHORT: {
-                return ClassDescriptor.SHORT;
+                return ClassDescriptors.SHORT;
             }
 
             case ID_VOID: {
-                return ClassDescriptor.VOID;
+                return ClassDescriptors.VOID;
             }
 
             case ID_BOOLEAN_CLASS: {
-                return ClassDescriptor.BOOLEAN_OBJ;
+                return ClassDescriptors.BOOLEAN_OBJ;
             }
             case ID_BYTE_CLASS: {
-                return ClassDescriptor.BYTE_OBJ;
+                return ClassDescriptors.BYTE_OBJ;
             }
             case ID_SHORT_CLASS: {
-                return ClassDescriptor.SHORT_OBJ;
+                return ClassDescriptors.SHORT_OBJ;
             }
             case ID_INTEGER_CLASS: {
-                return ClassDescriptor.INTEGER_OBJ;
+                return ClassDescriptors.INTEGER_OBJ;
             }
             case ID_LONG_CLASS: {
-                return ClassDescriptor.LONG_OBJ;
+                return ClassDescriptors.LONG_OBJ;
             }
             case ID_CHARACTER_CLASS: {
-                return ClassDescriptor.CHARACTER_OBJ;
+                return ClassDescriptors.CHARACTER_OBJ;
             }
             case ID_FLOAT_CLASS: {
-                return ClassDescriptor.FLOAT_OBJ;
+                return ClassDescriptors.FLOAT_OBJ;
             }
             case ID_DOUBLE_CLASS: {
-                return ClassDescriptor.DOUBLE_OBJ;
+                return ClassDescriptors.DOUBLE_OBJ;
             }
 
             case ID_VOID_CLASS: {
-                return ClassDescriptor.VOID_OBJ;
+                return ClassDescriptors.VOID_OBJ;
             }
 
             default: {

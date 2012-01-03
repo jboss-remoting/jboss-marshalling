@@ -165,13 +165,7 @@ public final class Marshalling {
      * @throws IOException if an I/O error occurs
      */
     public static void readFully(ByteInput input, byte[] dest) throws IOException {
-        final int len = dest.length;
-        final int r = input.read(dest);
-        if (r == -1) {
-            throw new EOFException();
-        } else if (r < len) {
-            readFully(input, dest, r, len - r);
-        }
+        readFully(input, dest, 0, dest.length);
     }
 
     /**

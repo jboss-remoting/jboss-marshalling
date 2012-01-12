@@ -23,6 +23,7 @@
 package org.jboss.marshalling;
 
 import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -39,5 +40,19 @@ public class OutputStreamByteOutput extends FilterOutputStream implements ByteOu
      */
     public OutputStreamByteOutput(final OutputStream outputStream) {
         super(outputStream);
+    }
+
+    /**
+     * Writes {@code len} bytes from the specified {@code byte} array starting at offset {@code off} to this
+     * output stream.
+     *
+     * @param b the data
+     * @param off the start offset in the data
+     * @param len the number of bytes to write
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    public void write(final byte[] b, final int off, final int len) throws IOException {
+        super.write(b, off, len);
     }
 }

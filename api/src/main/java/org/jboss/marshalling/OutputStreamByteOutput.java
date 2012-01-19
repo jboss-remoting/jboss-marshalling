@@ -53,6 +53,6 @@ public class OutputStreamByteOutput extends FilterOutputStream implements ByteOu
      * @throws IOException if an I/O error occurs
      */
     public void write(final byte[] b, final int off, final int len) throws IOException {
-        super.write(b, off, len);
+        out.write(b, off, len);
     }
 }

@@ -116,7 +116,12 @@ public final class TraceInformation extends Throwable {
     public static void addObjectInformation(Throwable t, Object targetObject) {
         final TraceInformation ti = getOrAddTraceInformation(t);
         final String targetClassName = getNiceClassName(targetObject.getClass());
-        final int targetHashCode = targetObject.hashCode();
+        int targetHashCode = 0;
+        try {
+            targetHashCode = targetObject.hashCode();
+        } catch (Throwable ignored) {
+            // guess we won't know the hash code!
+        }
         final Info oldInfo = ti.info;
         ti.info = new ObjectInfo(oldInfo, targetClassName, targetHashCode);
     }

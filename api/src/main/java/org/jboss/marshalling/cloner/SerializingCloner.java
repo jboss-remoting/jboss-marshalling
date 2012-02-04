@@ -692,6 +692,7 @@ class SerializingCloner implements ObjectCloner {
             fieldMap.put(name, new ObjectReadField(getField(name, Kind.OBJECT), val));
         }
 
+        @Deprecated
         public void write(final ObjectOutput out) throws IOException {
             throw new UnsupportedOperationException();
         }

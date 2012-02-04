@@ -127,6 +127,7 @@ public final class SingleObjectMarshallerTestFactory {
         populateAllMapSizes(list, identityHashMapMaker);
         populateAllMapSizes(list, treeMapMaker);
         populateAllMapSizes(list, treeMapCompMaker);
+        populateAllMapSizes(list, lruMapMaker);
     }
 
     private static void populateAllCollections(List<Object> list) {
@@ -272,6 +273,12 @@ public final class SingleObjectMarshallerTestFactory {
     private static final Maker<Map<Integer,Object>> linkedHashMapMaker = new Maker<Map<Integer,Object>>() {
         public Map<Integer, Object> make() {
             return new LinkedHashMap<Integer, Object>();
+        }
+    };
+
+    private static final Maker<Map<Integer,Object>> lruMapMaker = new Maker<Map<Integer, Object>>() {
+        public Map<Integer, Object> make() {
+            return new LRUMap<Integer, Object>(60);
         }
     };
 

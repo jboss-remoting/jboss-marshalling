@@ -41,4 +41,13 @@ public abstract class SerializableClassDescriptor extends ClassDescriptor {
     public abstract SerializableField[] getFields();
 
     public abstract SerializableClass getSerializableClass();
+
+    public String toString() {
+        final ClassDescriptor superClassDescriptor = getSuperClassDescriptor();
+        if (superClassDescriptor == null) {
+            return String.format("%s for %s (id %x02)", getClass().getSimpleName(), getType(), Integer.valueOf(getTypeID()));
+        } else {
+            return String.format("%s for %s (id %x02) extends %s", getClass().getSimpleName(), getType(), Integer.valueOf(getTypeID()), superClassDescriptor);
+        }
+    }
 }

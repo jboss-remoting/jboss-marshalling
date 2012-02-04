@@ -71,6 +71,7 @@ import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
@@ -80,6 +81,9 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.reflect.ReflectiveCreator;
+import org.jboss.marshalling.reflect.SunReflectiveCreator;
+import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
@@ -92,6 +96,23 @@ public final class SimpleMarshallerTests extends TestBase {
 
     public SimpleMarshallerTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
         super(testMarshallerProvider, testUnmarshallerProvider, configuration);
+    }
+
+    /**
+     * Simple constructor for running one test at a time from an IDE.
+     */
+    public SimpleMarshallerTests() {
+        super(new MarshallerFactoryTestMarshallerProvider(new RiverMarshallerFactory(), 3),
+              new MarshallerFactoryTestUnmarshallerProvider(new RiverMarshallerFactory(), 3),
+              getOneTestMarshallingConfiguration());
+    }
+
+    private static MarshallingConfiguration getOneTestMarshallingConfiguration() {
+        final MarshallingConfiguration marshallingConfiguration = new MarshallingConfiguration();
+        marshallingConfiguration.setExternalizerCreator(new ReflectiveCreator());
+        marshallingConfiguration.setSerializedCreator(new SunReflectiveCreator());
+        marshallingConfiguration.setVersion(3);
+        return marshallingConfiguration;
     }
 
     @Test
@@ -2792,6 +2813,22 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 unmarshaller.readObject();
+            }
+        });
+    }
+
+    @Test
+    public void testHierarchyLikeLinkedHashMapSubclass() throws Throwable {
+        final LRUMap test = new LRUMap(64);
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(test);
+                marshaller.writeObject(test);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final LRUMap map = unmarshaller.readObject(LRUMap.class);
+                assertSame(map, unmarshaller.readObject());
             }
         });
     }

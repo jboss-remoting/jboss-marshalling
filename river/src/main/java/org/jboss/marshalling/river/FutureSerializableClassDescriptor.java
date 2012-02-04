@@ -69,4 +69,8 @@ public final class FutureSerializableClassDescriptor extends SerializableClassDe
         }
         return result;
     }
+
+    public String toString() {
+        return "future " + result;
+    }
 }

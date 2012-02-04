@@ -662,4 +662,12 @@ public final class SerializableClass {
             return lookupPublicConstructor(clazz, params);
         }
     }
+
+    public String toString() {
+        try {
+            return String.format("Serializable %s", getSubjectClass());
+        } catch (ClassNotFoundException e) {
+            return "Unloaded serializable class";
+        }
+    }
 }

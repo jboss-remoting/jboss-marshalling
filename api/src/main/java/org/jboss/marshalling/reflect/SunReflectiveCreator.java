@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.io.Serializable;
+
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -54,12 +55,16 @@ public class SunReflectiveCreator extends ReflectiveCreator {
             @SuppressWarnings({"unchecked"})
             public Constructor<T> run() {
                 Class<? super T> current = clazz;
-                for (; Serializable.class.isAssignableFrom(current); current = current.getSuperclass());
-                final Constructor<? super T> topConstructor;
-                try {
-                    topConstructor = current.getDeclaredConstructor();
-                } catch (NoSuchMethodException e) {
-                    return null;
+                Constructor<? super T> topConstructor = null;
+                while (topConstructor == null) {
+                    //we know that the passed in clazz does not have a default constructor
+                    current = current.getSuperclass();
+                    if (!Serializable.class.isAssignableFrom(current)) {
+                        try {
+                            topConstructor = current.getDeclaredConstructor();
+                        } catch (NoSuchMethodException e) {
+                        }
+                    }
                 }
                 topConstructor.setAccessible(true);
                 final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(clazz, topConstructor);

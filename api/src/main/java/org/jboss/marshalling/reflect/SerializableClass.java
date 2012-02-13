@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -562,7 +564,13 @@ public final class SerializableClass {
                 }
             }
             final Class<?> clazz = dereference(classRef);
-            final Method method = finder.get(clazz);
+            final SecurityManager sm = System.getSecurityManager();
+            final Method method;
+            if (sm != null) {
+                method = AccessController.doPrivileged(new MethodFinderAction(finder, clazz));
+            } else {
+                method = finder.get(clazz);
+            }
             if (method == null) {
                 throw new NullPointerException("method is null (was non-null on last check)");
             }
@@ -607,13 +615,23 @@ public final class SerializableClass {
                 }
             }
             final Class<?> clazz = dereference(classRef);
-            final Constructor<?> method = finder.get(clazz);
-            if (method == null) {
-                throw new NullPointerException("method is null (was non-null on last check)");
+            final Constructor<?> constructor;
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                constructor = doAction(finder, clazz);
+            } else {
+                constructor = finder.get(clazz);
             }
-            final WeakReference<Constructor<?>> newVal = new WeakReference<Constructor<?>>(method);
+            if (constructor == null) {
+                throw new NullPointerException("constructor is null (was non-null on last check)");
+            }
+            final WeakReference<Constructor<?>> newVal = new WeakReference<Constructor<?>>(constructor);
             refUpdater.compareAndSet(this, weakReference, newVal);
-            return method;
+            return constructor;
+        }
+
+        private static <T> Constructor<T> doAction(ConstructorFinder finder, Class<T> clazz) {
+            return AccessController.doPrivileged(new ConstructorFinderAction<T>(finder, clazz));
         }
     }
 
@@ -651,6 +669,20 @@ public final class SerializableClass {
         }
     }
 
+    private static final class MethodFinderAction implements PrivilegedAction<Method> {
+        private final MethodFinder finder;
+        private final Class<?> clazz;
+
+        private MethodFinderAction(final MethodFinder finder, final Class<?> clazz) {
+            this.finder = finder;
+            this.clazz = clazz;
+        }
+
+        public Method run() {
+            return finder.get(clazz);
+        }
+    }
+
     private static final class PublicConstructorFinder implements ConstructorFinder {
         private final Class<?>[] params;
 
@@ -660,6 +692,20 @@ public final class SerializableClass {
 
         public <T> Constructor<T> get(final Class<T> clazz) {
             return lookupPublicConstructor(clazz, params);
+        }
+    }
+
+    private static final class ConstructorFinderAction<T> implements PrivilegedAction<Constructor<T>> {
+        private final ConstructorFinder finder;
+        private final Class<T> clazz;
+
+        private ConstructorFinderAction(final ConstructorFinder finder, final Class<T> clazz) {
+            this.finder = finder;
+            this.clazz = clazz;
+        }
+
+        public Constructor<T> run() {
+            return finder.get(clazz);
         }
     }
 

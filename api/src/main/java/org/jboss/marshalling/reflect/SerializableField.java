@@ -22,32 +22,25 @@
 
 package org.jboss.marshalling.reflect;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
-import java.util.concurrent.atomic.AtomicReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import org.jboss.marshalling.util.Kind;
 
 /**
  * Reflection information about a field on a serializable class.
  */
 public final class SerializableField {
-    // the class that the field is attached to
-    private final WeakReference<Class<?>> classRef;
     // the type of the field itself
-    private final WeakReference<Class<?>> typeRef;
-    private final AtomicReference<WeakReference<Field>> fieldRefRef = new AtomicReference<WeakReference<Field>>();
+    private final Class<?> type;
+    private final Field field;
     private final String name;
     private final boolean unshared;
     private final Kind kind;
-    private volatile boolean missing;
 
-    SerializableField(Class<?> clazz, Class<?> type, String name, boolean unshared) {
-        classRef = new WeakReference<Class<?>>(clazz);
-        typeRef = new WeakReference<Class<?>>(type);
+    SerializableField(Class<?> type, String name, boolean unshared, final Field field) {
+        this.type = type;
         this.name = name;
         this.unshared = unshared;
+        this.field = field;
         // todo - see if a small Map is faster
         if (type == boolean.class) {
             kind = Kind.BOOLEAN;
@@ -70,57 +63,13 @@ public final class SerializableField {
         }
     }
 
-    private Field lookupField() {
-        if (missing) {
-            return null;
-        }
-        final Class<?> clazz = classRef.get();
-        if (clazz != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-                public Field run() {
-                    try {
-                        final Field field = clazz.getDeclaredField(name);
-                        field.setAccessible(true);
-                        return field;
-                    } catch (NoSuchFieldException e) {
-                        missing = true;
-                        return null;
-                    }
-                }
-            });
-        } else {
-            throw new IllegalStateException("Class unloaded");
-        }
-    }
-
     /**
      * Get the reflection {@code Field} for this serializable field.  The resultant field will be accessible.
      *
      * @return the reflection field
      */
     public Field getField() {
-        final WeakReference<Field> fieldRef = fieldRefRef.get();
-        if (fieldRef == null) {
-            final Field field = lookupField();
-            if (field != null) {
-                fieldRefRef.compareAndSet(null, new WeakReference<Field>(field));
-            }
-            return field;
-        } else {
-            final Field field = fieldRef.get();
-            if (field != null) {
-                return field;
-            }
-            final Field newField = lookupField();
-            final WeakReference<Field> newFieldRef;
-            if (newField == null) {
-                newFieldRef = null;
-            } else {
-                newFieldRef = new WeakReference<Field>(newField);
-            }
-            fieldRefRef.compareAndSet(fieldRef, newFieldRef);
-            return newField;
-        }
+        return field;
     }
 
     /**
@@ -156,6 +105,6 @@ public final class SerializableField {
      * @return the field type
      */
     public Class<?> getType() throws ClassNotFoundException {
-        return SerializableClass.dereference(typeRef);
+        return type;
     }
 }

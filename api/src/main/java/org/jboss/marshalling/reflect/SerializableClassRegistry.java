@@ -25,10 +25,10 @@ package org.jboss.marshalling.reflect;
 import java.io.SerializablePermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.EnumSet;
-import static org.jboss.marshalling.reflect.ConcurrentReferenceHashMap.ReferenceType.WEAK;
-import static org.jboss.marshalling.reflect.ConcurrentReferenceHashMap.ReferenceType.STRONG;
-import static org.jboss.marshalling.reflect.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * A registry for reflection information usable by serialization implementations.  Objects returned from this registry
@@ -58,7 +58,7 @@ public final class SerializableClassRegistry {
         return INSTANCE;
     }
 
-    private final ConcurrentReferenceHashMap<Class<?>, SerializableClass> cache = new ConcurrentReferenceHashMap<Class<?>, SerializableClass>(512, 0x0.Cp0f, 16, WEAK, STRONG, EnumSet.of(IDENTITY_COMPARISONS));
+    private final ConcurrentMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>> registry = new UnlockedHashMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>>();
 
     /**
      * Look up serialization information for a class.  The resultant object will be cached.
@@ -67,7 +67,18 @@ public final class SerializableClassRegistry {
      * @return the serializable class information
      */
     public SerializableClass lookup(final Class<?> subject) {
-        SerializableClass info = cache.get(subject);
+        if (subject == null) {
+            return null;
+        }
+        final ClassLoader classLoader = subject.getClassLoader();
+        ConcurrentMap<Class<?>, SerializableClass> loaderMap = registry.get(classLoader);
+        if (loaderMap == null) {
+            final ConcurrentMap<Class<?>, SerializableClass> existing = registry.putIfAbsent(classLoader, loaderMap = new UnlockedHashMap<Class<?>, SerializableClass>());
+            if (existing != null) {
+                loaderMap = existing;
+            }
+        }
+        SerializableClass info = loaderMap.get(subject);
         if (info != null) {
             return info;
         }
@@ -81,7 +92,35 @@ public final class SerializableClassRegistry {
         } else {
             info = new SerializableClass(subject);
         }
-        final SerializableClass old = cache.putIfAbsent(subject, info);
-        return old != null ? old : info;
+        final SerializableClass existing = loaderMap.putIfAbsent(subject, info);
+        return existing != null ? existing : info;
+    }
+
+    /**
+     * Release all reflection information belonging to the given class loader.
+     *
+     * @param classLoader the class loader to release
+     */
+    public void release(ClassLoader classLoader) {
+        registry.remove(classLoader);
+    }
+
+    static final class DuhMap<K, V> extends IdentityHashMap<K, V> implements ConcurrentMap<K, V> {
+
+        public V putIfAbsent(final K key, final V value) {
+            return containsKey(key) ? get(key) : put(key, value);
+        }
+
+        public boolean remove(final Object key, final Object value) {
+            return get(key) == value ? remove(key) != this : false;
+        }
+
+        public boolean replace(final K key, final V oldValue, final V newValue) {
+            return get(key) == oldValue ? put(key, newValue) != this : false;
+        }
+
+        public V replace(final K key, final V value) {
+            return containsKey(key) ? put(key, value) : null;
+        }
     }
 }

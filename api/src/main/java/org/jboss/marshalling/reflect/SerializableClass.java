@@ -35,28 +35,28 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
  */
 public final class SerializableClass {
 
-    private final WeakReference<Class<?>> subjectRef;
-    private final LazyWeakMethodRef writeObject;
-    private final LazyWeakMethodRef writeReplace;
-    private final LazyWeakMethodRef readObject;
-    private final LazyWeakMethodRef readObjectNoData;
-    private final LazyWeakMethodRef readResolve;
-    private final LazyWeakConstructorRef noArgConstructor;
-    private final LazyWeakConstructorRef objectInputConstructor;
+    private final Class<?> subject;
+    private final Method writeObject;
+    private final Method writeReplace;
+    private final Method readObject;
+    private final Method readObjectNoData;
+    private final Method readResolve;
+    private final Constructor<?> noArgConstructor;
+    private final Constructor<?> objectInputConstructor;
     private final SerializableField[] fields;
+    private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
 
     private static final Comparator<? super SerializableField> NAME_COMPARATOR = new Comparator<SerializableField>() {
@@ -70,18 +70,21 @@ public final class SerializableClass {
     public static final SerializableField[] NOFIELDS = new SerializableField[0];
 
     SerializableClass(Class<?> subject) {
-        final WeakReference<Class<?>> subjectRef = new WeakReference<Class<?>>(subject);
-        this.subjectRef = subjectRef;
-        writeObject = LazyWeakMethodRef.getInstance(WRITE_OBJECT_FINDER, subjectRef);
-        readObject = LazyWeakMethodRef.getInstance(READ_OBJECT_FINDER, subjectRef);
-        readObjectNoData = LazyWeakMethodRef.getInstance(READ_OBJECT_NO_DATA_FINDER, subjectRef);
-        writeReplace = LazyWeakMethodRef.getInstance(WRITE_REPLACE_FINDER, subjectRef);
-        readResolve = LazyWeakMethodRef.getInstance(READ_RESOLVE_FINDER, subjectRef);
-        noArgConstructor = LazyWeakConstructorRef.getInstance(SIMPLE_CONSTRUCTOR_FINDER, subjectRef);
-        objectInputConstructor = LazyWeakConstructorRef.getInstance(OBJECT_INPUT_CONSTRUCTOR_FINDER, subjectRef);
+        this.subject = subject;
+        writeObject = lookupPrivateMethod(subject, "writeObject", ObjectOutputStream.class);
+        readObject = lookupPrivateMethod(subject, "readObject", ObjectInputStream.class);
+        readObjectNoData = lookupPrivateMethod(subject, "readObjectNoData");
+        writeReplace = lookupInheritableMethod(subject, "writeReplace");
+        readResolve = lookupInheritableMethod(subject, "readResolve");
+        noArgConstructor = lookupPublicConstructor(subject);
+        objectInputConstructor = lookupPublicConstructor(subject, ObjectInput.class);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
-        fields = getSerializableFields(subject);
+        final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
+        for (SerializableField serializableField : fields = getSerializableFields(subject)) {
+            fieldsByName.put(serializableField.getName(), serializableField);
+        }
+        this.fieldsByName = fieldsByName;
     }
 
     private static SerializableField[] getSerializableFields(Class<?> clazz) {
@@ -90,7 +93,7 @@ public final class SerializableClass {
             SerializableField[] fields = new SerializableField[objectStreamFields.length];
             for (int i = 0; i < objectStreamFields.length; i++) {
                 ObjectStreamField field = objectStreamFields[i];
-                fields[i] = new SerializableField(clazz, field.getType(), field.getName(), field.isUnshared());
+                fields[i] = new SerializableField(field.getType(), field.getName(), field.isUnshared(), null);
             }
             Arrays.sort(fields, NAME_COMPARATOR);
             return fields;
@@ -100,7 +103,8 @@ public final class SerializableClass {
         final ArrayList<SerializableField> fields = new ArrayList<SerializableField>(declaredFields.length);
         for (Field field : declaredFields) {
             if ((field.getModifiers() & (Modifier.TRANSIENT | Modifier.STATIC)) == 0) {
-                fields.add(new SerializableField(clazz, field.getType(), field.getName(), false));
+                field.setAccessible(true);
+                fields.add(new SerializableField(field.getType(), field.getName(), false, field));
             }
         }
         Collections.sort(fields, NAME_COMPARATOR);
@@ -151,7 +155,11 @@ public final class SerializableClass {
      * @throws ClassNotFoundException if a class was not found while looking up the subject class
      */
     public SerializableField getSerializableField(String name, Class<?> fieldType, boolean unshared) throws ClassNotFoundException {
-        return new SerializableField(getSubjectClass(), fieldType, name, unshared);
+        final SerializableField serializableField = fieldsByName.get(name);
+        if (serializableField != null) {
+            return serializableField;
+        }
+        return new SerializableField(fieldType, name, unshared, null);
     }
 
     /**
@@ -172,7 +180,7 @@ public final class SerializableClass {
      */
     public void callWriteObject(Object object, ObjectOutputStream outputStream) throws IOException {
         try {
-            writeObject.getMethod().invoke(object, outputStream);
+            writeObject.invoke(object, outputStream);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof IOException) {
@@ -184,8 +192,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Method is unexpectedly inaccessible");
         }
@@ -210,7 +216,7 @@ public final class SerializableClass {
      */
     public void callReadObject(Object object, ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         try {
-            readObject.getMethod().invoke(object, inputStream);
+            readObject.invoke(object, inputStream);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof IOException) {
@@ -224,8 +230,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Method is unexpectedly inaccessible");
         }
@@ -248,7 +252,7 @@ public final class SerializableClass {
      */
     public void callReadObjectNoData(Object object) throws ObjectStreamException {
         try {
-            readObjectNoData.getMethod().invoke(object);
+            readObjectNoData.invoke(object);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof ObjectStreamException) {
@@ -260,8 +264,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Method is unexpectedly inaccessible");
         }
@@ -285,7 +287,7 @@ public final class SerializableClass {
      */
     public Object callWriteReplace(Object object) throws ObjectStreamException {
         try {
-            return writeReplace.getMethod().invoke(object);
+            return writeReplace.invoke(object);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof ObjectStreamException) {
@@ -297,8 +299,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Method is unexpectedly inaccessible");
         }
@@ -322,7 +322,7 @@ public final class SerializableClass {
      */
     public Object callReadResolve(Object object) throws ObjectStreamException {
         try {
-            return readResolve.getMethod().invoke(object);
+            return readResolve.invoke(object);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof ObjectStreamException) {
@@ -334,8 +334,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Method is unexpectedly inaccessible");
         }
@@ -380,9 +378,9 @@ public final class SerializableClass {
         return invokeConstructor(objectInputConstructor, objectInput);
     }
 
-    private static Object invokeConstructor(LazyWeakConstructorRef ref, Object... args) throws IOException {
+    private static Object invokeConstructor(Constructor<?> constructor, Object... args) throws IOException {
         try {
-            return ref.getConstructor().newInstance(args);
+            return constructor.newInstance(args);
         } catch (InvocationTargetException e) {
             final Throwable te = e.getTargetException();
             if (te instanceof IOException) {
@@ -394,8 +392,6 @@ public final class SerializableClass {
             } else {
                 throw new IllegalStateException("Unexpected exception", te);
             }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class is unexpectedly missing or changed");
         } catch (InstantiationException e) {
             throw new IllegalStateException("Instantiation failed unexpectedly");
         } catch (IllegalAccessException e) {
@@ -416,10 +412,9 @@ public final class SerializableClass {
      * Get the {@code Class} of this class.
      *
      * @return the subject class
-     * @throws ClassNotFoundException if the class was unloaded
      */
-    public Class<?> getSubjectClass() throws ClassNotFoundException {
-        return dereference(subjectRef);
+    public Class<?> getSubjectClass() {
+        return subject;
     }
 
     private static <T> Constructor<T> lookupPublicConstructor(final Class<T> subject, final Class<?>... params) {
@@ -513,14 +508,6 @@ public final class SerializableClass {
         }
     }
 
-    private interface MethodFinder {
-        Method get(Class<?> clazz);
-    }
-
-    private interface ConstructorFinder {
-        <T> Constructor<T> get(Class<T> clazz);
-    }
-
     static Class<?> dereference(final WeakReference<Class<?>> classRef) throws ClassNotFoundException {
         final Class<?> clazz = classRef.get();
         if (clazz == null) {
@@ -529,191 +516,7 @@ public final class SerializableClass {
         return clazz;
     }
 
-    private static class LazyWeakMethodRef {
-        private volatile WeakReference<Method> ref;
-        private final MethodFinder finder;
-        private final WeakReference<Class<?>> classRef;
-
-        @SuppressWarnings("unchecked")
-        private static final AtomicReferenceFieldUpdater<LazyWeakMethodRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakMethodRef.class, WeakReference.class, "ref");
-
-        private LazyWeakMethodRef(final MethodFinder finder, final Method initial, final WeakReference<Class<?>> classRef) {
-            this.finder = finder;
-            this.classRef = classRef;
-            ref = new WeakReference<Method>(initial);
-        }
-
-        private static LazyWeakMethodRef getInstance(MethodFinder finder, WeakReference<Class<?>> classRef) {
-            final Class<?> clazz = classRef.get();
-            if (clazz == null) {
-                throw new NullPointerException("clazz is null (no strong reference held to class when serialization info was acquired");
-            }
-            final Method method = finder.get(clazz);
-            if (method == null) {
-                return null;
-            }
-            return new LazyWeakMethodRef(finder, method, classRef);
-        }
-
-        private Method getMethod() throws ClassNotFoundException {
-            final WeakReference<Method> weakReference = ref;
-            if (weakReference != null) {
-                final Method method = weakReference.get();
-                if (method != null) {
-                    return method;
-                }
-            }
-            final Class<?> clazz = dereference(classRef);
-            final SecurityManager sm = System.getSecurityManager();
-            final Method method;
-            if (sm != null) {
-                method = AccessController.doPrivileged(new MethodFinderAction(finder, clazz));
-            } else {
-                method = finder.get(clazz);
-            }
-            if (method == null) {
-                throw new NullPointerException("method is null (was non-null on last check)");
-            }
-            final WeakReference<Method> newVal = new WeakReference<Method>(method);
-            refUpdater.compareAndSet(this, weakReference, newVal);
-            return method;
-        }
-    }
-
-    private static class LazyWeakConstructorRef {
-        private volatile WeakReference<Constructor<?>> ref;
-        private final ConstructorFinder finder;
-        private final WeakReference<Class<?>> classRef;
-
-        @SuppressWarnings("unchecked")
-        private static final AtomicReferenceFieldUpdater<LazyWeakConstructorRef, WeakReference> refUpdater = AtomicReferenceFieldUpdater.newUpdater(LazyWeakConstructorRef.class, WeakReference.class, "ref");
-
-        private LazyWeakConstructorRef(final ConstructorFinder finder, final Constructor<?> initial, final WeakReference<Class<?>> classRef) {
-            this.finder = finder;
-            this.classRef = classRef;
-            ref = new WeakReference<Constructor<?>>(initial);
-        }
-
-        private static LazyWeakConstructorRef getInstance(ConstructorFinder finder, WeakReference<Class<?>> classRef) {
-            final Class<?> clazz = classRef.get();
-            if (clazz == null) {
-                throw new NullPointerException("clazz is null (no strong reference held to class when serialization info was acquired");
-            }
-            final Constructor<?> constructor = finder.get(clazz);
-            if (constructor == null) {
-                return null;
-            }
-            return new LazyWeakConstructorRef(finder, constructor, classRef);
-        }
-
-        private Constructor<?> getConstructor() throws ClassNotFoundException {
-            final WeakReference<Constructor<?>> weakReference = ref;
-            if (weakReference != null) {
-                final Constructor<?> method = weakReference.get();
-                if (method != null) {
-                    return method;
-                }
-            }
-            final Class<?> clazz = dereference(classRef);
-            final Constructor<?> constructor;
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                constructor = doAction(finder, clazz);
-            } else {
-                constructor = finder.get(clazz);
-            }
-            if (constructor == null) {
-                throw new NullPointerException("constructor is null (was non-null on last check)");
-            }
-            final WeakReference<Constructor<?>> newVal = new WeakReference<Constructor<?>>(constructor);
-            refUpdater.compareAndSet(this, weakReference, newVal);
-            return constructor;
-        }
-
-        private static <T> Constructor<T> doAction(ConstructorFinder finder, Class<T> clazz) {
-            return AccessController.doPrivileged(new ConstructorFinderAction<T>(finder, clazz));
-        }
-    }
-
-    private static final MethodFinder WRITE_OBJECT_FINDER = new PrivateMethodFinder("writeObject", ObjectOutputStream.class);
-    private static final MethodFinder READ_OBJECT_FINDER = new PrivateMethodFinder("readObject", ObjectInputStream.class);
-    private static final MethodFinder READ_OBJECT_NO_DATA_FINDER = new PrivateMethodFinder("readObjectNoData");
-    private static final MethodFinder WRITE_REPLACE_FINDER = new InheritableMethodFinder("writeReplace");
-    private static final MethodFinder READ_RESOLVE_FINDER = new InheritableMethodFinder("readResolve");
-    private static final ConstructorFinder SIMPLE_CONSTRUCTOR_FINDER = new PublicConstructorFinder();
-    private static final ConstructorFinder OBJECT_INPUT_CONSTRUCTOR_FINDER = new PublicConstructorFinder(ObjectInput.class);
-
-    private static final class PrivateMethodFinder implements MethodFinder {
-        private final String name;
-        private final Class<?>[] params;
-
-        private PrivateMethodFinder(final String name, final Class<?>... params) {
-            this.name = name;
-            this.params = params;
-        }
-
-        public Method get(final Class<?> clazz) {
-            return lookupPrivateMethod(clazz, name, params);
-        }
-    }
-
-    private static final class InheritableMethodFinder implements MethodFinder {
-        private final String name;
-
-        private InheritableMethodFinder(final String name) {
-            this.name = name;
-        }
-
-        public Method get(final Class<?> clazz) {
-            return lookupInheritableMethod(clazz, name);
-        }
-    }
-
-    private static final class MethodFinderAction implements PrivilegedAction<Method> {
-        private final MethodFinder finder;
-        private final Class<?> clazz;
-
-        private MethodFinderAction(final MethodFinder finder, final Class<?> clazz) {
-            this.finder = finder;
-            this.clazz = clazz;
-        }
-
-        public Method run() {
-            return finder.get(clazz);
-        }
-    }
-
-    private static final class PublicConstructorFinder implements ConstructorFinder {
-        private final Class<?>[] params;
-
-        private PublicConstructorFinder(final Class<?>... params) {
-            this.params = params;
-        }
-
-        public <T> Constructor<T> get(final Class<T> clazz) {
-            return lookupPublicConstructor(clazz, params);
-        }
-    }
-
-    private static final class ConstructorFinderAction<T> implements PrivilegedAction<Constructor<T>> {
-        private final ConstructorFinder finder;
-        private final Class<T> clazz;
-
-        private ConstructorFinderAction(final ConstructorFinder finder, final Class<T> clazz) {
-            this.finder = finder;
-            this.clazz = clazz;
-        }
-
-        public Constructor<T> run() {
-            return finder.get(clazz);
-        }
-    }
-
     public String toString() {
-        try {
-            return String.format("Serializable %s", getSubjectClass());
-        } catch (ClassNotFoundException e) {
-            return "Unloaded serializable class";
-        }
+        return String.format("Serializable %s", getSubjectClass());
     }
 }

@@ -947,10 +947,10 @@ public class RiverMarshaller extends AbstractMarshaller {
             // user type #2: externalizable
             if (obj instanceof Externalizable) {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                instanceCache.put(obj, instanceSeq++);
                 final Externalizable ext = (Externalizable) obj;
                 final ObjectOutput objectOutput = getObjectOutput();
                 writeExternalizableClass(objClass);
+                instanceCache.put(obj, instanceSeq++);
                 ext.writeExternal(objectOutput);
                 writeEndBlock();
                 if (unshared) {

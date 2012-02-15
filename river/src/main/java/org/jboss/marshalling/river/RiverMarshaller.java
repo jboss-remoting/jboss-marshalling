@@ -611,18 +611,19 @@ public class RiverMarshaller extends AbstractMarshaller {
                     return;
                 }
                 case ID_CC_ENUM_SET_PROXY: {
-                    instanceCache.put(obj, instanceSeq++);
                     final Enum[] elements = getEnumSetElements(obj);
                     final int len = elements.length;
                     if (len == 0) {
                         write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
                         writeClass(getEnumSetElementType(obj));
+                        instanceCache.put(obj, instanceSeq++);
                     } else if (len <= 256) {
                         write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
                         write(len);
                         write(id);
                         writeClass(getEnumSetElementType(obj));
+                        instanceCache.put(obj, instanceSeq++);
                         for (Object o : elements) {
                             doWriteObject(o, false);
                         }
@@ -631,6 +632,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                         writeShort(len);
                         write(id);
                         writeClass(getEnumSetElementType(obj));
+                        instanceCache.put(obj, instanceSeq++);
                         for (Object o : elements) {
                             doWriteObject(o, false);
                         }
@@ -639,6 +641,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                         writeInt(len);
                         write(id);
                         writeClass(getEnumSetElementType(obj));
+                        instanceCache.put(obj, instanceSeq++);
                         for (Object o : elements) {
                             doWriteObject(o, false);
                         }
@@ -791,16 +794,17 @@ public class RiverMarshaller extends AbstractMarshaller {
                 default: throw new NotSerializableException(objClass.getName());
             }
             if (isArray) {
-                instanceCache.put(obj, instanceSeq++);
                 final Object[] objects = (Object[]) obj;
                 final int len = objects.length;
                 if (len == 0) {
                     write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
                     writeClass(objClass.getComponentType());
+                    instanceCache.put(obj, instanceSeq++);
                 } else if (len <= 256) {
                     write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
                     write(len);
                     writeClass(objClass.getComponentType());
+                    instanceCache.put(obj, instanceSeq++);
                     for (int i = 0; i < len; i++) {
                         doWriteObject(objects[i], unshared);
                     }
@@ -808,6 +812,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
                     writeShort(len);
                     writeClass(objClass.getComponentType());
+                    instanceCache.put(obj, instanceSeq++);
                     for (int i = 0; i < len; i++) {
                         doWriteObject(objects[i], unshared);
                     }
@@ -815,6 +820,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
                     writeInt(len);
                     writeClass(objClass.getComponentType());
+                    instanceCache.put(obj, instanceSeq++);
                     for (int i = 0; i < len; i++) {
                         doWriteObject(objects[i], unshared);
                     }

@@ -22,6 +22,10 @@
 
 package org.jboss.test.marshalling;
 
+import java.io.IOException;
+import org.jboss.marshalling.AbstractClassResolver;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.Unmarshaller;
 import org.testng.annotations.Factory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -29,6 +33,8 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
 import static org.jboss.marshalling.Pair.create;
+import static org.testng.Assert.assertEquals;
+
 import org.jboss.marshalling.Pair;
 import java.util.Collection;
 import java.util.List;
@@ -77,6 +83,42 @@ public final class SimpleMarshallerTestFactory {
 
         final Collection<Object[]> c = new ArrayList<Object[]>();
         final MarshallingConfiguration configuration = new MarshallingConfiguration();
+        for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
+            if (pair == null) continue;
+            // Add this combination
+            c.add(new Object[] { pair.getA(), pair.getB(), configuration.clone() });
+        }
+        configuration.setClassResolver(new AbstractClassResolver() {
+            protected ClassLoader getClassLoader() {
+                return SimpleMarshallerTestFactory.class.getClassLoader();
+            }
+
+            public void annotateProxyClass(final Marshaller marshaller, final Class<?> proxyClass) throws IOException {
+                marshaller.writeObject("Test One");
+                marshaller.writeObject("Test Two");
+            }
+
+            public void annotateClass(final Marshaller marshaller, final Class<?> clazz) throws IOException {
+                marshaller.writeObject("Test One");
+                marshaller.writeObject("Test Two");
+            }
+
+            public Class<?> resolveProxyClass(final Unmarshaller unmarshaller, final String[] interfaces) throws IOException, ClassNotFoundException {
+                assertEquals("Test One", unmarshaller.readObject(String.class));
+                assertEquals("Test Two", unmarshaller.readObject(String.class));
+                return super.resolveProxyClass(unmarshaller, interfaces);
+            }
+
+            public Class<?> resolveClass(final Unmarshaller unmarshaller, final String name, final long serialVersionUID) throws IOException, ClassNotFoundException {
+                assertEquals("Test One", unmarshaller.readObject(String.class));
+                assertEquals("Test Two", unmarshaller.readObject(String.class));
+                return super.resolveClass(unmarshaller, name, serialVersionUID);
+            }
+
+            public String toString() {
+                return "Test Class Resolver";
+            }
+        });
         for (Pair<TestMarshallerProvider, TestUnmarshallerProvider> pair : marshallerProviderPairs) {
             if (pair == null) continue;
             // Add this combination

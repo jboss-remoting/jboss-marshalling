@@ -697,9 +697,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return readMapData(unshared, idx, len, new TreeMap(comp));
                         }
                         case ID_CC_ENUM_MAP: {
+                            int idx = instanceCache.size();
+                            instanceCache.add(null);
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return readMapData(unshared, -1, len, new EnumMap(elementType));
+                            return readMapData(unshared, idx, len, new EnumMap(elementType));
                         }
                         case ID_CC_NCOPIES: {
                             final int idx = instanceCache.size();
@@ -875,8 +877,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 for (int i = 0; i < interfaces.length; i ++) {
                     interfaces[i] = readString();
                 }
+                final int idx = classCache.size();
+                classCache.add(null);
                 final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(classResolver.resolveProxyClass(this, interfaces), ID_PROXY_CLASS);
-                classCache.add(descriptor);
+                classCache.set(idx, descriptor);
                 return descriptor;
             }
             case ID_WRITE_OBJECT_CLASS:

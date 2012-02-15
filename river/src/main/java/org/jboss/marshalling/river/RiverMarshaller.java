@@ -827,8 +827,8 @@ public class RiverMarshaller extends AbstractMarshaller {
             // serialize proxies efficiently
             if (Proxy.isProxyClass(objClass)) {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                instanceCache.put(obj, instanceSeq++);
                 writeProxyClass(objClass);
+                instanceCache.put(obj, instanceSeq++);
                 doWriteObject(Proxy.getInvocationHandler(obj), false);
                 if (unshared) {
                     instanceCache.put(obj, -1);

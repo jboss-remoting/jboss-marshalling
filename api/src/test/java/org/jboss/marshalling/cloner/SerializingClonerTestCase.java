@@ -22,6 +22,10 @@
 
 package org.jboss.marshalling.cloner;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +38,44 @@ import static org.testng.Assert.*;
 
 @Test
 public final class SerializingClonerTestCase {
+    public static class ExtTest implements Externalizable {
+        private int foo;
+
+        public ExtTest() {
+        }
+
+        public ExtTest(final int foo) {
+            this.foo = foo;
+        }
+
+        public int getFoo() {
+            return foo;
+        }
+
+        public void setFoo(final int foo) {
+            this.foo = foo;
+        }
+
+        public void writeExternal(final ObjectOutput out) throws IOException {
+            out.writeInt(foo);
+        }
+
+        public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+            foo = in.readInt();
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof ExtTest && equals((ExtTest) obj);
+        }
+
+        public boolean equals(final ExtTest obj) {
+            return obj != null && obj.foo == foo;
+        }
+
+        public int hashCode() {
+            return foo;
+        }
+    }
 
     public void testImmutables() throws Throwable {
         final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
@@ -62,6 +104,7 @@ public final class SerializingClonerTestCase {
                 Pair.create("First", "Second"),
                 Arrays.asList("One", Integer.valueOf(2), Boolean.TRUE, "Shoe"),
                 new DateFieldType(new Date(), true),
+                new ExtTest(12345),
         };
         for (Object orig : objects) {
             final Object clone = objectCloner.clone(orig);

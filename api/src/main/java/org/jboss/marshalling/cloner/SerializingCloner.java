@@ -240,7 +240,9 @@ class SerializingCloner implements ObjectCloner {
             clone = externalizedCreator.create((Class<?>) clone(objClass));
             clones.put(orig, clone);
             final Queue<Step> steps = new ArrayDeque<Step>();
-            externalizable.writeExternal(new StepObjectOutput(steps));
+            final StepObjectOutput soo = new StepObjectOutput(steps);
+            externalizable.writeExternal(soo);
+            soo.doFinish();
             ((Externalizable) clone).readExternal(new StepObjectInput(steps));
         } else if (serializabilityChecker.isSerializable(objClass)) {
             clone = serializedCreator.create((Class<?>) clone(objClass));
@@ -485,7 +487,7 @@ class SerializingCloner implements ObjectCloner {
         StepObjectOutput(final Queue<Step> steps) throws IOException {
             super(SerializingCloner.this.bufferSize);
             this.steps = steps;
-            start(byteOutput);
+            super.start(byteOutput);
         }
 
         protected void doWriteObject(final Object obj, final boolean unshared) throws IOException {
@@ -499,16 +501,27 @@ class SerializingCloner implements ObjectCloner {
         }
 
         public void clearInstanceCache() throws IOException {
+            throw new UnsupportedOperationException();
         }
 
         public void clearClassCache() throws IOException {
+            throw new UnsupportedOperationException();
         }
 
         public void start(final ByteOutput byteOutput) throws IOException {
-            super.start(byteOutput);
+            throw new UnsupportedOperationException();
         }
 
         public void finish() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        void doFinish() throws IOException {
+            final ByteArrayOutputStream baos = byteArrayOutputStream;
+            if (baos.size() > 0) {
+                steps.add(new ByteDataStep(baos.toByteArray()));
+                baos.reset();
+            }
             super.finish();
         }
 
@@ -707,7 +720,7 @@ class SerializingCloner implements ObjectCloner {
             this.steps = steps;
             if (steps.peek() instanceof ByteDataStep) {
                 final ByteDataStep step = (ByteDataStep) steps.poll();
-                start(Marshalling.createByteInput(new ByteArrayInputStream(step.getBytes())));
+                super.start(Marshalling.createByteInput(new ByteArrayInputStream(step.getBytes())));
             }
         }
 
@@ -725,23 +738,25 @@ class SerializingCloner implements ObjectCloner {
             final Object clone = SerializingCloner.this.clone(((CloneStep) step).getOrig());
             step = steps.peek();
             if (step instanceof ByteDataStep) {
-                start(Marshalling.createByteInput(new ByteArrayInputStream(((ByteDataStep) steps.poll()).getBytes())));
+                super.start(Marshalling.createByteInput(new ByteArrayInputStream(((ByteDataStep) steps.poll()).getBytes())));
             }
             return clone;
         }
 
         public void finish() throws IOException {
-            super.finish();
+            throw new UnsupportedOperationException();
         }
 
         public void start(final ByteInput byteInput) throws IOException {
-            super.start(byteInput);
+            throw new UnsupportedOperationException();
         }
 
         public void clearInstanceCache() throws IOException {
+            throw new UnsupportedOperationException();
         }
 
         public void clearClassCache() throws IOException {
+            throw new UnsupportedOperationException();
         }
     }
 

@@ -725,7 +725,7 @@ class SerializingCloner implements ObjectCloner {
         }
 
         protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
-            finish();
+            super.finish();
             Step step;
             do {
                 step = steps.poll();

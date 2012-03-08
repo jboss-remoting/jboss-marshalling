@@ -69,11 +69,59 @@ public final class SerializingClonerTestCase {
         }
 
         public boolean equals(final ExtTest obj) {
-            return obj != null && obj.foo == foo;
+            return this == obj || obj != null && obj.foo == foo;
         }
 
         public int hashCode() {
             return foo;
+        }
+    }
+
+    public static class ExtTest2 implements Externalizable {
+        private int foo;
+        private ExtTest one;
+
+        public ExtTest2() {
+            one = new ExtTest(1234);
+        }
+
+        public ExtTest2(final int foo) {
+            this();
+            this.foo = foo;
+        }
+
+        public int getFoo() {
+            return foo;
+        }
+
+        public void setFoo(final int foo) {
+            this.foo = foo;
+        }
+
+        public void writeExternal(final ObjectOutput out) throws IOException {
+            out.writeInt(foo);
+            out.writeObject(one);
+            out.writeInt(foo);
+            out.writeObject(one);
+        }
+
+        public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+            foo = in.readInt();
+            one = (ExtTest) in.readObject();
+            foo = in.readInt();
+            one = (ExtTest) in.readObject();
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof ExtTest2 && equals((ExtTest2) obj);
+        }
+
+        public boolean equals(final ExtTest2 obj) {
+            return this == obj || obj != null && obj.foo == foo && one == null ? obj.one == null : one.equals(obj.one);
+        }
+
+        public int hashCode() {
+            return foo + one.hashCode();
         }
     }
 
@@ -105,6 +153,7 @@ public final class SerializingClonerTestCase {
                 Arrays.asList("One", Integer.valueOf(2), Boolean.TRUE, "Shoe"),
                 new DateFieldType(new Date(), true),
                 new ExtTest(12345),
+                new ExtTest2(12345),
         };
         for (Object orig : objects) {
             final Object clone = objectCloner.clone(orig);

@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2787,6 +2788,43 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertSame(newTreeMap, unmarshaller.readObject(TreeMap.class));
             }
         });
+    }
+
+    @Test
+    public void testTreeSetBackref() throws Throwable {
+        final TreeSet<TreeSetSelfRef> set = new TreeSet<TreeSetSelfRef>();
+        set.add(new TreeSetSelfRef(1, set));
+        set.add(new TreeSetSelfRef(4, set));
+        set.add(new TreeSetSelfRef(7, set));
+        set.add(new TreeSetSelfRef(8, set));
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(set);
+                marshaller.writeObject(set);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final TreeSet treeSet = unmarshaller.readObject(TreeSet.class);
+                assertSame(treeSet, unmarshaller.readObject(TreeSet.class));
+            }
+        });
+    }
+
+    private static final class TreeSetSelfRef implements Comparable<TreeSetSelfRef>, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final int foo;
+        private final TreeSet<TreeSetSelfRef> parent;
+
+        private TreeSetSelfRef(final int foo, final TreeSet<TreeSetSelfRef> parent) {
+            this.foo = foo;
+            this.parent = parent;
+        }
+
+        public int compareTo(final TreeSetSelfRef o) {
+            return Integer.signum(foo - o.foo);
+        }
     }
 
     private static final class NonPublicExt implements Externalizable {

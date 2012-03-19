@@ -22,10 +22,14 @@
 
 package org.jboss.marshalling.cloner;
 
+import java.io.EOFException;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +129,42 @@ public final class SerializingClonerTestCase {
         }
     }
 
+    public static final class BigTest implements Serializable {
+        private static final long serialVersionUID = -8115739879471991819L;
+
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            out.defaultWriteObject();
+            byte[] baImage = new byte[374301];
+            out.writeInt(baImage.length);
+            out.writeInt(baImage.length);
+            out.writeInt(baImage.length);
+            out.writeInt(baImage.length);
+            out.write(baImage);
+            out.writeObject(null);
+        }
+
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            int length = in.readInt();
+            byte[] baImage = new byte[length];
+            int off = 0;
+            int len = baImage.length;
+            while (len > 0) {
+                int n = in.read(baImage, off, len);
+                if (n < 0) {
+                    throw new EOFException();
+                }
+                off += n;
+                len -= n;
+            }
+            in.readObject();
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof BigTest;
+        }
+    }
+
     public void testImmutables() throws Throwable {
         final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
         final Object[] objects = {
@@ -154,6 +194,7 @@ public final class SerializingClonerTestCase {
                 new DateFieldType(new Date(), true),
                 new ExtTest(12345),
                 new ExtTest2(12345),
+                new BigTest(),
         };
         for (Object orig : objects) {
             final Object clone = objectCloner.clone(orig);

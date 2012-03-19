@@ -65,6 +65,8 @@
                     <includes>
                         <include>**/*TestFactory.java</include>
                     </includes>
+                    <argLine>-Xmx256m</argLine>
+                    <forkMode>once</forkMode>
                 </configuration>
             </plugin>
             <plugin>

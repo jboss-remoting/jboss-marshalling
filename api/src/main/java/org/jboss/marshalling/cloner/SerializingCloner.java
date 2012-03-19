@@ -22,7 +22,6 @@
 
 package org.jboss.marshalling.cloner;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.Externalizable;
@@ -298,6 +297,7 @@ class SerializingCloner implements ObjectCloner {
             final StepObjectOutputStream stepObjectOutputStream = new StepObjectOutputStream(steps, fields, orig);
             info.callWriteObject(orig, stepObjectOutputStream);
             stepObjectOutputStream.flush();
+            stepObjectOutputStream.doFinish();
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, new StepObjectInputStream(steps, fields, clone, cloneInfo));
             } else {
@@ -482,12 +482,11 @@ class SerializingCloner implements ObjectCloner {
 
         private final Queue<Step> steps;
         private final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        private final ByteOutput byteOutput = Marshalling.createByteOutput(byteArrayOutputStream);
 
         StepObjectOutput(final Queue<Step> steps) throws IOException {
             super(SerializingCloner.this.bufferSize);
             this.steps = steps;
-            super.start(byteOutput);
+            super.start(Marshalling.createByteOutput(byteArrayOutputStream));
         }
 
         protected void doWriteObject(final Object obj, final boolean unshared) throws IOException {
@@ -517,19 +516,16 @@ class SerializingCloner implements ObjectCloner {
         }
 
         void doFinish() throws IOException {
-            final ByteArrayOutputStream baos = byteArrayOutputStream;
-            if (baos.size() > 0) {
-                steps.add(new ByteDataStep(baos.toByteArray()));
-                baos.reset();
-            }
             super.finish();
         }
 
         public void flush() throws IOException {
             super.flush();
             final ByteArrayOutputStream baos = byteArrayOutputStream;
-            steps.add(new ByteDataStep(baos.toByteArray()));
-            baos.reset();
+            if (baos.size() > 0) {
+                steps.add(new ByteDataStep(baos.toByteArray()));
+                baos.reset();
+            }
         }
     }
 
@@ -538,12 +534,18 @@ class SerializingCloner implements ObjectCloner {
         private final Queue<Step> steps;
         private final ClonerPutField clonerPutField;
         private final Object subject;
+        private final StepObjectOutput output;
 
-        StepObjectOutputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object subject) throws IOException {
-            super(new StepObjectOutput(steps));
+        private StepObjectOutputStream(StepObjectOutput output, final Queue<Step> steps, final ClonerPutField clonerPutField, final Object subject) throws IOException {
+            super(output);
+            this.output = output;
             this.steps = steps;
             this.clonerPutField = clonerPutField;
             this.subject = subject;
+        }
+
+        StepObjectOutputStream(final Queue<Step> steps, final ClonerPutField clonerPutField, final Object subject) throws IOException {
+            this(new StepObjectOutput(steps), steps, clonerPutField, subject);
         }
 
         public void writeFields() throws IOException {
@@ -566,6 +568,10 @@ class SerializingCloner implements ObjectCloner {
             final Object subject = this.subject;
             final SerializingCloner.ClonerPutField fields = clonerPutField;
             prepareFields(subject, fields);
+        }
+
+        void doFinish() throws IOException {
+            output.doFinish();
         }
     }
 
@@ -714,32 +720,119 @@ class SerializingCloner implements ObjectCloner {
     class StepObjectInput extends AbstractObjectInput implements Unmarshaller {
 
         private final Queue<Step> steps;
+        private Step current;
+        private int idx;
 
         StepObjectInput(final Queue<Step> steps) throws IOException {
             super(bufferSize);
             this.steps = steps;
-            if (steps.peek() instanceof ByteDataStep) {
-                final ByteDataStep step = (ByteDataStep) steps.poll();
-                super.start(Marshalling.createByteInput(new ByteArrayInputStream(step.getBytes())));
-            }
+            current = steps.poll();
+            super.start(new ByteInput() {
+
+                public int read() throws IOException {
+                    while (current != null) {
+                        if (current instanceof ByteDataStep) {
+                            final ByteDataStep step = (ByteDataStep) current;
+                            final byte[] bytes = step.getBytes();
+                            if (idx == bytes.length) {
+                                current = steps.poll();
+                                idx = 0;
+                            } else {
+                                final byte b = bytes[idx++];
+                                return b & 0xff;
+                            }
+                        } else {
+                            // an object is pending
+                            return -1;
+                        }
+                    }
+                    return -1;
+                }
+
+                public int read(final byte[] b) throws IOException {
+                    return read(b, 0, b.length);
+                }
+
+                public int read(final byte[] b, int off, int len) throws IOException {
+                    if (len == 0) return 0;
+                    int t = 0;
+                    while (current != null && len > 0) {
+                        if (current instanceof ByteDataStep) {
+                            final ByteDataStep step = (ByteDataStep) current;
+                            final byte[] bytes = step.getBytes();
+                            final int blen = bytes.length;
+                            if (idx == blen) {
+                                current = steps.poll();
+                                idx = 0;
+                            } else {
+                                final int c = Math.min(blen - idx, len);
+                                System.arraycopy(bytes, idx, b, off, c);
+                                idx += c;
+                                off += c;
+                                len -= c;
+                                t += c;
+                                if (idx == blen) {
+                                    current = steps.poll();
+                                    idx = 0;
+                                }
+                            }
+                        } else {
+                            // an object is pending
+                            return t == 0 ? -1 : t;
+                        }
+                    }
+                    return t == 0 ? -1 : t;
+                }
+
+                public int available() throws IOException {
+                    return current instanceof ByteDataStep ? ((ByteDataStep) current).getBytes().length - idx : 0;
+                }
+
+                public long skip(long n) throws IOException {
+                    long t = 0;
+                    while (current != null && n > 0) {
+                        if (current instanceof ByteDataStep) {
+                            final ByteDataStep step = (ByteDataStep) current;
+                            final byte[] bytes = step.getBytes();
+                            final int blen = bytes.length;
+                            if (idx == blen) {
+                                current = steps.poll();
+                                idx = 0;
+                            } else {
+                                final int c = (int) Math.min((long) blen - idx, n);
+                                idx += c;
+                                if (idx == blen) {
+                                    current = steps.poll();
+                                    idx = 0;
+                                }
+                            }
+                        } else {
+                            // an object is pending
+                            return t;
+                        }
+                    }
+                    return t;
+                }
+
+                public void close() throws IOException {
+                    current = null;
+                }
+            });
         }
 
         protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
-            super.finish();
-            Step step;
-            do {
+            Step step = current;
+            while (step instanceof ByteDataStep) {
                 step = steps.poll();
-            } while (step instanceof ByteDataStep);
+            }
             if (step == null) {
+                current = null;
                 throw new EOFException();
             }
+            current = steps.poll();
             // not really true, just IDEA being silly again
             @SuppressWarnings("UnnecessaryThis")
             final Object clone = SerializingCloner.this.clone(((CloneStep) step).getOrig());
-            step = steps.peek();
-            if (step instanceof ByteDataStep) {
-                super.start(Marshalling.createByteInput(new ByteArrayInputStream(((ByteDataStep) steps.poll()).getBytes())));
-            }
             return clone;
         }
 

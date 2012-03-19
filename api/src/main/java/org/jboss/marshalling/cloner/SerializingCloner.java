@@ -801,6 +801,7 @@ class SerializingCloner implements ObjectCloner {
                             } else {
                                 final int c = (int) Math.min((long) blen - idx, n);
                                 idx += c;
+                                n -= c;
                                 if (idx == blen) {
                                     current = steps.poll();
                                     idx = 0;

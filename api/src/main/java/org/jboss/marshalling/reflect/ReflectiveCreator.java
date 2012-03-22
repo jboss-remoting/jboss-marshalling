@@ -24,8 +24,6 @@ package org.jboss.marshalling.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ConcurrentMap;
-import java.util.EnumSet;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Permission;
@@ -37,11 +35,6 @@ import org.jboss.marshalling.Creator;
  * A creator that simply uses reflection to locate and invoke a zero-argument constructor.
  */
 public class ReflectiveCreator implements Creator {
-
-    /**
-     * Constructor cache.  Keys and values are weak, and keys and values both use identity comparisons.
-     */
-    private static final ConcurrentMap<Class<?>, Constructor<?>> constructorMap = new ConcurrentReferenceHashMap<Class<?>, Constructor<?>>(1000, 0.5f, 16, ConcurrentReferenceHashMap.ReferenceType.WEAK, ConcurrentReferenceHashMap.ReferenceType.WEAK, EnumSet.<ConcurrentReferenceHashMap.Option>of(ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS));
 
     private static final Permission CREATOR_PERM = new SerializablePermission("creator");
 
@@ -73,36 +66,13 @@ public class ReflectiveCreator implements Creator {
         return newConstructor;
     }
 
-    /**
-     * Get a cached constructor for the class.  If no such constructor is found in the cache, the
-     * {@code getNewConstructor()} method is invoked to get it.  If no constructor is available then an
-     * {@code InstantiationException} is thrown.
-     *
-     * @param clazz the class to look up
-     * @return the cached constructor
-     * @throws InstantiationException if no suitable constructor is available
-     */
-    @SuppressWarnings({"unchecked"})
-    protected <T> Constructor<T> getCachedConstructor(final Class<T> clazz) throws InvalidClassException {
-        final Constructor<?> constructor = constructorMap.get(clazz);
-        if (constructor != null) {
-            return (Constructor<T>) constructor;
-        }
+    /** {@inheritDoc} */
+    public <T> T create(final Class<T> clazz) throws InvalidClassException {
         final Constructor<T> newConstructor = getNewConstructor(clazz);
         if (newConstructor == null) {
             throw new InvalidClassException(clazz.getName(), "No suitable constructor could be found");
         }
-        final Constructor<?> old = constructorMap.putIfAbsent(clazz, newConstructor);
-        if (old != null) {
-            return (Constructor<T>) old;
-        } else {
-            return newConstructor;
-        }
-    }
-
-    /** {@inheritDoc} */
-    public <T> T create(final Class<T> clazz) throws InvalidClassException {
-        final Constructor<T> constructor = getCachedConstructor(clazz);
+        final Constructor<T> constructor = newConstructor;
         try {
             return constructor.newInstance();
         } catch (InvocationTargetException e) {

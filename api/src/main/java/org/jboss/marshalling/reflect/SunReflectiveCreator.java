@@ -46,10 +46,6 @@ public class SunReflectiveCreator extends ReflectiveCreator {
      * {@inheritDoc}  This implementation will attempt to create a new constructor if one is not available.
      */
     protected <T> Constructor<T> getNewConstructor(final Class<T> clazz) {
-        final Constructor<T> constructor = super.getNewConstructor(clazz);
-        if (constructor != null) {
-            return constructor;
-        }
         return AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
             @SuppressWarnings({"unchecked"})
             public Constructor<T> run() {

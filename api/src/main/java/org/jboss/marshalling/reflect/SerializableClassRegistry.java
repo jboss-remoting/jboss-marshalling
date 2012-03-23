@@ -58,6 +58,10 @@ public final class SerializableClassRegistry {
         return INSTANCE;
     }
 
+    static SerializableClassRegistry getInstanceUnchecked() {
+        return INSTANCE;
+    }
+
     private final ConcurrentReferenceHashMap<Class<?>, SerializableClass> cache = new ConcurrentReferenceHashMap<Class<?>, SerializableClass>(512, 0x0.Cp0f, 16, WEAK, STRONG, EnumSet.of(IDENTITY_COMPARISONS));
 
     /**

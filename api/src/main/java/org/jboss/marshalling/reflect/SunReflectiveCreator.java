@@ -23,45 +23,18 @@
 package org.jboss.marshalling.reflect;
 
 import java.lang.reflect.Constructor;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.io.Serializable;
-import sun.reflect.ReflectionFactory;
 
 /**
  * An object creator that uses methods only found in certain JVMs to create a new constructor if needed.
  */
 public class SunReflectiveCreator extends ReflectiveCreator {
-    private static final ReflectionFactory reflectionFactory;
 
-    static {
-        reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
-            public ReflectionFactory run() {
-                return ReflectionFactory.getReflectionFactory();
-            }
-        });
-    }
+    private static SerializableClassRegistry registry = SerializableClassRegistry.getInstanceUnchecked();
 
     /**
      * {@inheritDoc}  This implementation will attempt to create a new constructor if one is not available.
      */
     protected <T> Constructor<T> getNewConstructor(final Class<T> clazz) {
-        return AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
-            @SuppressWarnings({"unchecked"})
-            public Constructor<T> run() {
-                Class<? super T> current = clazz;
-                for (; Serializable.class.isAssignableFrom(current); current = current.getSuperclass());
-                final Constructor<? super T> topConstructor;
-                try {
-                    topConstructor = current.getDeclaredConstructor();
-                } catch (NoSuchMethodException e) {
-                    return null;
-                }
-                topConstructor.setAccessible(true);
-                final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(clazz, topConstructor);
-                generatedConstructor.setAccessible(true);
-                return generatedConstructor;
-            }
-        });
+        return registry.lookup(clazz).getNoInitConstructor();
     }
 }

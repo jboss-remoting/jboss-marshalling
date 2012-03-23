@@ -31,7 +31,7 @@
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.3.13.GA</version>
+    <version>1.3.14.GA-SNAPSHOT</version>
 
     <parent>
         <groupId>org.jboss</groupId>

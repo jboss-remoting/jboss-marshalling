@@ -23,29 +23,41 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.ObjectInput;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
-import java.lang.ref.WeakReference;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import sun.reflect.ReflectionFactory;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
  */
 public final class SerializableClass {
+    private static final ReflectionFactory reflectionFactory;
+
+    static {
+        reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
+            public ReflectionFactory run() {
+                return ReflectionFactory.getReflectionFactory();
+            }
+        });
+    }
 
     private final Class<?> subject;
     private final Method writeObject;
@@ -55,6 +67,7 @@ public final class SerializableClass {
     private final Method readResolve;
     private final Constructor<?> noArgConstructor;
     private final Constructor<?> objectInputConstructor;
+    private final Constructor<?> nonInitConstructor;
     private final SerializableField[] fields;
     private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
@@ -78,6 +91,7 @@ public final class SerializableClass {
         readResolve = lookupInheritableMethod(subject, "readResolve");
         noArgConstructor = lookupPublicConstructor(subject);
         objectInputConstructor = lookupPublicConstructor(subject, ObjectInput.class);
+        nonInitConstructor = lookupNonInitConstructor(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
@@ -378,6 +392,24 @@ public final class SerializableClass {
         return invokeConstructor(objectInputConstructor, objectInput);
     }
 
+    /**
+     * Determine whether this class has a non-init constructor.
+     *
+     * @return whether this class has a non-init constructor
+     */
+    public boolean hasNoInitConstructor() {
+        return nonInitConstructor != null;
+    }
+
+    /**
+     * Invoke the non-init constructor on this class.
+     *
+     * @return the new instance
+     */
+    public Object callNonInitConstructor() {
+        return invokeConstructorNoException(nonInitConstructor);
+    }
+
     private static Object invokeConstructor(Constructor<?> constructor, Object... args) throws IOException {
         try {
             return constructor.newInstance(args);
@@ -386,6 +418,25 @@ public final class SerializableClass {
             if (te instanceof IOException) {
                 throw (IOException)te;
             } else if (te instanceof RuntimeException) {
+                throw (RuntimeException)te;
+            } else if (te instanceof Error) {
+                throw (Error)te;
+            } else {
+                throw new IllegalStateException("Unexpected exception", te);
+            }
+        } catch (InstantiationException e) {
+            throw new IllegalStateException("Instantiation failed unexpectedly");
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Constructor is unexpectedly inaccessible");
+        }
+    }
+
+    private static Object invokeConstructorNoException(Constructor<?> constructor, Object... args) {
+        try {
+            return constructor.newInstance(args);
+        } catch (InvocationTargetException e) {
+            final Throwable te = e.getTargetException();
+            if (te instanceof RuntimeException) {
                 throw (RuntimeException)te;
             } else if (te instanceof Error) {
                 throw (Error)te;
@@ -425,6 +476,22 @@ public final class SerializableClass {
         } catch (NoSuchMethodException e) {
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Constructor<T> lookupNonInitConstructor(final Class<T> subject) {
+        Class<? super T> current = subject;
+        for (; Serializable.class.isAssignableFrom(current); current = current.getSuperclass());
+        final Constructor<? super T> topConstructor;
+        try {
+            topConstructor = current.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+        topConstructor.setAccessible(true);
+        final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(subject, topConstructor);
+        generatedConstructor.setAccessible(true);
+        return generatedConstructor;
     }
 
     private static Method lookupPrivateMethod(final Class<?> subject, final String name, final Class<?>... params) {
@@ -508,12 +575,14 @@ public final class SerializableClass {
         }
     }
 
-    static Class<?> dereference(final WeakReference<Class<?>> classRef) throws ClassNotFoundException {
-        final Class<?> clazz = classRef.get();
-        if (clazz == null) {
-            throw new ClassNotFoundException("Class was unloaded");
-        }
-        return clazz;
+    @SuppressWarnings("unchecked")
+    <T> Constructor<T> getNoInitConstructor() {
+        return (Constructor<T>) nonInitConstructor;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> Constructor<T> getNoArgConstructor() {
+        return (Constructor<T>) noArgConstructor;
     }
 
     public String toString() {

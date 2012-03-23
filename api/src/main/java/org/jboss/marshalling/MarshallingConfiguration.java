@@ -126,8 +126,9 @@ public final class MarshallingConfiguration implements Cloneable {
      * Get the object creator, or {@code null} if none is specified.  Used only if a more specific creator type
      * was not specified.
      *
-     * @deprecated Use {@link #getExternalizerCreator()} or {@link #getSerializedCreator()} instead.
      * @return the object creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
     @Deprecated
     public Creator getCreator() {
@@ -138,8 +139,9 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the object creator, or {@code null} to use the default.  Used only if a more specific creator type
      * was not specified.
      *
-     * @deprecated Use {@link #setExternalizerCreator(Creator)} or {@link #setSerializedCreator(Creator)} instead.
      * @param creator the object creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
     @Deprecated
     public void setCreator(final Creator creator) {
@@ -280,7 +282,10 @@ public final class MarshallingConfiguration implements Cloneable {
      * {@link #getCreator()}.
      *
      * @return the creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
+    @Deprecated
     public Creator getExternalizerCreator() {
         final Creator result = externalizerCreator;
         return result == null ? creator : result;
@@ -290,7 +295,10 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the creator to use for externalized objects.
      *
      * @param externalizerCreator the creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
+    @Deprecated
     public void setExternalizerCreator(final Creator externalizerCreator) {
         this.externalizerCreator = externalizerCreator;
     }
@@ -300,7 +308,10 @@ public final class MarshallingConfiguration implements Cloneable {
      * {@link #getCreator()}.
      *
      * @return the creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
+    @Deprecated
     public Creator getSerializedCreator() {
         final Creator result = serializedCreator;
         return result == null ? creator : result;
@@ -310,7 +321,10 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the creator to use for serialized objects.
      *
      * @param serializedCreator the creator
+     *
+     * @deprecated no longer used in 1.4, will be removed in 1.4
      */
+    @Deprecated
     public void setSerializedCreator(final Creator serializedCreator) {
         this.serializedCreator = serializedCreator;
     }
@@ -361,9 +375,6 @@ public final class MarshallingConfiguration implements Cloneable {
         }
         if (objectResolver != null) {
             builder.append("objectResolver=<").append(objectResolver).append("> ");
-        }
-        if (creator != null) {
-            builder.append("creator=<").append(creator).append("> ");
         }
         if (classTable != null) {
             builder.append("classTable=<").append(classTable).append("> ");

@@ -25,8 +25,6 @@ package org.jboss.marshalling.reflect;
 import java.io.SerializablePermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -59,6 +57,10 @@ public final class SerializableClassRegistry {
     }
 
     private final ConcurrentMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>> registry = new UnlockedHashMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>>();
+
+    static SerializableClassRegistry getInstanceUnchecked() {
+        return INSTANCE;
+    }
 
     /**
      * Look up serialization information for a class.  The resultant object will be cached.

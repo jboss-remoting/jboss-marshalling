@@ -23,28 +23,19 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.InvalidClassException;
-import java.lang.reflect.InvocationTargetException;
 import org.jboss.marshalling.Creator;
 
 /**
  * A creator that simply uses reflection to locate and invoke a public, zero-argument constructor.
+ *
+ * @deprecated this class simply delegates to {@link ReflectiveCreator}.
  */
+@Deprecated
 public class PublicReflectiveCreator implements Creator {
+    private final ReflectiveCreator reflectiveCreator = new ReflectiveCreator();
 
     /** {@inheritDoc} */
     public <T> T create(final Class<T> clazz) throws InvalidClassException {
-        try {
-            return clazz.getConstructor().newInstance();
-        } catch (InvocationTargetException e) {
-            final InvalidClassException ice = new InvalidClassException(clazz.getName(), "Constructor threw an exception");
-            ice.initCause(e);
-            throw ice;
-        } catch (IllegalAccessException e) {
-            throw new InvalidClassException(clazz.getName(), "Illegal access exception occurred accessing the constructor: " + String.valueOf(e));
-        } catch (InstantiationException e) {
-            throw new InvalidClassException(clazz.getName(), "Instantiation exception: " + String.valueOf(e));
-        } catch (NoSuchMethodException e) {
-            throw new InvalidClassException(clazz.getName(), "No public, zero-arg constructor");
-        }
+        return reflectiveCreator.create(clazz);
     }
 }

@@ -279,7 +279,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                             throw new InvalidObjectException("Created object should be Externalizable but it is not");
                         }
                     } else {
-                        obj = serializedCreator.create(objClass);
+                        obj = sc.callNonInitConstructor();
                         if (obj instanceof Externalizable) {
                             throw new InvalidObjectException("Created object should not be Externalizable but it is");
                         }

@@ -31,8 +31,6 @@ import java.io.ObjectInputValidation;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -69,12 +67,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.ByteInput;
-import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -84,6 +82,8 @@ import static org.jboss.marshalling.river.Protocol.*;
  *
  */
 public class RiverUnmarshaller extends AbstractUnmarshaller {
+
+    private static final ReflectiveCreator DEFAULT_CREATOR = new ReflectiveCreator();
     private final ArrayList<Object> instanceCache;
     private final ArrayList<ClassDescriptor> classCache;
     private final SerializableClassRegistry registry;
@@ -1176,12 +1176,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return UTFUtils.readUTFBytes(this, length);
     }
 
-    private static final class DummyInvocationHandler implements InvocationHandler {
-        public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            throw new NoSuchMethodError("Invocation handler not yet loaded");
-        }
-    }
-
     public void start(final ByteInput byteInput) throws IOException {
         super.start(byteInput);
         int version = readUnsignedByte();
@@ -1189,16 +1183,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             throw new IOException("Unsupported protocol version " + version);
         }
         this.version = version;
-    }
-
-    private static final InvocationHandler DUMMY_HANDLER = new DummyInvocationHandler();
-
-    private static Object createProxyInstance(Creator creator, Class<?> type) throws IOException {
-        try {
-            return creator.create(type);
-        } catch (Exception e) {
-            return Proxy.newProxyInstance(type.getClassLoader(), type.getInterfaces(), DUMMY_HANDLER);
-        }
     }
 
     protected Object doReadNewObject(final int streamClassType, final boolean unshared) throws ClassNotFoundException, IOException {
@@ -1209,7 +1193,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             switch (classType) {
                 case ID_PROXY_CLASS: {
                     final Class<?> type = descriptor.getType();
-                    final Object obj = createProxyInstance(serializedCreator, type);
+                    final Object obj = registry.lookup(type).callNonInitConstructor();
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     try {
@@ -1228,9 +1212,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_WRITE_OBJECT_CLASS:
                 case ID_SERIALIZABLE_CLASS: {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
-                    final Class<?> type = descriptor.getType();
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                    final Object obj = serializedCreator.create(type);
+                    final Object obj = serializableClass.callNonInitConstructor();
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     doInitSerializable(obj, serializableClassDescriptor);
@@ -1275,7 +1258,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClass serializableClass = registry.lookup(type);
                     final Object obj;
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj = externalizer.createExternal(type, blockUnmarshaller, externalizerCreator);
+                    obj = externalizer.createExternal(type, blockUnmarshaller, DEFAULT_CREATOR);
                     instanceCache.set(idx, obj);
                     externalizer.readExternal(obj, blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();

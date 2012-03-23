@@ -23,7 +23,6 @@
 package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectInputStream;
-import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;

@@ -22,9 +22,6 @@
 
 package org.jboss.marshalling;
 
-import org.jboss.marshalling.reflect.PublicReflectiveCreator;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
-
 /**
  * An abstract implementation of the {@code MarshallerFactory} interface.  This
  * instance can be configured at any time; however any marshallers and unmarshallers
@@ -76,26 +73,6 @@ public abstract class AbstractMarshallerFactory implements MarshallerFactory {
      */
     protected ClassResolver getDefaultClassResolver() {
         return new ContextClassResolver();
-    }
-
-    /**
-     * Get the default serializable object creator, which is used if none was configured.  This base implementation returns a
-     * simple reflective creator.
-     *
-     * @return the creator
-     */
-    protected Creator getDefaultSerializedCreator() {
-        return new SunReflectiveCreator();
-    }
-
-    /**
-     * Get the default externalizable object creator, which is used if none was configured.  This base implementation returns a
-     * simple reflective creator.
-     *
-     * @return the creator
-     */
-    protected Creator getDefaultExternalizedCreator() {
-        return new PublicReflectiveCreator();
     }
 
     /**

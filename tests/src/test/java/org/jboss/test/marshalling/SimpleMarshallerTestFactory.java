@@ -104,14 +104,14 @@ public final class SimpleMarshallerTestFactory {
             }
 
             public Class<?> resolveProxyClass(final Unmarshaller unmarshaller, final String[] interfaces) throws IOException, ClassNotFoundException {
-                assertEquals("Test One", unmarshaller.readObject(String.class));
-                assertEquals("Test Two", unmarshaller.readObject(String.class));
+                assertEquals(unmarshaller.readObject(String.class), "Test One", "for proxy");
+                assertEquals(unmarshaller.readObject(String.class), "Test Two", "for proxy");
                 return super.resolveProxyClass(unmarshaller, interfaces);
             }
 
             public Class<?> resolveClass(final Unmarshaller unmarshaller, final String name, final long serialVersionUID) throws IOException, ClassNotFoundException {
-                assertEquals("Test One", unmarshaller.readObject(String.class));
-                assertEquals("Test Two", unmarshaller.readObject(String.class));
+                assertEquals(unmarshaller.readObject(String.class), "Test One", "for class " + name);
+                assertEquals(unmarshaller.readObject(String.class), "Test Two", "for class " + name);
                 return super.resolveClass(unmarshaller, name, serialVersionUID);
             }
 

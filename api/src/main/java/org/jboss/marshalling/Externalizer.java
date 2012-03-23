@@ -49,21 +49,9 @@ public interface Externalizer extends Serializable {
      *
      * @param subjectType the type of object to create
      * @param input the input
-     * @param defaultCreator the configured creator
      * @return the new instance
      * @throws IOException if an error occurs
      * @throws ClassNotFoundException if a class could not be found during read
      */
-    Object createExternal(Class<?> subjectType, ObjectInput input, Creator defaultCreator) throws IOException, ClassNotFoundException;
-
-    /**
-     * Read the external representation of an object.  The object will already be instantiated, but may be uninitialized, when
-     * this method is called.
-     *
-     * @param subject the object to read
-     * @param input the input
-     * @throws IOException if an error occurs
-     * @throws ClassNotFoundException if a class could not be found during read
-     */
-    void readExternal(Object subject, ObjectInput input) throws IOException, ClassNotFoundException;
+    Object createExternal(Class<?> subjectType, ObjectInput input) throws IOException, ClassNotFoundException;
 }

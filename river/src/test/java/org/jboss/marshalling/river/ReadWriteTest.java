@@ -26,8 +26,6 @@ import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.marshalling.MarshallingConfiguration;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
@@ -39,8 +37,6 @@ public abstract class ReadWriteTest {
     public void run() throws Throwable {
         final MarshallerFactory factory = new RiverMarshallerFactory();
         final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setSerializedCreator(new SunReflectiveCreator());
-        configuration.setExternalizerCreator(new ReflectiveCreator());
         configure(configuration);
         final Marshaller marshaller = factory.createMarshaller(configuration);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);

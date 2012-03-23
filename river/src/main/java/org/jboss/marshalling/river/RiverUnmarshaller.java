@@ -72,7 +72,6 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -83,7 +82,6 @@ import static org.jboss.marshalling.river.Protocol.*;
  */
 public class RiverUnmarshaller extends AbstractUnmarshaller {
 
-    private static final ReflectiveCreator DEFAULT_CREATOR = new ReflectiveCreator();
     private final ArrayList<Object> instanceCache;
     private final ArrayList<ClassDescriptor> classCache;
     private final SerializableClassRegistry registry;
@@ -1258,9 +1256,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClass serializableClass = registry.lookup(type);
                     final Object obj;
                     final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
-                    obj = externalizer.createExternal(type, blockUnmarshaller, DEFAULT_CREATOR);
+                    obj = externalizer.createExternal(type, blockUnmarshaller);
                     instanceCache.set(idx, obj);
-                    externalizer.readExternal(obj, blockUnmarshaller);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
                     final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);

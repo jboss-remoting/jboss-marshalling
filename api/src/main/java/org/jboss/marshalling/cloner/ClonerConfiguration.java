@@ -22,11 +22,8 @@
 
 package org.jboss.marshalling.cloner;
 
-import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.SerializabilityChecker;
-import org.jboss.marshalling.reflect.PublicReflectiveCreator;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
 
 /**
  * The configuration for a cloner instance.
@@ -37,8 +34,6 @@ public final class ClonerConfiguration implements Cloneable {
     private ObjectResolver objectResolver;
     private ClassCloner classCloner;
     private SerializabilityChecker serializabilityChecker;
-    private Creator externalizedCreator;
-    private Creator serializedCreator;
     private int bufferSize;
 
     /**
@@ -132,45 +127,6 @@ public final class ClonerConfiguration implements Cloneable {
      */
     public void setSerializabilityChecker(final SerializabilityChecker serializabilityChecker) {
         this.serializabilityChecker = serializabilityChecker;
-    }
-
-    /**
-     * Get the creator to use for externalizable objects.  This is used by the serializing cloner.
-     *
-     * @return the creator to use for externalizable objects
-     * @see PublicReflectiveCreator
-     */
-    public Creator getExternalizedCreator() {
-        return externalizedCreator;
-    }
-
-    /**
-     * Set the creator to use for externalizable objects.
-     *
-     * @param externalizedCreator the creator to use for externalizable objects
-     * @see #getExternalizedCreator()
-     */
-    public void setExternalizedCreator(final Creator externalizedCreator) {
-        this.externalizedCreator = externalizedCreator;
-    }
-
-    /**
-     * Get the creator to use for serialized objects.  This is used by the serializing cloner.
-     *
-     * @return the creator to use for serialized objects
-     * @see SunReflectiveCreator
-     */
-    public Creator getSerializedCreator() {
-        return serializedCreator;
-    }
-
-    /**
-     * Set the creator to use for serialized objects.
-     *
-     * @param serializedCreator the creator to use for serialized objects
-     */
-    public void setSerializedCreator(final Creator serializedCreator) {
-        this.serializedCreator = serializedCreator;
     }
 
     /**

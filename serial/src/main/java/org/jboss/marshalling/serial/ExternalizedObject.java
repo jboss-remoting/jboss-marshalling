@@ -29,7 +29,6 @@ import java.io.ObjectInput;
 import java.io.InvalidClassException;
 import java.io.ObjectStreamException;
 import org.jboss.marshalling.Externalizer;
-import org.jboss.marshalling.Creator;
 
 /**
  * An externalized object.  This wrapper allows an object that was written with an {@code Externalizer} to be read by
@@ -37,7 +36,7 @@ import org.jboss.marshalling.Creator;
  * object, there will be an error in the reconstructed object graph such that those references will refer to this
  * wrapper object rather than the properly externalized object.
  */
-public final class ExternalizedObject implements Externalizable, Creator {
+public final class ExternalizedObject implements Externalizable {
 
     private static final long serialVersionUID = -7764783599281227099L;
 
@@ -67,8 +66,7 @@ public final class ExternalizedObject implements Externalizable, Creator {
     public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
         Class<?> subject = (Class<?>) in.readObject();
         externalizer = (Externalizer) in.readObject();
-        final Object o = externalizer.createExternal(subject, in, this);
-        externalizer.readExternal(o, in);
+        final Object o = externalizer.createExternal(subject, in);
         obj = o;
     }
 

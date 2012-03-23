@@ -29,8 +29,6 @@ import java.io.EOFException;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.io.Serializable;
-import java.io.ObjectOutput;
-import java.io.ObjectInput;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
@@ -338,7 +336,7 @@ public final class Marshalling {
     }
 
     /**
-     * Construct a new {@link java.io.OptionalDataException}.  This method is necssary because there are no
+     * Construct a new {@link java.io.OptionalDataException}.  This method is necessary because there are no
      * public constructors in the API.
      *
      * @param eof {@code true} if there is no more data in the buffered part of the stream
@@ -355,7 +353,7 @@ public final class Marshalling {
     }
 
     /**
-     * Construct a new {@link java.io.OptionalDataException}.  This method is necssary because there are no
+     * Construct a new {@link java.io.OptionalDataException}.  This method is necessary because there are no
      * public constructors in the API.
      *
      * @param length the number of bytes of primitive data available to be read in the current buffer
@@ -402,29 +400,5 @@ public final class Marshalling {
                 throw new RuntimeException("Error invoking constructor", e);
             }
         }
-    }
-
-    private static final Externalizer NULL_EXTERNALIZER = new AbstractExternalizer() {
-        private static final long serialVersionUID = 1L;
-
-        public void writeExternal(final Object subject, final ObjectOutput output) throws IOException {
-        }
-
-        public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
-        }
-
-        public String toString() {
-            return "Null externalizer";
-        }
-    };
-
-    /**
-     * Get a null externalizer.  Useful in conjunction with {@link org.jboss.marshalling.ObjectTable} entries.
-     * This externalizer reads and writes no data.
-     *
-     * @return the null externalizer
-     */
-    public static Externalizer nullExternalizer() {
-        return NULL_EXTERNALIZER;
     }
 }

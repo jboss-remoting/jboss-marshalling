@@ -67,12 +67,10 @@ import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.ClassExternalizerFactory;
 import org.jboss.marshalling.ClassTable;
-import org.jboss.marshalling.Creator;
 import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
@@ -82,8 +80,6 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.reflect.ReflectiveCreator;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.testng.SkipException;
@@ -110,8 +106,6 @@ public final class SimpleMarshallerTests extends TestBase {
 
     private static MarshallingConfiguration getOneTestMarshallingConfiguration() {
         final MarshallingConfiguration marshallingConfiguration = new MarshallingConfiguration();
-        marshallingConfiguration.setExternalizerCreator(new ReflectiveCreator());
-        marshallingConfiguration.setSerializedCreator(new SunReflectiveCreator());
         marshallingConfiguration.setVersion(3);
         return marshallingConfiguration;
     }
@@ -1138,17 +1132,13 @@ public final class SimpleMarshallerTests extends TestBase {
         }
 
         @SuppressWarnings({ "unchecked" })
-        public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
+        public Object createExternal(final Class<?> subjectType, final ObjectInput input) throws IOException, ClassNotFoundException {
             final int size = input.readInt();
             final HashMap map = new HashMap(size * 2, 0.5f);
             for (int i = 0; i < size; i++) {
                 map.put(input.readObject(), input.readObject());
             }
             return map;
-        }
-
-        public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
-            // no op
         }
     }
 
@@ -1543,12 +1533,8 @@ public final class SimpleMarshallerTests extends TestBase {
             output.writeInt(testSubject.getV());
         }
 
-        public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
+        public Object createExternal(final Class<?> subjectType, final ObjectInput input) throws IOException, ClassNotFoundException {
             return new TestExternalizerWithAnnotation((String) input.readObject(), input.readInt());
-        }
-
-        public void readExternal(final Object subject, final ObjectInput input) throws IOException, ClassNotFoundException {
-            // empty
         }
     }
 
@@ -2266,30 +2252,23 @@ public final class SimpleMarshallerTests extends TestBase {
 
         private static final long serialVersionUID = -8104713864804175542L;
 
-        public Object createExternal(Class<?> subjectType, ObjectInput input, Creator defaultCreator) throws IOException, ClassNotFoundException {
+        public Object createExternal(Class<?> subjectType, ObjectInput input) throws IOException, ClassNotFoundException {
             if (!TestExternalizableInt.class.isAssignableFrom(subjectType)) {
                 throw new IOException(this + " only works for " + TestExternalizableInt.class + " but I got a " + subjectType);
             }
             Object obj = null;
             try {
-                if (defaultCreator != null) {
-                    obj = defaultCreator.create(subjectType);
-                } else {
-                    obj = Class.forName(subjectType.getName());
-                }
+                obj = subjectType.newInstance();
             } catch (Exception e) {
                 throw new IOException(e + "\n" + e.getMessage());
             }
-            return obj;
-        }
-
-        public void readExternal(Object subject, ObjectInput input) throws IOException, ClassNotFoundException {
-            if (TestExternalizableInt.class.isAssignableFrom(subject.getClass())) {
-                System.out.println(this + " reading  " + subject.getClass());
-                ((TestExternalizableInt) subject).setSecret(input.readInt());
+            if (TestExternalizableInt.class.isAssignableFrom(obj.getClass())) {
+                System.out.println(this + " reading  " + obj.getClass());
+                ((TestExternalizableInt) obj).setSecret(input.readInt());
             } else {
                 throw new IOException(this + " only works for " + TestExternalizableInt.class);
             }
+            return obj;
         }
 
         public void writeExternal(Object subject, ObjectOutput output) throws IOException {

@@ -188,12 +188,8 @@ public final class Pair<A, B> implements Serializable {
         }
 
         /** {@inheritDoc} */
-        public Object createExternal(final Class<?> subjectType, final ObjectInput input, final Creator defaultCreator) throws IOException, ClassNotFoundException {
+        public Object createExternal(final Class<?> subjectType, final ObjectInput input) throws IOException, ClassNotFoundException {
             return create(input.readObject(), input.readObject());
-        }
-
-        /** {@inheritDoc} */
-        public void readExternal(final Object subject, final ObjectInput input) {
         }
 
         /** {@inheritDoc} */

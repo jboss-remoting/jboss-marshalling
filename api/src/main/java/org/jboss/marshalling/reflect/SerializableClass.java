@@ -115,7 +115,7 @@ public final class SerializableClass {
                             readObjectNoData.setAccessible(true);
                         }
                     }
-                } else if (! Modifier.isStatic(modifiers) && methodReturnType == Object.class) {
+                } else if (methodReturnType == Object.class) {
                     // inheritable
                     if (methodName.equals("writeReplace")) {
                         final Class<?>[] parameterTypes = method.getParameterTypes();

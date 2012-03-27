@@ -37,6 +37,9 @@ public class ClassLoaderClassCloner implements ClassCloner {
     }
 
     public Class<?> clone(final Class<?> original) throws IOException, ClassNotFoundException {
+        if (original.isPrimitive()) {
+            return original;
+        }
         final String name = original.getName();
         if (name.startsWith("java.")) {
             return original;

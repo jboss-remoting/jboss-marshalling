@@ -84,13 +84,88 @@ public final class SerializableClass {
 
     SerializableClass(Class<?> subject) {
         this.subject = subject;
-        writeObject = lookupPrivateMethod(subject, "writeObject", ObjectOutputStream.class);
-        readObject = lookupPrivateMethod(subject, "readObject", ObjectInputStream.class);
-        readObjectNoData = lookupPrivateMethod(subject, "readObjectNoData");
-        writeReplace = lookupInheritableMethod(subject, "writeReplace");
-        readResolve = lookupInheritableMethod(subject, "readResolve");
-        noArgConstructor = lookupPublicConstructor(subject);
-        objectInputConstructor = lookupPublicConstructor(subject, ObjectInput.class);
+        // private methods
+        Method writeObject = null;
+        Method readObject = null;
+        Method readObjectNoData = null;
+        Method writeReplace = null;
+        Method readResolve = null;
+        for (Method method : subject.getDeclaredMethods()) {
+            final int modifiers = method.getModifiers();
+            final String methodName = method.getName();
+            final Class<?> methodReturnType = method.getReturnType();
+            if (! Modifier.isStatic(modifiers)) {
+                if (Modifier.isPrivate(modifiers) && methodReturnType == void.class) {
+                    if (methodName.equals("writeObject")) {
+                        final Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 1 && parameterTypes[0] == ObjectOutputStream.class) {
+                            writeObject = method;
+                            writeObject.setAccessible(true);
+                        }
+                    } else if (methodName.equals("readObject")) {
+                        final Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInputStream.class) {
+                            readObject = method;
+                            readObject.setAccessible(true);
+                        }
+                    } else if (methodName.equals("readObjectNoData")) {
+                        final Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 0) {
+                            readObjectNoData = method;
+                            readObjectNoData.setAccessible(true);
+                        }
+                    }
+                } else if (! Modifier.isStatic(modifiers) && methodReturnType == Object.class) {
+                    // inheritable
+                    if (methodName.equals("writeReplace")) {
+                        final Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 0) {
+                            writeReplace = method;
+                            writeReplace.setAccessible(true);
+                        }
+                    } else if (methodName.equals("readResolve")) {
+                        final Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 0) {
+                            readResolve = method;
+                            readResolve.setAccessible(true);
+                        }
+                    }
+                }
+            }
+        }
+        if (readResolve == null || writeReplace == null) {
+            final Class<?> superclass = subject.getSuperclass();
+            if (superclass != null) {
+                final SerializableClass superInfo = SerializableClassRegistry.getInstanceUnchecked().lookup(superclass);
+                final Method otherReadResolve = superInfo.readResolve;
+                if (readResolve == null && otherReadResolve != null && ! Modifier.isPrivate(otherReadResolve.getModifiers())) {
+                    readResolve = otherReadResolve;
+                }
+                final Method otherWriteReplace = superInfo.writeReplace;
+                if (writeReplace == null && otherWriteReplace != null && ! Modifier.isPrivate(otherWriteReplace.getModifiers())) {
+                    writeReplace = otherWriteReplace;
+                }
+            }
+        }
+        Constructor<?> noArgConstructor = null;
+        Constructor<?> objectInputConstructor = null;
+        for (Constructor<?> constructor : subject.getConstructors()) {
+            final Class<?>[] parameterTypes = constructor.getParameterTypes();
+            if (parameterTypes.length == 0) {
+                noArgConstructor = constructor;
+                noArgConstructor.setAccessible(true);
+            } else if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInput.class) {
+                objectInputConstructor = constructor;
+                noArgConstructor.setAccessible(true);
+            }
+        }
+        this.writeObject = writeObject;
+        this.readObject = readObject;
+        this.readObjectNoData = readObjectNoData;
+        this.noArgConstructor = noArgConstructor;
+        this.objectInputConstructor = objectInputConstructor;
+        this.readResolve = readResolve;
+        this.writeReplace = writeReplace;
         nonInitConstructor = lookupNonInitConstructor(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
@@ -468,16 +543,6 @@ public final class SerializableClass {
         return subject;
     }
 
-    private static <T> Constructor<T> lookupPublicConstructor(final Class<T> subject, final Class<?>... params) {
-        try {
-            Constructor<T> constructor = subject.getConstructor(params);
-            constructor.setAccessible(true);
-            return constructor;
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
     @SuppressWarnings("unchecked")
     private static <T> Constructor<T> lookupNonInitConstructor(final Class<T> subject) {
         Class<? super T> current = subject;
@@ -492,87 +557,6 @@ public final class SerializableClass {
         final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(subject, topConstructor);
         generatedConstructor.setAccessible(true);
         return generatedConstructor;
-    }
-
-    private static Method lookupPrivateMethod(final Class<?> subject, final String name, final Class<?>... params) {
-        try {
-            final Method method = subject.getDeclaredMethod(name, params);
-            final int modifiers = method.getModifiers();
-            if ((modifiers & Modifier.PRIVATE) == 0) {
-                // must be private...
-                return null;
-            } else if ((modifiers & Modifier.STATIC) != 0) {
-                // must NOT be static...
-                return null;
-            } else {
-                method.setAccessible(true);
-                return method;
-            }
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
-    private static Method lookupInheritableMethod(final Class<?> subject, final String name) {
-        Class<?> foundClass = subject;
-        Method method = null;
-        while (method == null) {
-            try {
-                if (foundClass == null) {
-                    return null;
-                }
-                method = foundClass.getDeclaredMethod(name);
-                if (method == null) {
-                    foundClass = foundClass.getSuperclass();
-                }
-            } catch (NoSuchMethodException e) {
-                foundClass = foundClass.getSuperclass();
-                continue;
-            }
-        }
-        final int modifiers = method.getModifiers();
-        if ((modifiers & Modifier.STATIC) != 0) {
-            // must NOT be static..
-            return null;
-        } else if ((modifiers & Modifier.ABSTRACT) != 0) {
-            // must NOT be abstract...
-            return null;
-        } else if ((modifiers & Modifier.PRIVATE) != 0 && foundClass != subject) {
-            // not visible to the actual class
-            return null;
-        } else if ((modifiers & (Modifier.PROTECTED | Modifier.PUBLIC)) != 0 || isSamePackage(foundClass, subject)) {
-            // visible!
-            method.setAccessible(true);
-            return method;
-        } else {
-            // package private, but not the same package
-            return null;
-        }
-    }
-
-    // the package is the same if the name and classloader are both the same
-    private static boolean isSamePackage(Class<?> a, Class<?> b) {
-        return a.getClassLoader() == b.getClassLoader() && getPackageName(a).equals(getPackageName(b));
-    }
-
-    private static String getPackageName(Class<?> c) {
-        String name = c.getName();
-        // skip array part
-        int idx = name.lastIndexOf('[');
-        if (idx > -1) {
-            // [[[[Lfoo.bar.baz.Blah;
-            // skip [ and also the L
-            name = name.substring(idx + 2);
-        }
-        idx = name.lastIndexOf('.');
-        if (idx > -1) {
-            // foo.bar.baz.Blah;
-            name = name.substring(0, idx);
-            return name;
-        } else {
-            // no package
-            return "";
-        }
     }
 
     @SuppressWarnings("unchecked")

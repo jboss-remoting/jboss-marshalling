@@ -23,7 +23,6 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.ObjectInput;
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +41,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import sun.reflect.ReflectionFactory;
 
@@ -50,6 +50,7 @@ import sun.reflect.ReflectionFactory;
  */
 public final class SerializableClass {
     private static final ReflectionFactory reflectionFactory;
+    private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
 
     static {
         reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
@@ -59,6 +60,7 @@ public final class SerializableClass {
         });
     }
 
+    private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
     private final Method writeObject;
     private final Method writeReplace;
@@ -67,7 +69,6 @@ public final class SerializableClass {
     private final Method readResolve;
     private final Constructor<?> noArgConstructor;
     private final Constructor<?> objectInputConstructor;
-    private final Constructor<?> nonInitConstructor;
     private final SerializableField[] fields;
     private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
@@ -84,6 +85,17 @@ public final class SerializableClass {
 
     SerializableClass(Class<?> subject) {
         this.subject = subject;
+        final IdentityHashMap<Class<?>, Constructor<?>> constructorMap = new IdentityHashMap<Class<?>, Constructor<?>>();
+        for (Class<?> t = subject.getSuperclass(); t != null; t = t.getSuperclass()) {
+            final SerializableClass lookedUp = REGISTRY.lookup(t);
+            final Constructor<?> constructor = lookedUp.noArgConstructor;
+            if (constructor != null) {
+                final Constructor newConstructor = reflectionFactory.newConstructorForSerialization(subject, constructor);
+                newConstructor.setAccessible(true);
+                constructorMap.put(t, newConstructor);
+            }
+        }
+        nonInitConstructors = constructorMap;
         // private methods
         Method writeObject = null;
         Method readObject = null;
@@ -136,7 +148,7 @@ public final class SerializableClass {
         if (readResolve == null || writeReplace == null) {
             final Class<?> superclass = subject.getSuperclass();
             if (superclass != null) {
-                final SerializableClass superInfo = SerializableClassRegistry.getInstanceUnchecked().lookup(superclass);
+                final SerializableClass superInfo = REGISTRY.lookup(superclass);
                 final Method otherReadResolve = superInfo.readResolve;
                 if (readResolve == null && otherReadResolve != null && ! Modifier.isPrivate(otherReadResolve.getModifiers())) {
                     readResolve = otherReadResolve;
@@ -149,7 +161,7 @@ public final class SerializableClass {
         }
         Constructor<?> noArgConstructor = null;
         Constructor<?> objectInputConstructor = null;
-        for (Constructor<?> constructor : subject.getConstructors()) {
+        for (Constructor<?> constructor : subject.getDeclaredConstructors()) {
             final Class<?>[] parameterTypes = constructor.getParameterTypes();
             if (parameterTypes.length == 0) {
                 noArgConstructor = constructor;
@@ -166,7 +178,6 @@ public final class SerializableClass {
         this.objectInputConstructor = objectInputConstructor;
         this.readResolve = readResolve;
         this.writeReplace = writeReplace;
-        nonInitConstructor = lookupNonInitConstructor(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
@@ -433,12 +444,12 @@ public final class SerializableClass {
      *
      * @return {@code true} if there is such a constructor
      */
-    public boolean hasNoArgConstructor() {
-        return noArgConstructor != null;
+    public boolean hasPublicNoArgConstructor() {
+        return noArgConstructor != null && Modifier.isPublic(noArgConstructor.getModifiers());
     }
 
     /**
-     * Invoke the public no-arg constructor on this class.
+     * Invoke the no-arg constructor on this class.
      *
      * @return the new instance
      * @throws IOException if an I/O error occurs
@@ -453,7 +464,7 @@ public final class SerializableClass {
      * @return {@code true} if there is such a constructor
      */
     public boolean hasObjectInputConstructor() {
-        return objectInputConstructor != null;
+        return objectInputConstructor != null && Modifier.isPublic(objectInputConstructor.getModifiers());
     }
 
     /**
@@ -472,8 +483,8 @@ public final class SerializableClass {
      *
      * @return whether this class has a non-init constructor
      */
-    public boolean hasNoInitConstructor() {
-        return nonInitConstructor != null;
+    public boolean hasNoInitConstructor(Class<?> target) {
+        return nonInitConstructors.containsKey(target);
     }
 
     /**
@@ -481,11 +492,14 @@ public final class SerializableClass {
      *
      * @return the new instance
      */
-    public Object callNonInitConstructor() {
-        return invokeConstructorNoException(nonInitConstructor);
+    public Object callNonInitConstructor(Class<?> target) {
+        return invokeConstructorNoException(nonInitConstructors.get(target));
     }
 
-    private static Object invokeConstructor(Constructor<?> constructor, Object... args) throws IOException {
+    private static <T> T invokeConstructor(Constructor<T> constructor, Object... args) throws IOException {
+        if (constructor == null) {
+            throw new IllegalArgumentException("No matching constructor");
+        }
         try {
             return constructor.newInstance(args);
         } catch (InvocationTargetException e) {
@@ -506,7 +520,10 @@ public final class SerializableClass {
         }
     }
 
-    private static Object invokeConstructorNoException(Constructor<?> constructor, Object... args) {
+    private static <T> T invokeConstructorNoException(Constructor<T> constructor, Object... args) {
+        if (constructor == null) {
+            throw new IllegalArgumentException("No matching constructor");
+        }
         try {
             return constructor.newInstance(args);
         } catch (InvocationTargetException e) {
@@ -541,27 +558,6 @@ public final class SerializableClass {
      */
     public Class<?> getSubjectClass() {
         return subject;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> Constructor<T> lookupNonInitConstructor(final Class<T> subject) {
-        Class<? super T> current = subject;
-        for (; Serializable.class.isAssignableFrom(current); current = current.getSuperclass());
-        final Constructor<? super T> topConstructor;
-        try {
-            topConstructor = current.getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-        topConstructor.setAccessible(true);
-        final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(subject, topConstructor);
-        generatedConstructor.setAccessible(true);
-        return generatedConstructor;
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> Constructor<T> getNoInitConstructor() {
-        return (Constructor<T>) nonInitConstructor;
     }
 
     @SuppressWarnings("unchecked")

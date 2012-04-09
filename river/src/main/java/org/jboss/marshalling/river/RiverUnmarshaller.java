@@ -1191,7 +1191,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             switch (classType) {
                 case ID_PROXY_CLASS: {
                     final Class<?> type = descriptor.getType();
-                    final Object obj = registry.lookup(type).callNonInitConstructor();
+                    final Class<?> nonSerializableSuperclass;
+                    if (descriptor instanceof SerializableClassDescriptor) {
+                        nonSerializableSuperclass = ((SerializableClassDescriptor) descriptor).getNonSerializableSuperclass();
+                    } else {
+                        nonSerializableSuperclass = Object.class;
+                    }
+                    final Object obj = registry.lookup(type).callNonInitConstructor(nonSerializableSuperclass);
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     try {
@@ -1211,7 +1217,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SERIALIZABLE_CLASS: {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                    final Object obj = serializableClass.callNonInitConstructor();
+                    final Object obj = serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     doInitSerializable(obj, serializableClassDescriptor);
@@ -1230,7 +1236,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final Externalizable obj;
                     if (serializableClass.hasObjectInputConstructor()) {
                         obj = (Externalizable) serializableClass.callObjectInputConstructor(blockUnmarshaller);
-                    } else if (serializableClass.hasNoArgConstructor()) {
+                    } else if (serializableClass.hasPublicNoArgConstructor()) {
                         obj = (Externalizable) serializableClass.callNoArgConstructor();
                     } else {
                         throw new InvalidClassException(type.getName(), "Class is non-public or has no public no-arg constructor");

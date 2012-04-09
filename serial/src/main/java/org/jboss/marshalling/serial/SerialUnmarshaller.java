@@ -258,7 +258,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
                         if (sc.hasObjectInputConstructor()) {
                             obj = sc.callObjectInputConstructor(blockUnmarshaller);
-                        } else if (sc.hasNoArgConstructor()) {
+                        } else if (sc.hasPublicNoArgConstructor()) {
                             obj = sc.callNoArgConstructor();
                         } else {
                             throw new InvalidClassException(objClass.getName(), "Class is non-public or has no public no-arg constructor");
@@ -279,7 +279,11 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                             throw new InvalidObjectException("Created object should be Externalizable but it is not");
                         }
                     } else {
-                        obj = sc.callNonInitConstructor();
+                        Class<?> nonSerializable;
+                        for (nonSerializable = objClass.getSuperclass(); serializabilityChecker.isSerializable(nonSerializable); nonSerializable = nonSerializable.getSuperclass()) {
+                            if (nonSerializable == Object.class) break;
+                        }
+                        obj = sc.callNonInitConstructor(nonSerializable);
                         if (obj instanceof Externalizable) {
                             throw new InvalidObjectException("Created object should not be Externalizable but it is");
                         }

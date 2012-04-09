@@ -50,4 +50,13 @@ public abstract class SerializableClassDescriptor extends ClassDescriptor {
             return String.format("%s for %s (id %x02) extends %s", getClass().getSimpleName(), getType(), Integer.valueOf(getTypeID()), superClassDescriptor);
         }
     }
+
+    public Class<?> getNonSerializableSuperclass() {
+        final ClassDescriptor descriptor = getSuperClassDescriptor();
+        if (descriptor instanceof SerializableClassDescriptor) {
+            return ((SerializableClassDescriptor) descriptor).getNonSerializableSuperclass();
+        } else {
+            return descriptor.getType();
+        }
+    }
 }

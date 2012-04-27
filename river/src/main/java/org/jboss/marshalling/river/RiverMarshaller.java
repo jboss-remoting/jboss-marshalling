@@ -912,7 +912,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 return;
             }
             // serialize proxies efficiently
-            if (Proxy.isProxyClass(objClass)) {
+            if (obj instanceof Proxy) {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 instanceCache.put(obj, instanceSeq++);
                 writeProxyClass(objClass);
@@ -1352,7 +1352,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void writeNewClass(final Class<?> objClass) throws IOException {
         if (objClass.isEnum()) {
             writeNewEnumClass(objClass.asSubclass(Enum.class));
-        } else if (Proxy.isProxyClass(objClass)) {
+        } else if (Proxy.class.isAssignableFrom(objClass)) {
             writeNewProxyClass(objClass);
         } else if (objClass.isArray()) {
             writeObjectArrayClass(objClass);

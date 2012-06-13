@@ -154,34 +154,30 @@ class SerializingCloner implements ObjectCloner {
             return cached;
         }
         final Class<? extends Object> objClass = orig.getClass();
+        final Class<?> clonedClass = (Class<?>) clone(objClass);
+        final boolean sameClass = objClass == clonedClass;
         if (orig instanceof Enum) {
-            @SuppressWarnings("unchecked")
-            final Class<? extends Enum> cloneClass = ((Class<?>)clone(objClass)).asSubclass(Enum.class);
-
-            if (cloneClass == objClass) {
+            if (sameClass) {
                 // same class means same enum constants
                 return orig;
             } else {
-                @SuppressWarnings("unchecked")
                 final Class<? extends Enum> cloneEnumClass;
                 //the actual object class may be a sub class of the enum class
                 final Class<?> enumClass = ((Enum<?>) orig).getDeclaringClass();
                 if(enumClass == objClass) {
-                    cloneEnumClass = cloneClass;
+                    cloneEnumClass = clonedClass.asSubclass(Enum.class);
                 } else{
                     cloneEnumClass = ((Class<?>)clone(enumClass)).asSubclass(Enum.class);
                 }
                 return Enum.valueOf(cloneEnumClass, ((Enum<?>) orig).name());
             }
         }
-        final Class<?> clonedClass = (Class<?>) clone(objClass);
         if (Proxy.isProxyClass(objClass)) {
             return Proxy.newProxyInstance(clonedClass.getClassLoader(), clonedClass.getInterfaces(), (InvocationHandler) clone(getInvocationHandler(orig)));
         }
         if (UNCLONED.contains(objClass)) {
             return orig;
         }
-        final boolean sameClass = objClass == clonedClass;
         if (objClass.isArray()) {
             Object simpleClone = simpleClone(orig, objClass);
             if (simpleClone != null) return simpleClone;

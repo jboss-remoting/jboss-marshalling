@@ -24,6 +24,7 @@ package org.jboss.marshalling.river;
 
 import org.jboss.marshalling.MarshallerObjectInputStream;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling.util.DefaultReadField;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;
 import org.jboss.marshalling.util.ObjectReadField;
@@ -163,7 +164,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                         return field;
                     }
                 }
-                throw new IllegalArgumentException("No field named '" + name + "'");
+                return new DefaultReadField(name);
             }
 
             public boolean defaulted(final String name) throws IOException {

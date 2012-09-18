@@ -169,13 +169,13 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
     }
 
     protected void finish(State restoreState) throws IOException {
-        //JBMAR-120
-//        switch (state.getAndSet(restoreState)) {
-//            case UNWRITTEN_FIELDS:
+        switch (state.getAndSet(restoreState)) {
+            case UNWRITTEN_FIELDS:
+                //JBMAR-120
 //            	if(serializableClass.getFields().length > 0) {
 //            		throw new NotActiveException("Fields were never written");
 //            	}
-//        }
+        }
     }
 
     protected void fullReset() {

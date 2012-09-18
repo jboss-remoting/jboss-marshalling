@@ -22,26 +22,26 @@
 
 package org.jboss.marshalling.river;
 
-import org.jboss.marshalling.MarshallerObjectInputStream;
-import org.jboss.marshalling.TraceInformation;
-import org.jboss.marshalling.util.DefaultReadField;
-import org.jboss.marshalling.util.ReadField;
-import org.jboss.marshalling.util.ShortReadField;
-import org.jboss.marshalling.util.ObjectReadField;
-import org.jboss.marshalling.util.LongReadField;
-import org.jboss.marshalling.util.IntReadField;
-import org.jboss.marshalling.util.FloatReadField;
-import org.jboss.marshalling.util.DoubleReadField;
-import org.jboss.marshalling.util.CharReadField;
-import org.jboss.marshalling.util.ByteReadField;
-import org.jboss.marshalling.util.BooleanReadField;
-import org.jboss.marshalling.reflect.SerializableField;
 import java.io.IOException;
-import java.io.ObjectInputValidation;
-import java.io.NotActiveException;
 import java.io.InvalidObjectException;
+import java.io.NotActiveException;
+import java.io.ObjectInputValidation;
 import java.io.ObjectStreamClass;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.jboss.marshalling.MarshallerObjectInputStream;
+import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling.reflect.SerializableField;
+import org.jboss.marshalling.util.BooleanReadField;
+import org.jboss.marshalling.util.ByteReadField;
+import org.jboss.marshalling.util.CharReadField;
+import org.jboss.marshalling.util.DoubleReadField;
+import org.jboss.marshalling.util.FloatReadField;
+import org.jboss.marshalling.util.IntReadField;
+import org.jboss.marshalling.util.LongReadField;
+import org.jboss.marshalling.util.ObjectReadField;
+import org.jboss.marshalling.util.ReadField;
+import org.jboss.marshalling.util.ShortReadField;
 
 /**
  *
@@ -164,55 +164,66 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                         return field;
                     }
                 }
-                return new DefaultReadField(name);
+                return null;
             }
 
             public boolean defaulted(final String name) throws IOException {
+                final ReadField field = find(name);
+                if (field == null) return true;
                 return find(name).isDefaulted();
             }
 
             public boolean get(final String name, final boolean val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getBoolean();
             }
 
             public byte get(final String name, final byte val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getByte();
             }
 
             public char get(final String name, final char val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getChar();
             }
 
             public short get(final String name, final short val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getShort();
             }
 
             public int get(final String name, final int val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getInt();
             }
 
             public long get(final String name, final long val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getLong();
             }
 
             public float get(final String name, final float val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getFloat();
             }
 
             public double get(final String name, final double val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getDouble();
             }
 
             public Object get(final String name, final Object val) throws IOException {
                 final ReadField field = find(name);
+                if (field == null) return val;
                 return field.isDefaulted() ? val : field.getObject();
             }
         };

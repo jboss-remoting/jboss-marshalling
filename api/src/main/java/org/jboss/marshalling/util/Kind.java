@@ -62,5 +62,9 @@ public enum Kind {
      * Field of type {@code short}.
      */
     SHORT,
+    /**
+     * Field of type unknown.
+     */
+    UNKNOWN,
     ;
 }

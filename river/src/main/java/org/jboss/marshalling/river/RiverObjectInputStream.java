@@ -139,52 +139,53 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
             }
 
             public boolean defaulted(final String name) throws IOException {
-                return find(name).isDefaulted();
+                final ReadField field = find(name);
+                return field == null || field.isDefaulted();
             }
 
             public boolean get(final String name, final boolean val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getBoolean();
+                return field == null || field.isDefaulted() ? val : field.getBoolean();
             }
 
             public byte get(final String name, final byte val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getByte();
+                return field == null || field.isDefaulted() ? val : field.getByte();
             }
 
             public char get(final String name, final char val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getChar();
+                return field == null || field.isDefaulted() ? val : field.getChar();
             }
 
             public short get(final String name, final short val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getShort();
+                return field == null || field.isDefaulted() ? val : field.getShort();
             }
 
             public int get(final String name, final int val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getInt();
+                return field == null || field.isDefaulted() ? val : field.getInt();
             }
 
             public long get(final String name, final long val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getLong();
+                return field == null || field.isDefaulted() ? val : field.getLong();
             }
 
             public float get(final String name, final float val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getFloat();
+                return field == null || field.isDefaulted() ? val : field.getFloat();
             }
 
             public double get(final String name, final double val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getDouble();
+                return field == null || field.isDefaulted() ? val : field.getDouble();
             }
 
             public Object get(final String name, final Object val) throws IOException {
                 final ReadField field = find(name);
-                return field.isDefaulted() ? val : field.getObject();
+                return field == null || field.isDefaulted() ? val : field.getObject();
             }
         };
     }

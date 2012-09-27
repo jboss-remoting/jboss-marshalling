@@ -154,6 +154,19 @@ class SerializingCloner implements ObjectCloner {
             return cached;
         }
         final Class<? extends Object> objClass = orig.getClass();
+        final SerializableClass info = registry.lookup(objClass);
+        if (replace) {
+            Object replaced = orig;
+            if (info.hasWriteReplace()) {
+                replaced = info.callWriteReplace(replaced);
+            }
+            replaced = objectResolver.writeReplace(replaced);
+            if (replaced != orig) {
+                Object clone = clone(replaced, false);
+                clones.put(orig, clone);
+                return clone;
+            }
+        }
         final Class<?> clonedClass = (Class<?>) clone(objClass);
         final boolean sameClass = objClass == clonedClass;
         if (orig instanceof Enum) {
@@ -206,20 +219,7 @@ class SerializingCloner implements ObjectCloner {
             }
             return clone;
         }
-        final SerializableClass info = registry.lookup(objClass);
         final SerializableClass cloneInfo = sameClass ? info : registry.lookup(clonedClass);
-        if (replace) {
-            Object replaced = orig;
-            if (info.hasWriteReplace()) {
-                replaced = info.callWriteReplace(replaced);
-            }
-            replaced = objectResolver.writeReplace(replaced);
-            if (replaced != orig) {
-                Object clone = clone(replaced, false);
-                clones.put(orig, clone);
-                return clone;
-            }
-        }
         // Now check the serializable types
         final Object clone;
         if (orig instanceof Externalizable) {

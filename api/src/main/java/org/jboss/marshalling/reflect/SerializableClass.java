@@ -36,7 +36,6 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -49,15 +48,7 @@ import sun.reflect.ReflectionFactory;
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
  */
 public final class SerializableClass {
-    private static final ReflectionFactory reflectionFactory;
-
-    static {
-        reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
-            public ReflectionFactory run() {
-                return ReflectionFactory.getReflectionFactory();
-            }
-        });
-    }
+    private static final ReflectionFactory reflectionFactory = (ReflectionFactory) AccessController.doPrivileged(new ReflectionFactory.GetReflectionFactoryAction());
 
     private final Class<?> subject;
     private final Method writeObject;

@@ -742,6 +742,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw new StreamCorruptedException("ID_CLEAR_INSTANCE_CACHE token in the middle of stream processing");
                     }
                     instanceCache.clear();
+                    leadByte = readUnsignedByte();
                     continue;
                 }
                 default: {

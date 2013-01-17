@@ -72,7 +72,6 @@ import org.jboss.marshalling.Externalize;
 import org.jboss.marshalling.Externalizer;
 import org.jboss.marshalling.FieldSetter;
 import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
@@ -2793,19 +2792,20 @@ public final class SimpleMarshallerTests extends TestBase {
     @Test
     public void testTreeSetBackref() throws Throwable {
         final TreeSet<TreeSetSelfRef> set = new TreeSet<TreeSetSelfRef>();
-        set.add(new TreeSetSelfRef(1, set));
-        set.add(new TreeSetSelfRef(4, set));
-        set.add(new TreeSetSelfRef(7, set));
-        set.add(new TreeSetSelfRef(8, set));
+        final TreeSetSelfRef item = new TreeSetSelfRef("1", set);
+        set.add(item);
+        set.add(new TreeSetSelfRef("4", set));
+        set.add(new TreeSetSelfRef("7", set));
+        set.add(new TreeSetSelfRef("8", set));
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
-                marshaller.writeObject(set);
-                marshaller.writeObject(set);
+                marshaller.writeObject(item);
+                marshaller.writeObject(item);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                final TreeSet treeSet = unmarshaller.readObject(TreeSet.class);
-                assertSame(treeSet, unmarshaller.readObject(TreeSet.class));
+                final TreeSetSelfRef thing = unmarshaller.readObject(TreeSetSelfRef.class);
+                assertSame(thing, unmarshaller.readObject(TreeSetSelfRef.class));
             }
         });
     }
@@ -2814,16 +2814,16 @@ public final class SimpleMarshallerTests extends TestBase {
 
         private static final long serialVersionUID = 1L;
 
-        private final int foo;
+        private final String zap;
         private final TreeSet<TreeSetSelfRef> parent;
 
-        private TreeSetSelfRef(final int foo, final TreeSet<TreeSetSelfRef> parent) {
-            this.foo = foo;
+        private TreeSetSelfRef(final String zap, final TreeSet<TreeSetSelfRef> parent) {
+            this.zap = zap;
             this.parent = parent;
         }
 
         public int compareTo(final TreeSetSelfRef o) {
-            return Integer.signum(foo - o.foo);
+            return zap.compareTo(o.zap);
         }
     }
 

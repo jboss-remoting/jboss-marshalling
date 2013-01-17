@@ -50,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -76,6 +77,9 @@ import org.jboss.marshalling.reflect.ReflectiveCreator;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
+import org.jboss.marshalling.util.FlatNavigableMap;
+import org.jboss.marshalling.util.FlatNavigableSet;
+
 import static org.jboss.marshalling.river.Protocol.*;
 
 /**
@@ -661,7 +665,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return readCollectionData(unshared, idx, len, new TreeSet(comp));
+                            return readSortedSetData(unshared, idx, len, new TreeSet(comp));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
@@ -694,7 +698,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return readMapData(unshared, idx, len, new TreeMap(comp));
+                            return readSortedMapData(unshared, idx, len, new TreeMap(comp));
                         }
                         case ID_CC_ENUM_MAP: {
                             int idx = instanceCache.size();
@@ -779,6 +783,30 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
+    private Object readSortedSetData(final boolean unshared, int cacheIdx, final int len, final SortedSet target) throws ClassNotFoundException, IOException {
+        final ArrayList<Object> instanceCache = this.instanceCache;
+        final int idx;
+        final FlatNavigableSet filler = new FlatNavigableSet(target.comparator());
+
+        if (cacheIdx == -1) {
+            idx = instanceCache.size();
+            instanceCache.add(target);
+        } else {
+            idx = cacheIdx;
+            instanceCache.set(idx, target);
+        }
+
+        for (int i = 0; i < len; i ++) {
+            filler.add(doReadCollectionObject(false, i, len));
+        }
+        target.addAll(filler);
+        final Object resolvedObject = objectResolver.readResolve(target);
+        instanceCache.set(idx, unshared ? null : resolvedObject);
+
+        return resolvedObject;
+    }
+
+    @SuppressWarnings({ "unchecked" })
     private Object readMapData(final boolean unshared, int cacheIdx, final int len, final Map target) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
@@ -794,6 +822,31 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         for (int i = 0; i < len; i ++) {
             target.put(doReadMapObject(false, i, len, true), doReadMapObject(false, i, len, false));
         }
+        final Object resolvedObject = objectResolver.readResolve(target);
+        instanceCache.set(idx, unshared ? null : resolvedObject);
+
+        return resolvedObject;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private Object readSortedMapData(final boolean unshared, int cacheIdx, final int len, final SortedMap target) throws ClassNotFoundException, IOException {
+        final ArrayList<Object> instanceCache = this.instanceCache;
+        final int idx;
+        final FlatNavigableMap filler = new FlatNavigableMap(target.comparator());
+
+        if (cacheIdx == -1) {
+            idx = instanceCache.size();
+            instanceCache.add(target);
+        } else {
+            idx = cacheIdx;
+            instanceCache.set(idx, target);
+        }
+
+        for (int i = 0; i < len; i ++) {
+            filler.put(doReadMapObject(false, i, len, true), doReadMapObject(false, i, len, false));
+        }
+        // should install entries in order, bypassing any circular ref issues, unless the map is mutated during deserialize of one of its elements
+        target.putAll(filler);
         final Object resolvedObject = objectResolver.readResolve(target);
         instanceCache.set(idx, unshared ? null : resolvedObject);
 

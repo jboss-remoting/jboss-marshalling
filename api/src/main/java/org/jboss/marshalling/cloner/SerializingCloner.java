@@ -555,7 +555,7 @@ class SerializingCloner implements ObjectCloner {
 
         public void defaultWriteObject() throws IOException {
             if (! steps.isEmpty()) {
-                throw new IllegalStateException("putFields may not be called in this context");
+                throw new IllegalStateException("defaultWriteObject may not be called in this context");
             }
             final Object subject = this.subject;
             final SerializingCloner.ClonerPutField fields = clonerPutField;

@@ -994,7 +994,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     protected void doWriteSerializableObject(final SerializableClass info, final Object obj, final Class<?> objClass) throws IOException {
         final Class<?> superclass = objClass.getSuperclass();
-        if (serializabilityChecker.isSerializable(superclass)) {
+        if (superclass != null && serializabilityChecker.isSerializable(superclass)) {
             doWriteSerializableObject(registry.lookup(superclass), obj, superclass);
         }
         if (info.hasWriteObject()) {

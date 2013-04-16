@@ -40,6 +40,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private int classCount = 64;
     private int bufferSize = 512;
     private int version = -1;
+    private ObjectResolver objectPreResolver;
 
     /**
      * Construct a new instance.
@@ -119,6 +120,26 @@ public final class MarshallingConfiguration implements Cloneable {
         this.objectResolver = objectResolver;
     }
 
+    /**
+     * Get the object pre resolver, or {@code null} if none is specified.
+     *
+     * @return the object resolver
+     */
+    public ObjectResolver getObjectPreResolver() {
+        return objectPreResolver;
+    }
+
+    /**
+     * Set the object pre resolver, or {@code null} to use none.
+     * Invoked before user replacement and global object resolver
+     *
+     * @param objectResolver the object resolver
+     */
+    public void setObjectPreResolver(final ObjectResolver objectPreResolver) {
+        this.objectPreResolver = objectPreResolver;
+    }
+
+    
     /**
      * Get the class table, or {@code null} if none is specified.
      *

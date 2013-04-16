@@ -32,6 +32,7 @@ public final class ClonerConfiguration implements Cloneable {
 
     private CloneTable cloneTable;
     private ObjectResolver objectResolver;
+    private ObjectResolver objectPreResolver;
     private ClassCloner classCloner;
     private SerializabilityChecker serializabilityChecker;
     private int bufferSize;
@@ -86,6 +87,25 @@ public final class ClonerConfiguration implements Cloneable {
      */
     public void setObjectResolver(final ObjectResolver objectResolver) {
         this.objectResolver = objectResolver;
+    }
+
+    /**
+     * Get the object pre resolver, or {@code null} if none is specified.
+     *
+     * @return the object resolver
+     */
+    public ObjectResolver getObjectPreResolver() {
+        return objectPreResolver;
+    }
+
+    /**
+     * Set the object pre resolver, or {@code null} to use none.
+     * Invoked before user replacement and global object resolver
+     *
+     * @param objectResolver the object resolver
+     */
+    public void setObjectPreResolver(final ObjectResolver objectPreResolver) {
+        this.objectPreResolver = objectPreResolver;
     }
 
     /**

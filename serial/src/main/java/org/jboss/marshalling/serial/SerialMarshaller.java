@@ -96,6 +96,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
         }
         final IdentityIntMap<Object> instanceCache = this.instanceCache;
         int v;
+        obj = objectPreResolver.writeReplace(obj);
         final ObjectTable.Writer writer;
         // - first check for cached objects, Classes, or ObjectStreamClass
         if (! unshared && (v = instanceCache.get(obj, -1)) != -1) {

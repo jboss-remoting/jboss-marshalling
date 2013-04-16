@@ -43,6 +43,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private int classCount = 64;
     private int bufferSize = 512;
     private int version = -1;
+    private ObjectResolver objectPreResolver;
 
     /**
      * Construct a new instance.
@@ -123,12 +124,13 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
+<<<<<<< HEAD
      * Get the object creator, or {@code null} if none is specified.  Used only if a more specific creator type
      * was not specified.
      *
      * @return the object creator
      *
-     * @deprecated no longer used in 1.4, will be removed in 1.4
+     * @deprecated no longer used in 1.4, will be removed in a future version
      */
     @Deprecated
     public Creator getCreator() {
@@ -141,11 +143,30 @@ public final class MarshallingConfiguration implements Cloneable {
      *
      * @param creator the object creator
      *
-     * @deprecated no longer used in 1.4, will be removed in 1.4
+     * @deprecated no longer used in 1.4, will be removed in a future version
      */
     @Deprecated
     public void setCreator(final Creator creator) {
         this.creator = creator;
+    }
+
+    /**
+     * Get the object pre resolver, or {@code null} if none is specified.
+     *
+     * @return the object resolver
+     */
+    public ObjectResolver getObjectPreResolver() {
+        return objectPreResolver;
+    }
+
+    /**
+     * Set the object pre resolver, or {@code null} to use none.
+     * Invoked before user replacement and global object resolver
+     *
+     * @param objectPreResolver the object resolver
+     */
+    public void setObjectPreResolver(final ObjectResolver objectPreResolver) {
+        this.objectPreResolver = objectPreResolver;
     }
 
     /**

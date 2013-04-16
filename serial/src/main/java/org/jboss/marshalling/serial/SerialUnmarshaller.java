@@ -75,7 +75,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
-        final Object obj = doReadObject(readUnsignedByte(), unshared);
+        final Object obj = objectPreResolver.readResolve((doReadObject(readUnsignedByte(), unshared)));
         if (depth == 0) try {
             for (Set<ObjectInputValidation> validations : validationMap.values()) {
                 for (ObjectInputValidation validation : validations) {

@@ -273,7 +273,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared != (leadByte == ID_NEW_OBJECT_UNSHARED)) {
                         throw sharedMismatch();
                     }
-                    return doReadNewObject(readUnsignedByte(), unshared);
+                    return replace(doReadNewObject(readUnsignedByte(), unshared));
                 }
                 // v2 string types
                 case ID_STRING_EMPTY: {
@@ -319,7 +319,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     } else if (obj != resolvedObject) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return obj;
+                    return replace(obj);
                 }
                 case ID_ARRAY_SMALL:
                 case ID_ARRAY_SMALL_UNSHARED: {
@@ -327,7 +327,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedByte();
-                    return doReadArray(len == 0 ? 0x100 : len, unshared);
+                    return replace(doReadArray(len == 0 ? 0x100 : len, unshared));
                 }
                 case ID_ARRAY_MEDIUM:
                 case ID_ARRAY_MEDIUM_UNSHARED: {
@@ -335,7 +335,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedShort();
-                    return doReadArray(len == 0 ? 0x10000 : len, unshared);
+                    return replace(doReadArray(len == 0 ? 0x10000 : len, unshared));
                 }
                 case ID_ARRAY_LARGE:
                 case ID_ARRAY_LARGE_UNSHARED: {
@@ -346,7 +346,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (len <= 0) {
                         throw new StreamCorruptedException("Invalid length value for array in stream (" + len + ")");
                     }
-                    return doReadArray(len, unshared);
+                    return replace(doReadArray(len, unshared));
                 }
                 case ID_PREDEFINED_OBJECT: {
                     if (unshared) {
@@ -355,31 +355,31 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return objectTable.readObject(this);
                 }
                 case ID_BOOLEAN_OBJECT_TRUE: {
-                    return objectResolver.readResolve(Boolean.TRUE);
+                    return replace(objectResolver.readResolve(Boolean.TRUE));
                 }
                 case ID_BOOLEAN_OBJECT_FALSE: {
-                    return objectResolver.readResolve(Boolean.FALSE);
+                    return replace(objectResolver.readResolve(Boolean.FALSE));
                 }
                 case ID_BYTE_OBJECT: {
-                    return objectResolver.readResolve(Byte.valueOf(readByte()));
+                    return replace(objectResolver.readResolve(Byte.valueOf(readByte())));
                 }
                 case ID_SHORT_OBJECT: {
-                    return objectResolver.readResolve(Short.valueOf(readShort()));
+                    return replace(objectResolver.readResolve(Short.valueOf(readShort())));
                 }
                 case ID_INTEGER_OBJECT: {
-                    return objectResolver.readResolve(Integer.valueOf(readInt()));
+                    return replace(objectResolver.readResolve(Integer.valueOf(readInt())));
                 }
                 case ID_LONG_OBJECT: {
-                    return objectResolver.readResolve(Long.valueOf(readLong()));
+                    return replace(objectResolver.readResolve(Long.valueOf(readLong())));
                 }
                 case ID_FLOAT_OBJECT: {
-                    return objectResolver.readResolve(Float.valueOf(readFloat()));
+                    return replace(objectResolver.readResolve(Float.valueOf(readFloat())));
                 }
                 case ID_DOUBLE_OBJECT: {
-                    return objectResolver.readResolve(Double.valueOf(readDouble()));
+                    return replace(objectResolver.readResolve(Double.valueOf(readDouble())));
                 }
                 case ID_CHARACTER_OBJECT: {
-                    return objectResolver.readResolve(Character.valueOf(readChar()));
+                    return replace(objectResolver.readResolve(Character.valueOf(readChar())));
                 }
                 case ID_PRIM_BYTE: {
                     return byte.class;
@@ -564,7 +564,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return resolvedObject;
+                    return replace(resolvedObject);
                 }
                 case ID_SINGLETON_SET_OBJECT: {
                     final int idx = instanceCache.size();
@@ -574,7 +574,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return resolvedObject;
+                    return replace(resolvedObject);
                 }
                 case ID_SINGLETON_MAP_OBJECT: {
                     final int idx = instanceCache.size();
@@ -584,7 +584,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return resolvedObject;
+                    return replace(resolvedObject);
                 }
                 case ID_REVERSE_ORDER2_OBJECT: {
                     final int idx = instanceCache.size();
@@ -594,7 +594,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return resolvedObject;
+                    return replace(resolvedObject);
                 }
 
                 case ID_EMPTY_LIST_OBJECT: {
@@ -650,62 +650,62 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
-                            return readCollectionData(unshared, -1, len, new ArrayList(len));
+                            return replace(readCollectionData(unshared, -1, len, new ArrayList(len)));
                         }
                         case ID_CC_HASH_SET: {
-                            return readCollectionData(unshared, -1, len, new HashSet(len));
+                            return replace(readCollectionData(unshared, -1, len, new HashSet(len)));
                         }
                         case ID_CC_LINKED_HASH_SET: {
-                            return readCollectionData(unshared, -1, len, new LinkedHashSet(len));
+                            return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len)));
                         }
                         case ID_CC_LINKED_LIST: {
-                            return readCollectionData(unshared, -1, len, new LinkedList());
+                            return replace(readCollectionData(unshared, -1, len, new LinkedList()));
                         }
                         case ID_CC_TREE_SET: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return readSortedSetData(unshared, idx, len, new TreeSet(comp));
+                            return replace(readSortedSetData(unshared, idx, len, new TreeSet(comp)));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType));
+                            return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType)));
                         }
                         case ID_CC_VECTOR: {
-                            return readCollectionData(unshared, -1, len, new Vector(len));
+                            return replace(readCollectionData(unshared, -1, len, new Vector(len)));
                         }
                         case ID_CC_STACK: {
-                            return readCollectionData(unshared, -1, len, new Stack());
+                            return replace(readCollectionData(unshared, -1, len, new Stack()));
                         }
                         case ID_CC_ARRAY_DEQUE: {
-                            return readCollectionData(unshared, -1, len, new ArrayDeque(len));
+                            return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len)));
                         }
 
                         case ID_CC_HASH_MAP: {
-                            return readMapData(unshared, -1, len, new HashMap(len));
+                            return replace(readMapData(unshared, -1, len, new HashMap(len)));
                         }
                         case ID_CC_HASHTABLE: {
-                            return readMapData(unshared, -1, len, new Hashtable(len));
+                            return replace(readMapData(unshared, -1, len, new Hashtable(len)));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
-                            return readMapData(unshared, -1, len, new IdentityHashMap(len));
+                            return replace(readMapData(unshared, -1, len, new IdentityHashMap(len)));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
-                            return readMapData(unshared, -1, len, new LinkedHashMap(len));
+                            return replace(readMapData(unshared, -1, len, new LinkedHashMap(len)));
                         }
                         case ID_CC_TREE_MAP: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return readSortedMapData(unshared, idx, len, new TreeMap(comp));
+                            return replace(readSortedMapData(unshared, idx, len, new TreeMap(comp)));
                         }
                         case ID_CC_ENUM_MAP: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return readMapData(unshared, idx, len, new EnumMap(elementType));
+                            return replace(readMapData(unshared, idx, len, new EnumMap(elementType)));
                         }
                         case ID_CC_NCOPIES: {
                             final int idx = instanceCache.size();
@@ -715,7 +715,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             if (! unshared) {
                                 instanceCache.set(idx, resolvedObject);
                             }
-                            return resolvedObject;
+                            return replace(resolvedObject);
                         }
                         default: {
                             throw new StreamCorruptedException("Unexpected byte found when reading a collection type: " + leadByte);
@@ -731,7 +731,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (! unshared) {
                         instanceCache.set(idx, resolvedObject);
                     }
-                    return resolvedObject;
+                    return replace(resolvedObject);
                 }
 
                 case ID_CLEAR_CLASS_CACHE: {
@@ -1747,5 +1747,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     public String readUTF() throws IOException {
         final int len = readInt();
         return UTFUtils.readUTFBytes(this, len);
+    }
+    
+    private Object replace(Object object) {
+        return objectPreResolver.readResolve(object);
     }
 }

@@ -107,6 +107,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     protected void doWriteObject(final Object original, final boolean unshared) throws IOException {
         final ClassExternalizerFactory classExternalizerFactory = this.classExternalizerFactory;
         final ObjectResolver objectResolver = this.objectResolver;
+        final ObjectResolver objectPreResolver = this.objectPreResolver;
         Object obj = original;
         Class<?> objClass;
         int id;
@@ -135,6 +136,8 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                // Check for a global pre replacement, before any user replacement is called
+                obj = objectPreResolver.writeReplace(obj);
                 final ObjectTable.Writer objectTableWriter;
                 if (! unshared && (objectTableWriter = objectTable.getObjectWriter(obj)) != null) {
                     write(ID_PREDEFINED_OBJECT);

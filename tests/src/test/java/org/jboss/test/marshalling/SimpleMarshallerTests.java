@@ -1967,12 +1967,38 @@ public final class SimpleMarshallerTests extends TestBase {
                 return original;
             }
         }
-
         public boolean ok() {
             return resolveVisited && replaceVisited;
         }
     }
 
+    public static class TestObjectPreResolver implements ObjectResolver {
+
+        private boolean writeReplaceVisited;
+        private boolean readReplaceVisited;
+
+        public Object readResolve(Object replacement) {
+        	if (replacement instanceof Integer) {
+        		readReplaceVisited = true;
+        	}
+        	return replacement;
+        }
+
+        public Object writeReplace(Object original) {
+            if (original instanceof TestSerializable) {
+                writeReplaceVisited = true;
+                return new Integer(17);
+            } else {
+                return original;
+            }
+        }
+        
+        public boolean ok() {
+            return writeReplaceVisited && readReplaceVisited;
+        }
+    }
+
+    
     /**
      * Verify that use of customized ObjectResolver works correctly.
      */
@@ -1997,6 +2023,34 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+        assertTrue(objectResolver.ok());
+    }
+    
+    @Test
+    public void testObjectPreResolver() throws Throwable {
+        if (testMarshallerProvider instanceof ObjectOutputStreamTestMarshallerProvider) {
+            throw new SkipException("Can't use objectPreResolver in compatibility tests");
+        }
+        if (testUnmarshallerProvider instanceof ObjectInputStreamTestUnmarshallerProvider) {
+            throw new SkipException("Can't use objectPreResolver in compatibility tests");
+        }
+        final TestObjectPreResolver objectResolver = new TestObjectPreResolver();
+        final TestSerializable serializable = new TestSerializable();
+        final Integer expectedObj = new Integer(17);
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setObjectPreResolver(objectResolver);
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(expectedObj, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
         });
@@ -2157,6 +2211,10 @@ public final class SimpleMarshallerTests extends TestBase {
             } else {
                 return original;
             }
+        }
+        
+        public Object preWriteReplace(Object original) {
+            return original;
         }
 
         public boolean ok() {

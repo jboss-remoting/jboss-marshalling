@@ -85,6 +85,7 @@ import org.jboss.marshalling.util.ShortReadField;
 class SerializingCloner implements ObjectCloner {
     private final CloneTable delegate;
     private final ObjectResolver objectResolver;
+    private final ObjectResolver objectPreResolver;
     private final ClassCloner classCloner;
     private final SerializabilityChecker serializabilityChecker;
     private final int bufferSize;
@@ -101,6 +102,8 @@ class SerializingCloner implements ObjectCloner {
         this.delegate = delegate == null ? CloneTable.NULL : delegate;
         final ObjectResolver objectResolver = configuration.getObjectResolver();
         this.objectResolver = objectResolver == null ? Marshalling.nullObjectResolver() : objectResolver;
+        final ObjectResolver objectPreResolver = configuration.getObjectPreResolver();
+        this.objectPreResolver = objectPreResolver == null ? Marshalling.nullObjectResolver() : objectPreResolver;
         final ClassCloner classCloner = configuration.getClassCloner();
         this.classCloner = classCloner == null ? ClassCloner.IDENTITY : classCloner;
         final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
@@ -143,21 +146,22 @@ class SerializingCloner implements ObjectCloner {
         if (cached != null) {
             return cached;
         }
+        Object replaced = orig;
+        replaced = objectPreResolver.writeReplace(replaced);
         final ClassCloner classCloner = this.classCloner;
-        if (orig instanceof Class) {
-            final Class<?> classObj = (Class<?>) orig;
+        if (replaced instanceof Class) {
+            final Class<?> classObj = (Class<?>) replaced;
             final Class<?> clonedClass = Proxy.isProxyClass(classObj) ? classCloner.cloneProxy(classObj) : classCloner.clone(classObj);
-            clones.put(orig, clonedClass);
+            clones.put(replaced, clonedClass);
             return clonedClass;
         }
-        if ((cached = delegate.clone(orig, this, classCloner)) != null) {
-            clones.put(orig, cached);
+        if ((cached = delegate.clone(replaced, this, classCloner)) != null) {
+            clones.put(replaced, cached);
             return cached;
         }
-        final Class<? extends Object> objClass = orig.getClass();
+        final Class<? extends Object> objClass = replaced.getClass();
         final SerializableClass info = registry.lookup(objClass);
         if (replace) {
-            Object replaced = orig;
             if (info.hasWriteReplace()) {
                 replaced = info.callWriteReplace(replaced);
             }
@@ -246,11 +250,11 @@ class SerializingCloner implements ObjectCloner {
         } else {
             throw new NotSerializableException(objClass.getName());
         }
-        Object replaced = clone;
+        replaced = clone;
         if (cloneInfo.hasReadResolve()) {
             replaced = cloneInfo.callReadResolve(replaced);
         }
-        replaced = objectResolver.readResolve(replaced);
+        replaced = objectPreResolver.readResolve(objectResolver.readResolve(replaced));
         if (replaced != clone) clones.put(orig, replaced);
         return replaced;
     }

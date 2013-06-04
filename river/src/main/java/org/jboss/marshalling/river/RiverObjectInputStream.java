@@ -163,7 +163,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                         return field;
                     }
                 }
-                throw new IllegalArgumentException("No field named '" + name + "'");
+                return null;
             }
 
             public boolean defaulted(final String name) throws IOException {

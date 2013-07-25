@@ -38,6 +38,8 @@ public abstract class AbstractMarshaller extends AbstractObjectOutput implements
     protected final ClassResolver classResolver;
     /** The configured object resolver. */
     protected final ObjectResolver objectResolver;
+    /** The configured pre object resolver. */
+    protected final ObjectResolver objectPreResolver;
     /** The configured class table. */
     protected final ClassTable classTable;
     /** The configured object table. */
@@ -65,6 +67,8 @@ public abstract class AbstractMarshaller extends AbstractObjectOutput implements
         this.classResolver = classResolver == null ? marshallerFactory.getDefaultClassResolver() : classResolver;
         final ObjectResolver objectResolver = configuration.getObjectResolver();
         this.objectResolver = objectResolver == null ? marshallerFactory.getDefaultObjectResolver() : objectResolver;
+        final ObjectResolver objectPreResolver = configuration.getObjectPreResolver();
+        this.objectPreResolver = objectPreResolver == null ? marshallerFactory.getDefaultObjectResolver() : objectPreResolver;
         final ClassTable classTable = configuration.getClassTable();
         this.classTable = classTable == null ? marshallerFactory.getDefaultClassTable() : classTable;
         final ObjectTable objectTable = configuration.getObjectTable();

@@ -50,7 +50,8 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     private static final float DEFAULT_LOAD_FACTOR = 0.60f;
 
     /** A row which has been resized into the new view. */
-    private static final Object[] RESIZED = new Object[0];
+    @SuppressWarnings("unchecked")
+    private static final Item<?,?>[] RESIZED = new Item[0];
     /** A non-existent table entry (as opposed to a {@code null} value). */
     private static final Object NONEXISTENT = new Object();
 
@@ -648,12 +649,6 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             return list.toArray();
         }
 
-        public <T> T[] toArray(final T[] a) {
-            ArrayList<T> list = new ArrayList<T>();
-            list.addAll((Collection<T>) this);
-            return list.toArray(a);
-        }
-
         public boolean add(final K k) {
             return doPut(k, null, true, table) == NONEXISTENT;
         }
@@ -681,12 +676,6 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             ArrayList<Object> list = new ArrayList<Object>(size());
             list.addAll(this);
             return list.toArray();
-        }
-
-        public <T> T[] toArray(final T[] a) {
-            ArrayList<T> list = new ArrayList<T>();
-            list.addAll((Collection<T>) this);
-            return list.toArray(a);
         }
 
         public int size() {
@@ -721,12 +710,6 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             ArrayList<Object> list = new ArrayList<Object>(size());
             list.addAll(this);
             return list.toArray();
-        }
-
-        public <T> T[] toArray(final T[] a) {
-            ArrayList<T> list = new ArrayList<T>();
-            list.addAll((Set<T>) this);
-            return list.toArray(a);
         }
 
         @SuppressWarnings("unchecked")

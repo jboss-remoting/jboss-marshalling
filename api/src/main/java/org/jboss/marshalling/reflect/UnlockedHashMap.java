@@ -22,6 +22,8 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.Integer.bitCount;
+
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -150,13 +152,12 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
     private V doPut(K key, V value, boolean ifAbsent, Table<K, V> table) {
         final int hashCode = hashCode(key);
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         OUTER: for (;;) {
 
             // Fetch the table row.
-            Item<K, V>[] oldRow = array.get(idx);
+            Item<K, V>[] oldRow = table.get(idx);
             if (oldRow == RESIZED) {
                 // row was transported to the new table so recalculate everything
                 final V result = doPut(key, value, ifAbsent, table.resizeView);
@@ -191,7 +192,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             // Row doesn't exist, or row exists but item doesn't; try and add a new item to the row.
             final Item<K, V> newItem = new Item<K, V>(key, hashCode, value);
             final Item<K, V>[] newRow = addItem(oldRow, newItem);
-            if (! array.compareAndSet(idx, oldRow, newRow)) {
+            if (! table.compareAndSet(idx, oldRow, newRow)) {
                 // Nope, row changed; retry.
                 continue;
             }
@@ -199,8 +200,8 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             // Up the table size.
             final int threshold = table.threshold;
             int newSize = sizeUpdater.incrementAndGet(table);
-            // >= 0 is really a sign-bit check
-            while (newSize >= 0 && (newSize & 0x7fffffff) > threshold) {
+            // if table is resized, newSize will have the sign bit set and thus will be < 0
+            while (threshold < Integer.MAX_VALUE && newSize > threshold) {
                 if (sizeUpdater.compareAndSet(table, newSize, newSize | 0x80000000)) {
                     resize(table);
                     return nonexistent();
@@ -217,19 +218,18 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     }
 
     private void resize(Table<K, V> origTable) {
-        final AtomicReferenceArray<Item<K, V>[]> origArray = origTable.array;
-        final int origCapacity = origArray.length();
+        final int origCapacity = origTable.length();
+        assert bitCount(origCapacity) == 1;
         final Table<K, V> newTable = new Table<K, V>(origCapacity << 1, loadFactor);
         // Prevent resize until we're done...
         newTable.size = 0x80000000;
         origTable.resizeView = newTable;
-        final AtomicReferenceArray<Item<K, V>[]> newArray = newTable.array;
 
         for (int i = 0; i < origCapacity; i ++) {
             // for each row, try to resize into two new rows
             Item<K, V>[] origRow, newRow0 = null, newRow1 = null;
             do {
-                origRow = origArray.get(i);
+                origRow = origTable.get(i);
                 if (origRow != null) {
                     int count0 = 0, count1 = 0;
                     for (Item<K, V> item : origRow) {
@@ -247,7 +247,9 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
                                 newRow0[j++] = item;
                             }
                         }
-                        newArray.lazySet(i, newRow0);
+                        newTable.lazySet(i, newRow0);
+                    } else {
+                        newTable.lazySet(i, null);
                     }
                     if (count1 != 0) {
                         newRow1 = createRow(count1);
@@ -257,20 +259,21 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
                                 newRow1[j++] = item;
                             }
                         }
-                        newArray.lazySet(i + origCapacity, newRow1);
+                        newTable.lazySet(i + origCapacity, newRow1);
+                    } else {
+                        newTable.lazySet(i + origCapacity, null);
                     }
                 }
-            } while (! origArray.compareAndSet(i, origRow, UnlockedHashMap.<K, V>resized()));
-            sizeUpdater.getAndAdd(newTable, origRow.length);
+            } while (! origTable.compareAndSet(i, origRow, UnlockedHashMap.<K, V>resized()));
+            if (origRow != null) sizeUpdater.getAndAdd(newTable, origRow.length);
         }
 
         int size;
         do {
             size = newTable.size;
-            if ((size & 0x7fffffff) >= newTable.threshold) {
-                // shorter path for reads and writes
-                table = newTable;
-                // then time for another resize, right away
+            final int threshold = newTable.threshold;
+            if (threshold < Integer.MAX_VALUE && (size & 0x7fffffff) >= threshold) {
+                // time for another resize, right away
                 resize(newTable);
                 return;
             }
@@ -314,13 +317,12 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     private boolean doRemove(final Item<K, V> item, final Table<K, V> table) {
         int hashCode = item.hashCode;
 
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         Item<K, V>[] oldRow;
 
         for (;;) {
-            oldRow = array.get(idx);
+            oldRow = table.get(idx);
             if (oldRow == null) {
                 return false;
             }
@@ -342,7 +344,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
             if (rowIdx == -1) {
                 return false;
             }
-            if (array.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
+            if (table.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
                 sizeUpdater.getAndDecrement(table);
                 return true;
             }
@@ -354,13 +356,12 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
         final int hashCode = hashCode(key);
 
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         Item<K, V>[] oldRow;
 
         // Fetch the table row.
-        oldRow = array.get(idx);
+        oldRow = table.get(idx);
         if (oldRow == null) {
             // no match for the key
             return false;
@@ -403,7 +404,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
         }
 
         // Now we are free to remove the item from the row.
-        if (array.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
+        if (table.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
             // Adjust the table size, since we are definitely the ones to be removing this item from the table.
             sizeUpdater.decrementAndGet(table);
             return true;
@@ -422,11 +423,10 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     private V doRemove(final K key, final Table<K, V> table) {
         final int hashCode = hashCode(key);
 
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         // Fetch the table row.
-        Item<K, V>[] oldRow = array.get(idx);
+        Item<K, V>[] oldRow = table.get(idx);
         if (oldRow == null) {
             // no match for the key
             return nonexistent();
@@ -465,7 +465,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
         }
 
         // Now we are free to remove the item from the row.
-        if (array.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
+        if (table.compareAndSet(idx, oldRow, remove(oldRow, rowIdx))) {
             // Adjust the table size, since we are definitely the ones to be removing this item from the table.
             sizeUpdater.decrementAndGet(table);
 
@@ -494,11 +494,10 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
     private boolean doReplace(final K key, final V oldValue, final V newValue, final Table<K, V> table) {
         final int hashCode = hashCode(key);
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         // Fetch the table row.
-        Item<K, V>[] oldRow = array.get(idx);
+        Item<K, V>[] oldRow = table.get(idx);
         if (oldRow == null) {
             // no match for the key
             return false;
@@ -538,11 +537,10 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
     private V doReplace(final K key, final V value, final Table<K, V> table) {
         final int hashCode = hashCode(key);
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final int idx = hashCode & array.length() - 1;
+        final int idx = hashCode & table.length() - 1;
 
         // Fetch the table row.
-        Item<K, V>[] oldRow = array.get(idx);
+        Item<K, V>[] oldRow = table.get(idx);
         if (oldRow == null) {
             // no match for the key
             return nonexistent();
@@ -581,8 +579,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     }
 
     private V doGet(final Table<K, V> table, final K key) {
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final Item<K, V>[] row = array.get(hashCode(key) & (array.length() - 1));
+        final Item<K, V>[] row = table.get(hashCode(key) & (table.length() - 1));
         if (row != null) for (Item<K, V> item : row) {
             if (key == item.key) {
                 return item.value;
@@ -847,11 +844,10 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
     }
 
     private TableIterator createRowIterator(Table<K, V> table, int rowIdx) {
-        final AtomicReferenceArray<Item<K, V>[]> array = table.array;
-        final Item<K, V>[] row = array.get(rowIdx);
+        final Item<K, V>[] row = table.get(rowIdx);
         if (row == RESIZED) {
             final Table<K, V> resizeView = table.resizeView;
-            return new BranchIterator(createRowIterator(resizeView, rowIdx), createRowIterator(resizeView, rowIdx + array.length()));
+            return new BranchIterator(createRowIterator(resizeView, rowIdx), createRowIterator(resizeView, rowIdx + table.length()));
         } else {
             return new RowIterator(table, row);
         }
@@ -866,7 +862,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
         public boolean hasNext() {
             while (next == null) {
-                if (tableIdx == table.array.length()) {
+                if (tableIdx == table.length()) {
                     return false;
                 }
                 if (tableIterator == null) {
@@ -913,7 +909,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
         public boolean hasNext() {
             while (next == null) {
-                if (tableIdx == table.array.length()) {
+                if (tableIdx == table.length()) {
                     return false;
                 }
                 if (tableIterator == null) {
@@ -960,7 +956,7 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
 
         public boolean hasNext() {
             while (next == NONEXISTENT) {
-                if (tableIdx == table.array.length()) {
+                if (tableIdx == table.length()) {
                     return false;
                 }
                 if (tableIterator == null) {
@@ -996,15 +992,17 @@ final class UnlockedHashMap<K, V> extends AbstractMap<K, V> implements Concurren
         }
     }
 
-    static final class Table<K, V> {
-        final AtomicReferenceArray<Item<K, V>[]> array;
+    @SuppressWarnings("serial")
+    static final class Table<K, V> extends AtomicReferenceArray<Item<K, V>[]> {
+
         final int threshold;
         /** Bits 0-30 are size; bit 31 is 1 if the table is being resized. */
         volatile int size;
         volatile Table<K, V> resizeView;
 
         private Table(int capacity, float loadFactor) {
-            array = new AtomicReferenceArray<Item<K, V>[]>(capacity);
+            super(capacity);
+            assert bitCount(capacity) == 1;
             threshold = capacity == MAXIMUM_CAPACITY ? Integer.MAX_VALUE : (int)(capacity * loadFactor);
         }
     }

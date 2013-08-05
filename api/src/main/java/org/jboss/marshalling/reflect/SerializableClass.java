@@ -23,6 +23,7 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.ObjectInput;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -559,5 +560,14 @@ public final class SerializableClass {
 
     public String toString() {
         return String.format("Serializable %s", getSubjectClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> Constructor<T> getNoInitConstructor() {
+        Class<?> clazz = getClass();
+        while (Serializable.class.isAssignableFrom(clazz)) {
+            clazz = clazz.getSuperclass();
+        }
+        return (Constructor<T>) nonInitConstructors.get(clazz);
     }
 }

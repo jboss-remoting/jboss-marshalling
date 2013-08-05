@@ -25,8 +25,9 @@ package org.jboss.marshalling;
 import java.io.InvalidClassException;
 
 /**
- * An instance creator.  Creates an uninitialized instance of a class.
+ * @deprecated This API is deprecated and will be removed in a future version.
  */
+@Deprecated
 public interface Creator {
     /**
      * Create an object instance.

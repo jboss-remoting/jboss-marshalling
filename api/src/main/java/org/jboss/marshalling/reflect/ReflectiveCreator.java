@@ -30,8 +30,9 @@ import java.io.SerializablePermission;
 import org.jboss.marshalling.Creator;
 
 /**
- * A creator that simply uses reflection to locate and invoke a zero-argument constructor.
+ * @deprecated This class is no longer used and will be removed in a future version.
  */
+@Deprecated
 public class ReflectiveCreator implements Creator {
 
     private static final Permission CREATOR_PERM = new SerializablePermission("creator");

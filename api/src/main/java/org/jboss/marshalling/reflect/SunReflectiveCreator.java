@@ -27,7 +27,7 @@ import java.lang.reflect.Constructor;
 /**
  * An object creator that uses methods only found in certain JVMs to create a new constructor if needed.
  *
- * @deprecated This creator is no longer used and will be removed in 1.5.
+ * @deprecated This creator is no longer used and will be removed in a future version.
  */
 @Deprecated
 public class SunReflectiveCreator extends ReflectiveCreator {

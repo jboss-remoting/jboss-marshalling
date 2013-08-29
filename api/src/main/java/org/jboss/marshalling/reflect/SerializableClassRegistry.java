@@ -25,7 +25,6 @@ package org.jboss.marshalling.reflect;
 import java.io.SerializablePermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.IdentityHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -105,24 +104,5 @@ public final class SerializableClassRegistry {
      */
     public void release(ClassLoader classLoader) {
         registry.remove(classLoader);
-    }
-
-    static final class DuhMap<K, V> extends IdentityHashMap<K, V> implements ConcurrentMap<K, V> {
-
-        public V putIfAbsent(final K key, final V value) {
-            return containsKey(key) ? get(key) : put(key, value);
-        }
-
-        public boolean remove(final Object key, final Object value) {
-            return get(key) == value ? remove(key) != this : false;
-        }
-
-        public boolean replace(final K key, final V oldValue, final V newValue) {
-            return get(key) == oldValue ? put(key, newValue) != this : false;
-        }
-
-        public V replace(final K key, final V value) {
-            return containsKey(key) ? put(key, value) : null;
-        }
     }
 }

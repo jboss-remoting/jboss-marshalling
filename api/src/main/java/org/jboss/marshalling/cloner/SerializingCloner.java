@@ -63,11 +63,9 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.SerializabilityChecker;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.reflect.PublicReflectiveCreator;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
 import org.jboss.marshalling.util.BooleanReadField;
 import org.jboss.marshalling.util.ByteReadField;
 import org.jboss.marshalling.util.CharReadField;
@@ -89,8 +87,6 @@ class SerializingCloner implements ObjectCloner {
     private final ObjectResolver objectResolver;
     private final ClassCloner classCloner;
     private final SerializabilityChecker serializabilityChecker;
-    private final Creator externalizedCreator;
-    private final Creator serializedCreator;
     private final int bufferSize;
 
     private final SerializableClassRegistry registry;
@@ -109,10 +105,6 @@ class SerializingCloner implements ObjectCloner {
         this.classCloner = classCloner == null ? ClassCloner.IDENTITY : classCloner;
         final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
         this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
-        final Creator externalizedCreator = configuration.getExternalizedCreator();
-        this.externalizedCreator = externalizedCreator == null ? new PublicReflectiveCreator() : externalizedCreator;
-        final Creator serializedCreator = configuration.getSerializedCreator();
-        this.serializedCreator = serializedCreator == null ? new SunReflectiveCreator() : serializedCreator;
         final int bufferSize = configuration.getBufferSize();
         this.bufferSize = bufferSize < 1 ? 8192 : bufferSize;
 
@@ -237,7 +229,7 @@ class SerializingCloner implements ObjectCloner {
         final Object clone;
         if (orig instanceof Externalizable) {
             final Externalizable externalizable = (Externalizable) orig;
-            clone = externalizedCreator.create(clonedClass);
+            clone = info.callNoArgConstructor();
             clones.put(orig, clone);
             final Queue<Step> steps = new ArrayDeque<Step>();
             final StepObjectOutput soo = new StepObjectOutput(steps);
@@ -245,7 +237,7 @@ class SerializingCloner implements ObjectCloner {
             soo.doFinish();
             ((Externalizable) clone).readExternal(new StepObjectInput(steps));
         } else if (serializabilityChecker.isSerializable(objClass)) {
-            clone = serializedCreator.create(clonedClass);
+            clone = info.callNonInitConstructor();
             if (! (serializabilityChecker.isSerializable(clonedClass))) {
                 throw new NotSerializableException(clonedClass.getName());
             }

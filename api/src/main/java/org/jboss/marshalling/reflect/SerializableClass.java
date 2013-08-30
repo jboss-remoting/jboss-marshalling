@@ -181,18 +181,23 @@ public final class SerializableClass {
     }
 
     private static SerializableField[] getSerializableFields(Class<?> clazz) {
+        final Field[] declaredFields = clazz.getDeclaredFields();
         final ObjectStreamField[] objectStreamFields = getDeclaredSerialPersistentFields(clazz);
         if (objectStreamFields != null) {
+            final Map<String, Field> map = new HashMap<String, Field>();
+            for (Field field : declaredFields) {
+                field.setAccessible(true);
+                map.put(field.getName(), field);
+            }
             SerializableField[] fields = new SerializableField[objectStreamFields.length];
             for (int i = 0; i < objectStreamFields.length; i++) {
                 ObjectStreamField field = objectStreamFields[i];
-                fields[i] = new SerializableField(field.getType(), field.getName(), field.isUnshared(), null);
+                final String name = field.getName();
+                fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), map.get(name));
             }
             Arrays.sort(fields, NAME_COMPARATOR);
             return fields;
         }
-        // not declared; we'll have to dig through the class's fields
-        final Field[] declaredFields = clazz.getDeclaredFields();
         final ArrayList<SerializableField> fields = new ArrayList<SerializableField>(declaredFields.length);
         for (Field field : declaredFields) {
             if ((field.getModifiers() & (Modifier.TRANSIENT | Modifier.STATIC)) == 0) {

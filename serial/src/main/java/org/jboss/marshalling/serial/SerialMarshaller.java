@@ -335,35 +335,35 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                 final Field field = serializableField.getField();
                 switch (serializableField.getKind()) {
                     case BOOLEAN: {
-                        writeBoolean(field.getBoolean(obj));
+                        writeBoolean(field == null ? false : field.getBoolean(obj));
                         break;
                     }
                     case BYTE: {
-                        writeByte(field.getByte(obj));
+                        writeByte(field == null ? 0 : field.getByte(obj));
                         break;
                     }
                     case SHORT: {
-                        writeShort(field.getShort(obj));
+                        writeShort(field == null ? 0 : field.getShort(obj));
                         break;
                     }
                     case INT: {
-                        writeInt(field.getInt(obj));
+                        writeInt(field == null ? 0 : field.getInt(obj));
                         break;
                     }
                     case CHAR: {
-                        writeChar(field.getChar(obj));
+                        writeChar(field == null ? 0 : field.getChar(obj));
                         break;
                     }
                     case LONG: {
-                        writeLong(field.getLong(obj));
+                        writeLong(field == null ? 0 : field.getLong(obj));
                         break;
                     }
                     case DOUBLE: {
-                        writeDouble(field.getDouble(obj));
+                        writeDouble(field == null ? 0 : field.getDouble(obj));
                         break;
                     }
                     case FLOAT: {
-                        writeFloat(field.getFloat(obj));
+                        writeFloat(field == null ? 0 : field.getFloat(obj));
                         break;
                     }
                 }
@@ -378,7 +378,7 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                 final Field field = serializableField.getField();
                 Kind i = serializableField.getKind();
                 if (i == Kind.OBJECT) {
-                    doWriteObject(field.get(obj), serializableField.isUnshared());
+                    doWriteObject(field == null ? null : field.get(obj), serializableField.isUnshared());
                 }
             } catch (IllegalAccessException e) {
                 final InvalidObjectException ioe = new InvalidObjectException("Unexpected illegal access exception");

@@ -317,16 +317,17 @@ class SerializingCloner implements ObjectCloner {
         try {
             for (String name : defMap.keySet()) {
                 final SerializableField field = defMap.get(name);
-                switch (field.getKind()) {
-                    case BOOLEAN: map.put(name, new BooleanReadField(field, field.getField().getBoolean(subject))); continue;
-                    case BYTE:    map.put(name, new ByteReadField(field, field.getField().getByte(subject))); continue;
-                    case CHAR:    map.put(name, new CharReadField(field, field.getField().getChar(subject))); continue;
-                    case DOUBLE:  map.put(name, new DoubleReadField(field, field.getField().getDouble(subject))); continue;
-                    case FLOAT:   map.put(name, new FloatReadField(field, field.getField().getFloat(subject))); continue;
-                    case INT:     map.put(name, new IntReadField(field, field.getField().getInt(subject))); continue;
-                    case LONG:    map.put(name, new LongReadField(field, field.getField().getLong(subject))); continue;
-                    case OBJECT:  map.put(name, new ObjectReadField(field, field.getField().get(subject))); continue;
-                    case SHORT:   map.put(name, new ShortReadField(field, field.getField().getShort(subject))); continue;
+                final Field realField = field.getField();
+                if (realField != null) switch (field.getKind()) {
+                    case BOOLEAN: map.put(name, new BooleanReadField(field, realField.getBoolean(subject))); continue;
+                    case BYTE:    map.put(name, new ByteReadField(field, realField.getByte(subject))); continue;
+                    case CHAR:    map.put(name, new CharReadField(field, realField.getChar(subject))); continue;
+                    case DOUBLE:  map.put(name, new DoubleReadField(field, realField.getDouble(subject))); continue;
+                    case FLOAT:   map.put(name, new FloatReadField(field, realField.getFloat(subject))); continue;
+                    case INT:     map.put(name, new IntReadField(field, realField.getInt(subject))); continue;
+                    case LONG:    map.put(name, new LongReadField(field, realField.getLong(subject))); continue;
+                    case OBJECT:  map.put(name, new ObjectReadField(field, realField.get(subject))); continue;
+                    case SHORT:   map.put(name, new ShortReadField(field, realField.getShort(subject))); continue;
                     default: throw new IllegalStateException();
                 }
             }
@@ -353,16 +354,17 @@ class SerializingCloner implements ObjectCloner {
             for (SerializableField cloneField : cloneInfo.getFields()) {
                 final String name = cloneField.getName();
                 final ReadField field = map.get(name);
-                switch (cloneField.getKind()) {
-                    case BOOLEAN: cloneField.getField().setBoolean(clone, field == null ? false : field.getBoolean()); continue;
-                    case BYTE:    cloneField.getField().setByte(clone, field == null ? 0 : field.getByte()); continue;
-                    case CHAR:    cloneField.getField().setChar(clone, field == null ? 0 : field.getChar()); continue;
-                    case DOUBLE:  cloneField.getField().setDouble(clone, field == null ? 0 : field.getDouble()); continue;
-                    case FLOAT:   cloneField.getField().setFloat(clone, field == null ? 0 : field.getFloat()); continue;
-                    case INT:     cloneField.getField().setInt(clone, field == null ? 0 : field.getInt()); continue;
-                    case LONG:    cloneField.getField().setLong(clone, field == null ? 0 : field.getLong()); continue;
-                    case OBJECT:  cloneField.getField().set(clone, field == null ? null : field.getObject()); continue;
-                    case SHORT:   cloneField.getField().setShort(clone, field == null ? 0 : field.getShort()); continue;
+                final Field realField = cloneField.getField();
+                if (realField != null) switch (cloneField.getKind()) {
+                    case BOOLEAN: realField.setBoolean(clone, field == null ? false : field.getBoolean()); continue;
+                    case BYTE:    realField.setByte(clone, field == null ? 0 : field.getByte()); continue;
+                    case CHAR:    realField.setChar(clone, field == null ? 0 : field.getChar()); continue;
+                    case DOUBLE:  realField.setDouble(clone, field == null ? 0 : field.getDouble()); continue;
+                    case FLOAT:   realField.setFloat(clone, field == null ? 0 : field.getFloat()); continue;
+                    case INT:     realField.setInt(clone, field == null ? 0 : field.getInt()); continue;
+                    case LONG:    realField.setLong(clone, field == null ? 0 : field.getLong()); continue;
+                    case OBJECT:  realField.set(clone, field == null ? null : field.getObject()); continue;
+                    case SHORT:   realField.setShort(clone, field == null ? 0 : field.getShort()); continue;
                     default: throw new IllegalStateException();
                 }
             }

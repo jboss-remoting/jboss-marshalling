@@ -124,7 +124,6 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
-<<<<<<< HEAD
      * Get the object creator, or {@code null} if none is specified.  Used only if a more specific creator type
      * was not specified.
      *

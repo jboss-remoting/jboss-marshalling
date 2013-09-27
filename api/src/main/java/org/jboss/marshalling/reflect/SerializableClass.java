@@ -180,7 +180,14 @@ public final class SerializableClass {
             for (int i = 0; i < objectStreamFields.length; i++) {
                 ObjectStreamField field = objectStreamFields[i];
                 final String name = field.getName();
-                fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), map.get(name));
+                final Field realField = map.get(name);
+                if (realField.getType() == field.getType()) {
+                    // allow direct updating of the field data since the types match
+                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), realField);
+                } else {
+                    // no direct update possible
+                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), null);
+                }
             }
             Arrays.sort(fields, NAME_COMPARATOR);
             return fields;

@@ -41,6 +41,15 @@ public final class SerializableField {
         this.name = name;
         this.unshared = unshared;
         this.field = field;
+        if (field != null) {
+            // verify field information
+            if (field.getType() != type) {
+                throw new IllegalStateException("Constructed a serializable field with the wrong type (field type is " + field.getType() + ", our type is " + type + ")");
+            }
+            if (! field.getName().equals(name)) {
+                throw new IllegalStateException("Constructed a serializable field with the wrong name (field name is " + field.getName() + ", our type is " + name + ")");
+            }
+        }
         // todo - see if a small Map is faster
         if (type == boolean.class) {
             kind = Kind.BOOLEAN;

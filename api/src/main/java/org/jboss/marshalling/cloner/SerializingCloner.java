@@ -233,7 +233,7 @@ class SerializingCloner implements ObjectCloner {
         final Object clone;
         if (orig instanceof Externalizable) {
             final Externalizable externalizable = (Externalizable) orig;
-            clone = info.callNoArgConstructor();
+            clone = cloneInfo.callNoArgConstructor();
             clones.put(orig, clone);
             final Queue<Step> steps = new ArrayDeque<Step>();
             final StepObjectOutput soo = new StepObjectOutput(steps);
@@ -241,7 +241,7 @@ class SerializingCloner implements ObjectCloner {
             soo.doFinish();
             ((Externalizable) clone).readExternal(new StepObjectInput(steps));
         } else if (serializabilityChecker.isSerializable(objClass)) {
-            clone = info.callNonInitConstructor();
+            clone = cloneInfo.callNonInitConstructor();
             if (! (serializabilityChecker.isSerializable(clonedClass))) {
                 throw new NotSerializableException(clonedClass.getName());
             }
@@ -259,39 +259,39 @@ class SerializingCloner implements ObjectCloner {
         return replaced;
     }
 
-    private void initSerializableClone(final Object orig, final SerializableClass info, final Object clone, final SerializableClass cloneInfo) throws IOException, ClassNotFoundException {
+    private void initSerializableClone(final Object orig, final SerializableClass origInfo, final Object clone, final SerializableClass cloneInfo) throws IOException, ClassNotFoundException {
 
         final Class<?> cloneClass = cloneInfo.getSubjectClass();
         if (! serializabilityChecker.isSerializable(cloneClass)) {
             throw new NotSerializableException(cloneClass.getName());
         }
         final Class<?> cloneSuperClass = cloneClass.getSuperclass();
-        final Class<?> objClass = info.getSubjectClass();
-        if (cloneClass != clone(objClass)) {
+        final Class<?> origClass = origInfo.getSubjectClass();
+        if (cloneClass != clone(origClass)) {
             // try superclass first, then fill in "no data"
-            initSerializableClone(orig, info, clone, cloneInfo);
+            initSerializableClone(orig, origInfo, clone, cloneInfo);
             if (cloneInfo.hasReadObjectNoData()) {
                 cloneInfo.callReadObjectNoData(clone);
             }
             return;
         }
         // first, init the serializable superclass, if any
-        final Class<?> superClass = objClass.getSuperclass();
-        if (serializabilityChecker.isSerializable(superClass) || serializabilityChecker.isSerializable(cloneSuperClass)) {
-            initSerializableClone(orig, registry.lookup(superClass), clone, registry.lookup(cloneSuperClass));
+        final Class<?> origSuperClass = origClass.getSuperclass();
+        if (serializabilityChecker.isSerializable(origSuperClass) || serializabilityChecker.isSerializable(cloneSuperClass)) {
+            initSerializableClone(orig, registry.lookup(origSuperClass), clone, registry.lookup(cloneSuperClass));
         }
-        if (! serializabilityChecker.isSerializable(objClass)) {
+        if (! serializabilityChecker.isSerializable(origClass)) {
             if (cloneInfo.hasReadObjectNoData()) {
                 cloneInfo.callReadObjectNoData(clone);
             }
             return;
         }
         final ClonerPutField fields = new ClonerPutField();
-        fields.defineFields(info);
-        if (info.hasWriteObject()) {
+        fields.defineFields(origInfo);
+        if (origInfo.hasWriteObject()) {
             final Queue<Step> steps = new ArrayDeque<Step>();
             final StepObjectOutputStream stepObjectOutputStream = new StepObjectOutputStream(steps, fields, orig);
-            info.callWriteObject(orig, stepObjectOutputStream);
+            origInfo.callWriteObject(orig, stepObjectOutputStream);
             stepObjectOutputStream.flush();
             stepObjectOutputStream.doFinish();
             cloneFields(fields);
@@ -316,18 +316,18 @@ class SerializingCloner implements ObjectCloner {
         final Map<String, ReadField> map = fields.fieldMap;
         try {
             for (String name : defMap.keySet()) {
-                final SerializableField field = defMap.get(name);
-                final Field realField = field.getField();
-                if (realField != null) switch (field.getKind()) {
-                    case BOOLEAN: map.put(name, new BooleanReadField(field, realField.getBoolean(subject))); continue;
-                    case BYTE:    map.put(name, new ByteReadField(field, realField.getByte(subject))); continue;
-                    case CHAR:    map.put(name, new CharReadField(field, realField.getChar(subject))); continue;
-                    case DOUBLE:  map.put(name, new DoubleReadField(field, realField.getDouble(subject))); continue;
-                    case FLOAT:   map.put(name, new FloatReadField(field, realField.getFloat(subject))); continue;
-                    case INT:     map.put(name, new IntReadField(field, realField.getInt(subject))); continue;
-                    case LONG:    map.put(name, new LongReadField(field, realField.getLong(subject))); continue;
-                    case OBJECT:  map.put(name, new ObjectReadField(field, realField.get(subject))); continue;
-                    case SHORT:   map.put(name, new ShortReadField(field, realField.getShort(subject))); continue;
+                final SerializableField serializableField = defMap.get(name);
+                final Field realField = serializableField.getField();
+                if (realField != null) switch (serializableField.getKind()) {
+                    case BOOLEAN: map.put(name, new BooleanReadField(serializableField, realField.getBoolean(subject))); continue;
+                    case BYTE:    map.put(name, new ByteReadField(serializableField, realField.getByte(subject))); continue;
+                    case CHAR:    map.put(name, new CharReadField(serializableField, realField.getChar(subject))); continue;
+                    case DOUBLE:  map.put(name, new DoubleReadField(serializableField, realField.getDouble(subject))); continue;
+                    case FLOAT:   map.put(name, new FloatReadField(serializableField, realField.getFloat(subject))); continue;
+                    case INT:     map.put(name, new IntReadField(serializableField, realField.getInt(subject))); continue;
+                    case LONG:    map.put(name, new LongReadField(serializableField, realField.getLong(subject))); continue;
+                    case OBJECT:  map.put(name, new ObjectReadField(serializableField, realField.get(subject))); continue;
+                    case SHORT:   map.put(name, new ShortReadField(serializableField, realField.getShort(subject))); continue;
                     default: throw new IllegalStateException();
                 }
             }

@@ -181,7 +181,7 @@ public final class SerializableClass {
                 ObjectStreamField field = objectStreamFields[i];
                 final String name = field.getName();
                 final Field realField = map.get(name);
-                if (realField.getType() == field.getType()) {
+                if (realField != null && realField.getType() == field.getType()) {
                     // allow direct updating of the field data since the types match
                     fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), realField);
                 } else {

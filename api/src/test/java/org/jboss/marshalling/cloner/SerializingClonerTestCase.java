@@ -201,4 +201,57 @@ public final class SerializingClonerTestCase {
             assertEquals(clone, orig);
         }
     }
+
+    public void testRegulars() throws Throwable {
+        final ClonerConfiguration configuration = new ClonerConfiguration();
+        configuration.setClassCloner(new ClassCloner() {
+            public Class<?> clone(final Class<?> original) throws IOException, ClassNotFoundException {
+                return original == ClonerTestException.class ? ClonerTestException2.class : original;
+            }
+
+            public Class<?> cloneProxy(final Class<?> proxyClass) throws IOException, ClassNotFoundException {
+                return proxyClass;
+            }
+        });
+        final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(configuration);
+        assertNotNull(objectCloner.clone(new ClonerTestException("blah")));
+    }
+
+    /**
+     * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+     */
+    @SuppressWarnings("serial")
+    static class ClonerTestException extends Exception {
+
+        // no serialVersionUID deliberately
+
+        private String reason;
+
+        public ClonerTestException() {
+        }
+
+        public ClonerTestException(final String message) {
+            super(message);
+            reason = message;
+        }
+    }
+
+    /**
+     * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+     */
+    @SuppressWarnings("serial")
+    static class ClonerTestException2 extends Exception {
+
+        // no serialVersionUID deliberately
+
+        private String reason;
+
+        public ClonerTestException2() {
+        }
+
+        public ClonerTestException2(final String message) {
+            super(message);
+            reason = message;
+        }
+    }
 }

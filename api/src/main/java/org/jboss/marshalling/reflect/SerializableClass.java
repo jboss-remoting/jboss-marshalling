@@ -147,7 +147,7 @@ public final class SerializableClass {
                 noArgConstructor.setAccessible(true);
             } else if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInput.class) {
                 objectInputConstructor = constructor;
-                noArgConstructor.setAccessible(true);
+                objectInputConstructor.setAccessible(true);
             }
         }
         this.writeObject = writeObject;

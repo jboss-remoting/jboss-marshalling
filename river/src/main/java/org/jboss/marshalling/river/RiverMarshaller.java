@@ -1377,7 +1377,12 @@ public class RiverMarshaller extends AbstractMarshaller {
                 writeBoolean(field.isUnshared());
             }
         }
-        writeClass(objClass.getSuperclass());
+        Class<?> sc = objClass.getSuperclass();
+        if (! serializabilityChecker.isSerializable(sc)) {
+            write(ID_OBJECT_CLASS);
+            return;
+        }
+        writeClass(sc);
     }
 
     protected void writeExternalizableClass(final Class<?> objClass) throws IOException {

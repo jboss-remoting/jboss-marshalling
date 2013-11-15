@@ -48,6 +48,7 @@ public final class SingleObjectMarshallerTests extends TestBase {
     }
 
     private static final Set<Class<?>> noEqualsClasses;
+    private static final Set<Class<?>> toStringEqualsClasses;
 
     static {
         Set<Class<?>> set = new HashSet<Class<?>>();
@@ -56,6 +57,10 @@ public final class SingleObjectMarshallerTests extends TestBase {
         set.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
         set.add(TestCollectionHolder.class);
         noEqualsClasses = set;
+        set = new HashSet<Class<?>>();
+        set.add(StringBuffer.class);
+        set.add(StringBuilder.class);
+        toStringEqualsClasses = set;
     }
 
     @Test
@@ -75,9 +80,14 @@ public final class SingleObjectMarshallerTests extends TestBase {
                 Object second = null;
                 try {
                     readSubject = unmarshaller.readObject();
-                    // IHM can't be compared for equality :|
                     final Class<? extends Object> subjectClass = subject == null ? null : subject.getClass();
-                    if (! noEqualsClasses.contains(subjectClass)) assertEquals(subject, readSubject);
+                    if (! noEqualsClasses.contains(subjectClass)) {
+                        if (toStringEqualsClasses.contains(subjectClass)) {
+                            assertEquals(subject.toString(), readSubject.toString());
+                        } else {
+                            assertEquals(subject, readSubject);
+                        }
+                    }
                     second = unmarshaller.readObject();
                     assertEqualsOrSame(readSubject, second);
                     assertEquals("Test follower", unmarshaller.readObject());

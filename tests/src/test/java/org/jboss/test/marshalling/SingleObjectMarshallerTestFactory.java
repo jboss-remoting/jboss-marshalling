@@ -176,6 +176,8 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(new TestArrayList());
         list.add(new TestCollectionHolder());
         list.add(Collections.nCopies(123, "This is a test!"));
+        list.add(new StringBuffer().append("This is a test!"));
+        list.add(new StringBuilder().append("This is a test!"));
         // classes to verify
         list.add(HashMap.class);
         list.add(ConcurrentHashMap.class);

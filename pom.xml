@@ -39,6 +39,11 @@
         <version>12</version>
     </parent>
 
+    <properties>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
+    </properties>
+
     <modules>
         <module>api</module>
         <module>river</module>

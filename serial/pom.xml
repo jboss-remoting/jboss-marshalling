@@ -28,7 +28,6 @@
 
     <name>JBoss Marshalling Serial</name>
     <description>JBoss Marshalling Serial Implementation</description>
-    <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-serial</artifactId>
     <packaging>jar</packaging>
 

@@ -28,7 +28,6 @@
 
     <name>JBoss Marshalling Tests</name>
     <description>JBoss Marshalling Test Suite</description>
-    <groupId>org.jboss.marshalling</groupId>
     <artifactId>tests</artifactId>
     <packaging>jar</packaging>
 

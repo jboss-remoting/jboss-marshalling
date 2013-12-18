@@ -28,7 +28,6 @@
 
     <name>JBoss Marshalling River</name>
     <description>JBoss Marshalling River Implementation</description>
-    <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-river</artifactId>
     <packaging>jar</packaging>
 

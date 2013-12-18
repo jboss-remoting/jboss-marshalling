@@ -28,7 +28,6 @@
 
     <name>JBoss Marshalling OSGi Bundle</name>
     <description>JBoss Marshalling OSGi Bundle with API and implementations</description>
-    <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-osgi</artifactId>
     <packaging>bundle</packaging>
 

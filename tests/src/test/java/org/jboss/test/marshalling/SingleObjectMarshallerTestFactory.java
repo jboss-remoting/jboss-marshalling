@@ -164,6 +164,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(new TestComplexObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))));
         list.add(new TestComplexExternalizableObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))));
         list.add(Collections.unmodifiableMap(new HashMap<Object, Object>()));
+        list.add(Collections.unmodifiableMap(Collections.singletonMap("hi", "there")).entrySet());
         list.add(Collections.unmodifiableSet(new HashSet<Object>()));
         list.add(Collections.unmodifiableCollection(new HashSet<Object>()));
         list.add(Collections.unmodifiableList(new ArrayList<Object>()));
@@ -203,6 +204,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add(Collections.singletonMap(null, null).getClass());
         list.add(Collections.reverseOrder().getClass());
         list.add(Collections.unmodifiableMap(new HashMap<Object, Object>()).getClass());
+        list.add(Collections.unmodifiableMap(new HashMap<Object, Object>()).entrySet().getClass());
         list.add(Collections.unmodifiableSet(new HashSet<Object>()).getClass());
         list.add(Collections.unmodifiableCollection(new HashSet<Object>()).getClass());
         list.add(Collections.unmodifiableList(new ArrayList<Object>()).getClass());

@@ -50,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -552,6 +553,84 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
                 case ID_CC_NCOPIES: {
                     return nCopiesClass;
+                }
+
+                case ID_UNMODIFIABLE_COLLECTION: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableCollection((Collection<?>) doReadNestedObject(false, "Collections#unmodifiableCollection()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_SET: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableSet((Set<?>) doReadNestedObject(false, "Collections#unmodifiableSet()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_LIST: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableList((List<?>) doReadNestedObject(false, "Collections#unmodifiableList()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_MAP: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableMap((Map<?, ?>) doReadNestedObject(false, "Collections#unmodifiableMap()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_SORTED_SET: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableSortedSet((SortedSet<?>) doReadNestedObject(false, "Collections#unmodifiableSortedSet()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_SORTED_MAP: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj = Collections.unmodifiableSortedMap((SortedMap<?, ?>) doReadNestedObject(false, "Collections#unmodifiableSortedMap()"));
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
+                }
+                case ID_UNMODIFIABLE_MAP_ENTRY_SET: {
+                    final int idx = instanceCache.size();
+                    instanceCache.add(null);
+                    final Object obj;
+                    try {
+                        obj = Protocol.unmodifiableMapEntrySetCtor.newInstance(doReadNestedObject(false, "Collections#unmodifiableSortedMap:entrySet()"));
+                    } catch (Exception e) {
+                        final InvalidObjectException ioe = new InvalidObjectException("Problem instantiating unmodifiable map entry set");
+                        ioe.initCause(e);
+                        throw ioe;
+                    }
+                    final Object resolvedObject = objectResolver.readResolve(obj);
+                    if (! unshared) {
+                        instanceCache.set(idx, resolvedObject);
+                    }
+                    return replace(resolvedObject);
                 }
 
                 case ID_SINGLETON_LIST_OBJECT: {
@@ -1088,6 +1167,28 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_NCOPIES: {
                 return ClassDescriptors.NCOPIES;
+            }
+
+            case ID_UNMODIFIABLE_COLLECTION: {
+                return ClassDescriptors.UNMODIFIABLE_COLLECTION;
+            }
+            case ID_UNMODIFIABLE_SET: {
+                return ClassDescriptors.UNMODIFIABLE_SET;
+            }
+            case ID_UNMODIFIABLE_LIST: {
+                return ClassDescriptors.UNMODIFIABLE_LIST;
+            }
+            case ID_UNMODIFIABLE_MAP: {
+                return ClassDescriptors.UNMODIFIABLE_MAP;
+            }
+            case ID_UNMODIFIABLE_SORTED_SET: {
+                return ClassDescriptors.UNMODIFIABLE_SORTED_SET;
+            }
+            case ID_UNMODIFIABLE_SORTED_MAP: {
+                return ClassDescriptors.UNMODIFIABLE_SORTED_MAP;
+            }
+            case ID_UNMODIFIABLE_MAP_ENTRY_SET: {
+                return ClassDescriptors.UNMODIFIABLE_MAP_ENTRY_SET;
             }
 
             case ID_SINGLETON_MAP_OBJECT: {

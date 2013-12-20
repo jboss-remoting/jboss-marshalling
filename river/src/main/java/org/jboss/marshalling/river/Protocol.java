@@ -22,15 +22,23 @@
 
 package org.jboss.marshalling.river;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  *
  */
 public final class Protocol {
     public static final int MIN_VERSION = 2;
-    public static final int MAX_VERSION = 3;
+    public static final int MAX_VERSION = 4;
 
     public static final int ID_NULL                     = 0x01;
     public static final int ID_REPEAT_OBJECT_FAR        = 0x02;
@@ -181,6 +189,16 @@ public final class Protocol {
     public static final int ID_REVERSE_ORDER2_OBJECT    = 0x7a;
     public static final int ID_CC_NCOPIES = 0x7b;
 
+    // protocol version >= 4
+    public static final int ID_UNMODIFIABLE_COLLECTION  = 0x7c;
+    public static final int ID_UNMODIFIABLE_LIST        = 0x7d;
+    public static final int ID_UNMODIFIABLE_MAP         = 0x7e;
+    public static final int ID_UNMODIFIABLE_SET         = 0x7f;
+    public static final int ID_UNMODIFIABLE_SORTED_SET  = 0x80;
+    public static final int ID_UNMODIFIABLE_SORTED_MAP  = 0x81;
+
+    public static final int ID_UNMODIFIABLE_MAP_ENTRY_SET = 0x82;
+
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
     static final Class<?> singletonMapClass = Collections.singletonMap(null, null).getClass();
@@ -189,6 +207,16 @@ public final class Protocol {
     static final Class<?> emptySetClass = Collections.emptySet().getClass();
     static final Class<?> emptyMapClass = Collections.emptyMap().getClass();
 
+    static final Class<?> unmodifiableCollectionClass = Collections.unmodifiableCollection(Collections.emptySet()).getClass();
+    static final Class<?> unmodifiableListClass = Collections.unmodifiableList(new LinkedList<Object>()).getClass();
+    static final Class<?> unmodifiableRandomAccessListClass = Collections.unmodifiableList(new ArrayList<Object>()).getClass();
+    static final Class<?> unmodifiableMapClass = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
+    static final Class<?> unmodifiableSetClass = Collections.unmodifiableSet(Collections.emptySet()).getClass();
+    static final Class<?> unmodifiableSortedSetClass = Collections.unmodifiableSortedSet(new TreeSet<Object>()).getClass();
+    static final Class<?> unmodifiableSortedMapClass = Collections.unmodifiableSortedMap(new TreeMap<Object, Object>()).getClass();
+
+    static final Class<?> unmodifiableMapEntrySetClass = Collections.unmodifiableMap(Collections.emptyMap()).entrySet().getClass();
+
     static final Class<?> reverseOrderClass = Collections.reverseOrder().getClass();
     static final Class<?> reverseOrder2Class = Collections.reverseOrder(Collections.<Object>reverseOrder()).getClass();
     static final Field reverseOrder2Field;
@@ -196,6 +224,33 @@ public final class Protocol {
     static final Class<?> nCopiesClass = Collections.nCopies(1, null).getClass();
 
     static final Class<?> enumSetProxyClass;
+
+    static final Field unmodifiableCollectionField;
+    static final Field unmodifiableListField;
+    static final Field unmodifiableRandomAccessListField;
+    static final Field unmodifiableMapField;
+    static final Field unmodifiableSetField;
+    static final Field unmodifiableSortedSetField;
+    static final Field unmodifiableSortedMapField;
+
+    static final Field unmodifiableMapEntrySetField;
+    static final Constructor<?> unmodifiableMapEntrySetCtor;
+
+    static Field findUnmodifiableField(Class<?> clazz) {
+        final HashSet<String> strings = new HashSet<String>(Arrays.asList("c", "ss", "list", "m"));
+        for (;;) {
+            if (clazz == Object.class) {
+                throw new IllegalStateException("No candidate collection fields found in " + clazz);
+            }
+            for (Field field : clazz.getDeclaredFields()) {
+                if (strings.contains(field.getName())) {
+                    field.setAccessible(true);
+                    return field;
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+    }
 
     static {
         Class<?> clazz;
@@ -210,12 +265,35 @@ public final class Protocol {
             if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
                 declared.setAccessible(true);
                 field = declared;
+                break;
             }
         }
         if (field == null) {
             throw new IllegalStateException("No standard field found for reverse order comparator!");
         }
         reverseOrder2Field = field;
+        unmodifiableCollectionField = findUnmodifiableField(unmodifiableCollectionClass);
+        unmodifiableSetField = findUnmodifiableField(unmodifiableSetClass);
+        unmodifiableListField = findUnmodifiableField(unmodifiableListClass);
+        unmodifiableRandomAccessListField = findUnmodifiableField(unmodifiableRandomAccessListClass);
+        unmodifiableMapField = findUnmodifiableField(unmodifiableMapClass);
+        unmodifiableSortedSetField = findUnmodifiableField(unmodifiableSortedSetClass);
+        unmodifiableSortedMapField = findUnmodifiableField(unmodifiableSortedMapClass);
+
+        unmodifiableMapEntrySetField = findUnmodifiableField(unmodifiableMapEntrySetClass);
+        Constructor<?> ctor = null;
+        for (Constructor<?> declared : unmodifiableMapEntrySetClass.getDeclaredConstructors()) {
+            final Class<?>[] parameterTypes = declared.getParameterTypes();
+            if (parameterTypes.length == 1 && parameterTypes[0].isAssignableFrom(Set.class)) {
+                declared.setAccessible(true);
+                ctor = declared;
+                break;
+            }
+        }
+        if (ctor == null) {
+            throw new IllegalStateException("No standard constructor found for unmodifiable map entry set!");
+        }
+        unmodifiableMapEntrySetCtor = ctor;
     }
 
     private Protocol() {

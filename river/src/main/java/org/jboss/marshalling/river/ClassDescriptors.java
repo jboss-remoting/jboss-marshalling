@@ -132,6 +132,15 @@ public final class ClassDescriptors {
     static final ClassDescriptor REVERSE_ORDER2 = getSerializableClassDescriptor(Protocol.reverseOrder2Class);
     static final ClassDescriptor NCOPIES = getSerializableClassDescriptor(Protocol.nCopiesClass);
 
+    // Odd mishmash
+    static final ClassDescriptor UNMODIFIABLE_SET = getSerializableClassDescriptor(Protocol.unmodifiableSetClass);
+    static final ClassDescriptor UNMODIFIABLE_COLLECTION = getSerializableClassDescriptor(Protocol.unmodifiableCollectionClass);
+    static final ClassDescriptor UNMODIFIABLE_LIST = getSerializableClassDescriptor(Protocol.unmodifiableListClass);
+    static final ClassDescriptor UNMODIFIABLE_MAP = getSerializableClassDescriptor(Protocol.unmodifiableMapClass);
+    static final ClassDescriptor UNMODIFIABLE_SORTED_SET = getSerializableClassDescriptor(Protocol.unmodifiableSortedSetClass);
+    static final ClassDescriptor UNMODIFIABLE_SORTED_MAP = getSerializableClassDescriptor(Protocol.unmodifiableSortedMapClass);
+    static final ClassDescriptor UNMODIFIABLE_MAP_ENTRY_SET = getSerializableClassDescriptor(Protocol.unmodifiableMapEntrySetClass);
+
     private ClassDescriptors() {
     }
 

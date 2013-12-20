@@ -793,6 +793,105 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
+                case ID_UNMODIFIABLE_COLLECTION:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableCollectionField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_UNMODIFIABLE_SET:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableSetField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_UNMODIFIABLE_LIST:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject((objClass == unmodifiableRandomAccessListClass ? unmodifiableRandomAccessListField : unmodifiableListField).get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_UNMODIFIABLE_MAP:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableMapField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_UNMODIFIABLE_SORTED_MAP:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableSortedMapField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+
+                case ID_UNMODIFIABLE_SORTED_SET:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableSortedSetField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_UNMODIFIABLE_MAP_ENTRY_SET:
+                {
+                    instanceCache.put(obj, instanceSeq++);
+                    write(id);
+                    try {
+                        doWriteObject(unmodifiableMapEntrySetField.get(obj), false);
+                    } catch (IllegalAccessException e) {
+                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
                 case -1: break;
                 default: throw new NotSerializableException(objClass.getName());
             }
@@ -903,7 +1002,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     private static IdentityIntMap<Class<?>> getBasicClasses(final int configuredVersion) {
-        return configuredVersion == 2 ? BASIC_CLASSES_V2 : BASIC_CLASSES_V3;
+        return configuredVersion == 2 ? BASIC_CLASSES_V2 : configuredVersion == 3 ? BASIC_CLASSES_V3 : BASIC_CLASSES_V4;
     }
 
     private static Class<? extends Enum> getEnumMapKeyType(final Object obj) {
@@ -1152,6 +1251,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V2;
     private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V3;
+    private static final IdentityIntMap<Class<?>> BASIC_CLASSES_V4;
 
     private static final Field ENUM_SET_ELEMENT_TYPE_FIELD;
     private static final Field ENUM_SET_VALUES_FIELD;
@@ -1242,7 +1342,17 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(reverseOrder2Class, ID_REVERSE_ORDER2_OBJECT); // special case
         map.put(nCopiesClass, ID_CC_NCOPIES);
 
-        BASIC_CLASSES_V3 = map;
+        BASIC_CLASSES_V3 = map.clone();
+
+        map.put(unmodifiableCollectionClass, ID_UNMODIFIABLE_COLLECTION);
+        map.put(unmodifiableSetClass, ID_UNMODIFIABLE_SET);
+        map.put(unmodifiableListClass, ID_UNMODIFIABLE_LIST);
+        map.put(unmodifiableMapClass, ID_UNMODIFIABLE_MAP);
+        map.put(unmodifiableSortedSetClass, ID_UNMODIFIABLE_SORTED_SET);
+        map.put(unmodifiableSortedMapClass, ID_UNMODIFIABLE_SORTED_MAP);
+        map.put(unmodifiableMapEntrySetClass, ID_UNMODIFIABLE_MAP_ENTRY_SET);
+
+        BASIC_CLASSES_V4 = map;
 
         // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
         // do something tricky involving ObjectStreamField anyway...

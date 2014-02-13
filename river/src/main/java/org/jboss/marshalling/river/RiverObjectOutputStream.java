@@ -48,7 +48,6 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
     private static final int ON = 2;
 
     private final RiverMarshaller marshaller;
-    private final Marshaller delegateMarshaller;
 
     private int state;
     private RiverPutField putField;
@@ -58,7 +57,6 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
     protected RiverObjectOutputStream(final Marshaller delegateMarshaller, final RiverMarshaller marshaller) throws IOException, SecurityException {
         super(delegateMarshaller);
         this.marshaller = marshaller;
-        this.delegateMarshaller = delegateMarshaller;
     }
 
     private boolean compareAndSetState(int expect, int set) {
@@ -290,18 +288,5 @@ public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
         putField = null;
         serializableClass = null;
         current = null;
-    }
-
-    private void checkState() throws NotActiveException {
-        switch (state.get()) {
-            case OFF:
-                throw new NotActiveException("Object stream not active");
-            case ON:
-                return;
-            case UNWRITTEN_FIELDS:
-                throw new NotActiveException("Fields not yet written");
-            default:
-                throw new IllegalStateException("Unknown state");
-        }
     }
 }

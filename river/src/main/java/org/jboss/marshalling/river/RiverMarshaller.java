@@ -1503,7 +1503,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
         }
         Class<?> sc = objClass.getSuperclass();
-        if (! serializabilityChecker.isSerializable(sc)) {
+        if (! (sc instanceof Serializable)) {
             write(ID_OBJECT_CLASS);
             return;
         }

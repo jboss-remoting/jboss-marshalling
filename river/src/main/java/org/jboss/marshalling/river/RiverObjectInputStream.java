@@ -40,15 +40,20 @@ import java.io.ObjectInputValidation;
 import java.io.NotActiveException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamClass;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  */
 public class RiverObjectInputStream extends MarshallerObjectInputStream {
-    private AtomicReference<State> state = new AtomicReference<State>(State.OFF);
+    private static final int OFF = 0;
+    private static final int UNREAD_FIELDS = 1;
+    private static final int UNREAD_FIELDS_EOB = 2;
+    private static final int ON = 3;
+
     private final RiverUnmarshaller unmarshaller;
     private final BlockUnmarshaller blockUnmarshaller;
+
+    private int state = OFF;
 
     protected RiverObjectInputStream(final RiverUnmarshaller riverUnmarshaller, final BlockUnmarshaller delegateUnmarshaller) throws IOException, SecurityException {
         super(delegateUnmarshaller);
@@ -60,8 +65,16 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     private Object current;
     private int restoreIdx;
 
+    private int getAndSet(int set) {
+        try {
+            return state;
+        } finally {
+            state = set;
+        }
+    }
+
     public void defaultReadObject() throws IOException, ClassNotFoundException {
-        State old = state.getAndSet(State.ON);
+        int old = getAndSet(ON);
         switch (old) {
             case UNREAD_FIELDS:
             case UNREAD_FIELDS_EOB: break;
@@ -70,7 +83,26 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
         try {
             unmarshaller.readFields(current, serializableClassDescriptor);
-            if (old == State.UNREAD_FIELDS_EOB) {
+            if (old == UNREAD_FIELDS_EOB) {
+                restoreIdx = blockUnmarshaller.tempEndOfStream();
+            }
+        } finally {
+            serializableClassDescriptor = null;
+            current = null;
+        }
+    }
+
+    void discardReadObject() throws IOException {
+        int old = getAndSet(ON);
+        switch (old) {
+            case UNREAD_FIELDS:
+            case UNREAD_FIELDS_EOB: break;
+            default:
+                throw new NotActiveException("readFields() may only be called when the fields have not yet been read");
+        }
+        try {
+            unmarshaller.discardFields(serializableClassDescriptor);
+            if (old == UNREAD_FIELDS_EOB) {
                 restoreIdx = blockUnmarshaller.tempEndOfStream();
             }
         } finally {
@@ -80,7 +112,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
     }
 
     public GetField readFields() throws IOException, ClassNotFoundException {
-        State old = state.getAndSet(State.ON);
+        int old = getAndSet(ON);
         switch (old) {
             case UNREAD_FIELDS:
             case UNREAD_FIELDS_EOB: break;
@@ -146,7 +178,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                 throw e;
             }
         }
-        if (old == State.UNREAD_FIELDS_EOB) {
+        if (old == UNREAD_FIELDS_EOB) {
             restoreIdx = blockUnmarshaller.tempEndOfStream();
         }
         return new GetField() {
@@ -238,12 +270,12 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
     }
 
-    protected State start() {
-        return state.getAndSet(State.UNREAD_FIELDS);
+    protected int start() {
+        return getAndSet(UNREAD_FIELDS);
     }
 
-    protected void finish(final State restoreState) throws IOException {
-        switch (state.getAndSet(restoreState)) {
+    protected void finish(final int restoreState) throws IOException {
+        switch (getAndSet(restoreState)) {
             case OFF:
                 // ??
                 break;
@@ -257,25 +289,139 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
         }
     }
 
+    private void checkState() throws IOException {
+        switch (state) {
+            case OFF:
+                throw new NotActiveException("Object stream not active");
+            case ON:
+                return;
+            case UNREAD_FIELDS:
+            case UNREAD_FIELDS_EOB:
+                discardReadObject();
+                return;
+            default:
+                throw new IllegalStateException("Unknown state");
+        }
+    }
+
+    protected Object readObjectOverride() throws IOException, ClassNotFoundException {
+        checkState();
+        return super.readObjectOverride();
+    }
+
+    public Object readUnshared() throws IOException, ClassNotFoundException {
+        checkState();
+        return super.readUnshared();
+    }
+
+    public int read() throws IOException {
+        checkState();
+        return super.read();
+    }
+
+    public int read(final byte[] buf) throws IOException {
+        checkState();
+        return super.read(buf);
+    }
+
+    public int read(final byte[] buf, final int off, final int len) throws IOException {
+        checkState();
+        return super.read(buf, off, len);
+    }
+
+    public boolean readBoolean() throws IOException {
+        checkState();
+        return super.readBoolean();
+    }
+
+    public byte readByte() throws IOException {
+        checkState();
+        return super.readByte();
+    }
+
+    public int readUnsignedByte() throws IOException {
+        checkState();
+        return super.readUnsignedByte();
+    }
+
+    public char readChar() throws IOException {
+        checkState();
+        return super.readChar();
+    }
+
+    public short readShort() throws IOException {
+        checkState();
+        return super.readShort();
+    }
+
+    public int readUnsignedShort() throws IOException {
+        checkState();
+        return super.readUnsignedShort();
+    }
+
+    public int readInt() throws IOException {
+        checkState();
+        return super.readInt();
+    }
+
+    public long readLong() throws IOException {
+        checkState();
+        return super.readLong();
+    }
+
+    public float readFloat() throws IOException {
+        checkState();
+        return super.readFloat();
+    }
+
+    public double readDouble() throws IOException {
+        checkState();
+        return super.readDouble();
+    }
+
+    public void readFully(final byte[] buf) throws IOException {
+        checkState();
+        super.readFully(buf);
+    }
+
+    public void readFully(final byte[] buf, final int off, final int len) throws IOException {
+        checkState();
+        super.readFully(buf, off, len);
+    }
+
+    public int skipBytes(final int len) throws IOException {
+        checkState();
+        return super.skipBytes(len);
+    }
+
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public String readLine() throws IOException {
+        checkState();
+        return super.readLine();
+    }
+
+    public String readUTF() throws IOException {
+        checkState();
+        return super.readUTF();
+    }
+
+    public long skip(final long n) throws IOException {
+        checkState();
+        return super.skip(n);
+    }
+
     protected void fullReset() {
-        state.set(State.OFF);
+        state = OFF;
         serializableClassDescriptor = null;
         current = null;
     }
 
     protected void noCustomData() {
-        state.set(State.UNREAD_FIELDS_EOB);
+        state = UNREAD_FIELDS_EOB;
     }
 
     protected int getRestoreIdx() {
         return restoreIdx;
-    }
-
-    protected enum State {
-        OFF,
-        UNREAD_FIELDS,
-        UNREAD_FIELDS_EOB,
-        ON,
-        ;
     }
 }

@@ -22,6 +22,9 @@
 
 package org.jboss.marshalling.reflect;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.lang.reflect.Field;
 import org.jboss.marshalling.util.Kind;
 
@@ -37,6 +40,7 @@ public final class SerializableField {
     private final Kind kind;
 
     SerializableField(Class<?> type, String name, boolean unshared, final Field field) {
+        assert field == null || field.isAccessible();
         this.type = type;
         this.name = name;
         this.unshared = unshared;
@@ -115,5 +119,95 @@ public final class SerializableField {
      */
     public Class<?> getType() throws ClassNotFoundException {
         return type;
+    }
+
+    /**
+     * Read the field value from the stream.
+     *
+     * @param instance the instance
+     * @param input the source stream
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class could not be loaded
+     */
+    public void readFrom(Object instance, ObjectInput input) throws IOException, ClassNotFoundException {
+        try {
+            switch (kind) {
+                case BOOLEAN:
+                    field.setBoolean(instance, input.readBoolean());
+                    break;
+                case BYTE:
+                    field.setByte(instance, input.readByte());
+                    break;
+                case CHAR:
+                    field.setChar(instance, input.readChar());
+                    break;
+                case DOUBLE:
+                    field.setDouble(instance, input.readDouble());
+                    break;
+                case FLOAT:
+                    field.setFloat(instance, input.readFloat());
+                    break;
+                case INT:
+                    field.setInt(instance, input.readInt());
+                    break;
+                case LONG:
+                    field.setLong(instance, input.readLong());
+                    break;
+                case SHORT:
+                    field.setShort(instance, input.readShort());
+                    break;
+                case OBJECT:
+                    field.set(instance, input.readObject());
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        } catch (IllegalAccessException e) {
+            // should not be possible
+            IllegalAccessError error = new IllegalAccessError(e.getMessage());
+            error.setStackTrace(e.getStackTrace());
+            throw error;
+        }
+    }
+
+    public void writeTo(Object instance, ObjectOutput output) throws IOException {
+        try {
+            switch (kind) {
+                case BOOLEAN:
+                    output.writeBoolean(field.getBoolean(instance));
+                    break;
+                case BYTE:
+                    output.writeByte(field.getByte(instance));
+                    break;
+                case CHAR:
+                    output.writeChar(field.getChar(instance));
+                    break;
+                case DOUBLE:
+                    output.writeDouble(field.getDouble(instance));
+                    break;
+                case FLOAT:
+                    output.writeFloat(field.getFloat(instance));
+                    break;
+                case INT:
+                    output.writeInt(field.getInt(instance));
+                    break;
+                case LONG:
+                    output.writeLong(field.getLong(instance));
+                    break;
+                case SHORT:
+                    output.writeShort(field.getShort(instance));
+                    break;
+                case OBJECT:
+                    output.writeObject(field.get(instance));
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        } catch (IllegalAccessException e) {
+            // should not be possible
+            IllegalAccessError error = new IllegalAccessError(e.getMessage());
+            error.setStackTrace(e.getStackTrace());
+            throw error;
+        }
     }
 }

@@ -1078,7 +1078,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             final RiverObjectOutputStream objectOutputStream = getObjectOutputStream();
             final SerializableClass oldInfo = objectOutputStream.swapClass(info);
             final Object oldObj = objectOutputStream.swapCurrent(obj);
-            final RiverObjectOutputStream.State restoreState = objectOutputStream.start();
+            final int restoreState = objectOutputStream.start();
             boolean ok = false;
             try {
                 info.callWriteObject(obj, objectOutputStream);
@@ -1147,6 +1147,58 @@ public class RiverMarshaller extends AbstractMarshaller {
                     throw ioe;
                 }
             } catch (IOException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            } catch (RuntimeException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            }
+        }
+    }
+
+    protected void doWriteEmptyFields(final SerializableClass info) throws IOException {
+        final SerializableField[] serializableFields = info.getFields();
+        for (SerializableField serializableField : serializableFields) {
+            try {
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        writeBoolean(false);
+                        break;
+                    }
+                    case BYTE: {
+                        writeByte(0);
+                        break;
+                    }
+                    case SHORT: {
+                        writeShort(0);
+                        break;
+                    }
+                    case INT: {
+                        writeInt(0);
+                        break;
+                    }
+                    case CHAR: {
+                        writeChar(0);
+                        break;
+                    }
+                    case LONG: {
+                        writeLong(0L);
+                        break;
+                    }
+                    case DOUBLE: {
+                        writeDouble(0.0);
+                        break;
+                    }
+                    case FLOAT: {
+                        writeFloat(0.0f);
+                        break;
+                    }
+                    case OBJECT: {
+                        writeObject(null);
+                        break;
+                    }
+                }
+            } catch (IOException e){
                 TraceInformation.addFieldInformation(e, serializableField.getName());
                 throw e;
             } catch (RuntimeException e) {

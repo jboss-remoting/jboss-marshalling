@@ -1539,7 +1539,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             final RiverObjectInputStream objectInputStream = getObjectInputStream();
             final SerializableClassDescriptor oldDescriptor = objectInputStream.swapClass(descriptor);
             final Object oldObj = objectInputStream.swapCurrent(obj);
-            final RiverObjectInputStream.State restoreState = objectInputStream.start();
+            final int restoreState = objectInputStream.start();
             boolean ok = false;
             try {
                 if (typeId == ID_WRITE_OBJECT_CLASS) {
@@ -1666,6 +1666,60 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             } catch (ClassNotFoundException e) {
                 TraceInformation.addFieldInformation(e, serializableField.getName());
                 throw e;
+            } catch (RuntimeException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            }
+        }
+    }
+
+    protected void discardFields(final SerializableClassDescriptor descriptor) throws IOException {
+        for (SerializableField serializableField : descriptor.getFields()) {
+            try {
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        readBoolean();
+                        break;
+                    }
+                    case BYTE: {
+                        readByte();
+                        break;
+                    }
+                    case CHAR: {
+                        readChar();
+                        break;
+                    }
+                    case DOUBLE: {
+                        readDouble();
+                        break;
+                    }
+                    case FLOAT: {
+                        readFloat();
+                        break;
+                    }
+                    case INT: {
+                        readInt();
+                        break;
+                    }
+                    case LONG: {
+                        readLong();
+                        break;
+                    }
+                    case OBJECT: {
+                        doReadObject(serializableField.isUnshared());
+                        break;
+                    }
+                    case SHORT: {
+                        readShort();
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw e;
+            } catch (ClassNotFoundException e) {
+                TraceInformation.addFieldInformation(e, serializableField.getName());
+                throw new IOException("Failed to discard field data", e);
             } catch (RuntimeException e) {
                 TraceInformation.addFieldInformation(e, serializableField.getName());
                 throw e;

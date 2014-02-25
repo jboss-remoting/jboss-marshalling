@@ -27,7 +27,7 @@ import java.io.ObjectStreamConstants;
 /**
  * Protocol extensions used locally for JBoss Marshalling extensions to Class/Object Resolvers.
  */
-public interface ExtendedObjectStreamConstants extends ObjectStreamConstants {
+interface ExtendedObjectStreamConstants extends ObjectStreamConstants {
     int TC_CLASSTABLEDESC = 0xF0;
     int TC_OBJECTTABLE = 0xF1;
 }

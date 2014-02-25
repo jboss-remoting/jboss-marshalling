@@ -25,7 +25,7 @@ package org.jboss.marshalling.river;
 /**
  *
  */
-public class SimpleClassDescriptor extends ClassDescriptor {
+class SimpleClassDescriptor extends ClassDescriptor {
     private final Class<?> type;
     private int typeID;
     // non-public (due to security)

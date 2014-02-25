@@ -58,7 +58,7 @@ import org.jboss.marshalling.reflect.SerializableField;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class ClassDescriptors {
+final class ClassDescriptors {
 
     public static final ClassDescriptor STRING_DESCRIPTOR = new SimpleClassDescriptor(String.class, Protocol.ID_STRING_CLASS);
     public static final ClassDescriptor CLASS_DESCRIPTOR = new SimpleClassDescriptor(Class.class, Protocol.ID_CLASS_CLASS);

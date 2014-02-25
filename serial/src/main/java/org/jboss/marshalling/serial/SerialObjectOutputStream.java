@@ -44,7 +44,7 @@ import java.util.TreeMap;
 /**
  *
  */
-public final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
+final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
 
     protected enum State {
         OFF,

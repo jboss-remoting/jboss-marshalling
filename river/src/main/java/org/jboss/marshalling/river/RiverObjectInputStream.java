@@ -44,7 +44,7 @@ import java.io.ObjectStreamClass;
 /**
  *
  */
-public class RiverObjectInputStream extends MarshallerObjectInputStream {
+class RiverObjectInputStream extends MarshallerObjectInputStream {
     private static final int OFF = 0;
     private static final int UNREAD_FIELDS = 1;
     private static final int UNREAD_FIELDS_EOB = 2;

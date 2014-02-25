@@ -25,7 +25,7 @@ package org.jboss.marshalling.river;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public abstract class ClassDescriptor {
+abstract class ClassDescriptor {
 
     public abstract Class<?> getType();
 

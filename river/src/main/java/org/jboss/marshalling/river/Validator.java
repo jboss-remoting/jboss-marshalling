@@ -24,7 +24,7 @@ package org.jboss.marshalling.river;
 
 import java.io.ObjectInputValidation;
 
-public final class Validator implements Comparable<Validator> {
+final class Validator implements Comparable<Validator> {
     private final int priority;
     private final int seq;
     private final ObjectInputValidation validation;

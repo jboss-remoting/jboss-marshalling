@@ -35,7 +35,7 @@ import java.io.EOFException;
 /**
  *
  */
-public final class BlockUnmarshaller implements Unmarshaller {
+final class BlockUnmarshaller implements Unmarshaller {
 
     private final RiverUnmarshaller riverUnmarshaller;
     private int remaining;

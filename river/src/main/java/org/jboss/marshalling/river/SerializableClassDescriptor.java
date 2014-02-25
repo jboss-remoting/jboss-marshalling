@@ -28,7 +28,7 @@ import org.jboss.marshalling.reflect.SerializableClass;
 /**
  *
  */
-public abstract class SerializableClassDescriptor extends ClassDescriptor {
+abstract class SerializableClassDescriptor extends ClassDescriptor {
 
     protected SerializableClassDescriptor() {}
 

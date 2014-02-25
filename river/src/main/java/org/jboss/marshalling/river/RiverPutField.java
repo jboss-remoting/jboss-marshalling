@@ -33,7 +33,7 @@ import org.jboss.marshalling.util.FieldPutter;
 /**
  *
  */
-public class RiverPutField extends ObjectOutputStream.PutField {
+class RiverPutField extends ObjectOutputStream.PutField {
 
     private final FieldPutter[] fields;
     private final String[] names;

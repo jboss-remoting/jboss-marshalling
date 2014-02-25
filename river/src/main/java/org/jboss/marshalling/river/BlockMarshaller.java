@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  *
  */
-public final class BlockMarshaller implements Marshaller {
+final class BlockMarshaller implements Marshaller {
     private final RiverMarshaller riverMarshaller;
     private final byte[] buffer;
     private int position;

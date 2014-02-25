@@ -36,7 +36,7 @@ import java.util.TreeSet;
 /**
  *
  */
-public final class Protocol {
+final class Protocol {
     public static final int MIN_VERSION = 2;
     public static final int MAX_VERSION = 4;
 

@@ -42,7 +42,7 @@ import java.io.NotActiveException;
 /**
  *
  */
-public class RiverObjectOutputStream extends MarshallerObjectOutputStream {
+class RiverObjectOutputStream extends MarshallerObjectOutputStream {
     private static final int OFF = 0;
     private static final int UNWRITTEN_FIELDS = 1;
     private static final int ON = 2;

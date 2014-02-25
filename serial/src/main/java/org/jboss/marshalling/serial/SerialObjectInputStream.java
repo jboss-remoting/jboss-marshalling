@@ -32,7 +32,7 @@ import java.io.InvalidObjectException;
 /**
  *
  */
-public final class SerialObjectInputStream extends MarshallerObjectInputStream {
+final class SerialObjectInputStream extends MarshallerObjectInputStream {
     private final SerialUnmarshaller serialUnmarshaller;
     private PlainDescriptor currentDescriptor;
     private SerializableClass currentSerializableClass;

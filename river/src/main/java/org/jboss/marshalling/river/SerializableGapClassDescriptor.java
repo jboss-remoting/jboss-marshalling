@@ -28,7 +28,7 @@ import org.jboss.marshalling.reflect.SerializableField;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class SerializableGapClassDescriptor extends SerializableClassDescriptor {
+final class SerializableGapClassDescriptor extends SerializableClassDescriptor {
 
     private final Class<?> type;
     private final SerializableClass serializableClass;

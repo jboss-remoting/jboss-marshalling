@@ -35,7 +35,7 @@ import java.io.EOFException;
 /**
  *
  */
-public final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStreamConstants {
+final class BlockUnmarshaller implements Unmarshaller, ExtendedObjectStreamConstants {
 
     private final SerialUnmarshaller serialUnmarshaller;
     private int remaining;

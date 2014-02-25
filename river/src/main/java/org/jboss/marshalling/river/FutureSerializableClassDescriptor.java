@@ -28,7 +28,7 @@ import org.jboss.marshalling.reflect.SerializableField;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class FutureSerializableClassDescriptor extends SerializableClassDescriptor {
+final class FutureSerializableClassDescriptor extends SerializableClassDescriptor {
     private final Class<?> type;
     private final int typeID;
 

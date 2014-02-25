@@ -27,7 +27,7 @@ import org.jboss.marshalling.Externalizer;
 /**
  *
  */
-public final class ExternalizerClassDescriptor extends SimpleClassDescriptor {
+final class ExternalizerClassDescriptor extends SimpleClassDescriptor {
     private final Externalizer externalizer;
 
     public ExternalizerClassDescriptor(final Class<?> clazz, final Externalizer externalizer) {

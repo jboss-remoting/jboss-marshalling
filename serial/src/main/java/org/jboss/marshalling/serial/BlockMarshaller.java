@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  *
  */
-public final class BlockMarshaller implements Marshaller, ExtendedObjectStreamConstants {
+final class BlockMarshaller implements Marshaller, ExtendedObjectStreamConstants {
     private final SerialMarshaller serialMarshaller;
     private final byte[] buffer;
     private int position;

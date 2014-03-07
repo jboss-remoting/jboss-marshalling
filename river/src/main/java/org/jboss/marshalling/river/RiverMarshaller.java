@@ -1103,8 +1103,8 @@ public class RiverMarshaller extends AbstractMarshaller {
             boolean ok = false;
             try {
                 info.callWriteObject(obj, objectOutputStream);
-                writeEndBlock();
                 objectOutputStream.finish(restoreState);
+                writeEndBlock();
                 objectOutputStream.swapCurrent(oldObj);
                 objectOutputStream.swapClass(oldInfo);
                 ok = true;

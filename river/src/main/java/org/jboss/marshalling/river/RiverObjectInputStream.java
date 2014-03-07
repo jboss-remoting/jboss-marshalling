@@ -284,9 +284,11 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                 // todo if blockmode, flush...
                 break;
             case UNREAD_FIELDS:
-                if(serializableClassDescriptor.getFields().length > 0) {
-                    throw new NotActiveException("Fields were never read");
-                }
+            case UNREAD_FIELDS_EOB:
+                unmarshaller.discardFields(serializableClassDescriptor);
+                return;
+            default:
+                throw new IllegalStateException("Unknown state");
         }
     }
 

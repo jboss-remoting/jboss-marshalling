@@ -18,14 +18,7 @@
 
 package org.jboss.test.marshalling;
 
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertFalse;
-import static org.testng.AssertJUnit.assertNotNull;
-import static org.testng.AssertJUnit.assertNotSame;
-import static org.testng.AssertJUnit.assertNull;
-import static org.testng.AssertJUnit.assertSame;
-import static org.testng.AssertJUnit.assertTrue;
-import static org.testng.AssertJUnit.fail;
+import static org.testng.AssertJUnit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -76,6 +69,8 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
+
+import org.jboss.marshalling.river.RiverMarshaller;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
 import org.testng.SkipException;
@@ -226,6 +221,27 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
+    public static class TestSerializableNoWriteObjectNoReadObject extends TestSerializable {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double fourth = 1.23;
+    }
+
+    @Test
+    public void testSerializableNoWriteObjectNoReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableNoWriteObjectDefaultReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
     public static class TestSerializableNoWriteObjectDefaultReadObject extends TestSerializable {
 
         private static final long serialVersionUID = 3121360863878480344L;
@@ -307,6 +323,10 @@ public final class SimpleMarshallerTests extends TestBase {
         private static final long serialVersionUID = 3121360863878480344L;
         protected double seventh = 4.56;
 
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+            oos.defaultWriteObject();
+        }
+
         private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
         }
@@ -327,84 +347,157 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
-    public static final class TestSerializableThatReferencesSerializableOverridenReadObject implements Serializable {
+    public static final class TestSerializableEmptyWriteObjectDefaultReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
 
-        private static final long serialVersionUID = 3131360863878480344L;
-        TestSerializableOverridenReadObject anSerializableOverridenReadObject;
-        Integer balance;
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
 
-        public boolean equals(Object obj) {
-            if (obj == this) return true;
-            if (!(obj instanceof TestSerializableThatReferencesSerializableOverridenReadObject)) return false;
-            TestSerializableThatReferencesSerializableOverridenReadObject that = (TestSerializableThatReferencesSerializableOverridenReadObject) obj;
-            if (!safeEquals(balance, that.balance)) return false;
-            if (!safeEquals(anSerializableOverridenReadObject, that.anSerializableOverridenReadObject)) return false;
-            return true;
-        }
-
-        public int hashCode() {
-            int result = 17;
-            result = result * 31 + safeHashCode(balance);
-            result = result * 31 + safeHashCode(anSerializableOverridenReadObject);
-            return result;
-        }
-
-        private static int safeHashCode(Object obj) {
-            return obj == null ? 0 : obj.hashCode();
-        }
-
-        private static boolean safeEquals(Object a, Object b) {
-            return (a == b || (a != null && a.equals(b)));
-        }
-    }
-
-    public static final class TestSerializableOverridenReadObject implements Serializable {
-
-        private static final long serialVersionUID = 3141360863878480344L;
-        String name;
-        String ssn;
-        transient boolean deserialized;
-
-        public TestSerializableOverridenReadObject() {
-            this.name = "Zamarreno";
-            this.ssn = "234-567-8901";
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) return true;
-            if (!(obj instanceof TestSerializableOverridenReadObject)) return false;
-            TestSerializableOverridenReadObject that = (TestSerializableOverridenReadObject) obj;
-            if (!name.equals(that.name)) return false;
-            if (!ssn.equals(that.ssn)) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 17;
-            result = result * 31 + name.hashCode();
-            result = result * 31 + ssn.hashCode();
-            return result;
+        private void writeObject(ObjectOutputStream oos) throws IOException {
         }
 
         private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
-            deserialized = true;
         }
     }
 
     @Test
-    public void testSerializableThatReferencesSerializableOverridenReadObject() throws Throwable {
-        final TestSerializableThatReferencesSerializableOverridenReadObject serializable = new TestSerializableThatReferencesSerializableOverridenReadObject();
-        serializable.anSerializableOverridenReadObject = new TestSerializableOverridenReadObject();
+    public void testSerializableEmptyWriteObjectDefaultReadObject() throws Throwable {
+        final TestSerializableEmptyWriteObjectDefaultReadObject serializable = new TestSerializableEmptyWriteObjectDefaultReadObject();
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
                 marshaller.writeObject(serializable);
             }
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
-                assertEquals(serializable, unmarshaller.readObject());
+                TestSerializableEmptyWriteObjectDefaultReadObject o = unmarshaller.readObject(TestSerializableEmptyWriteObjectDefaultReadObject.class);
+                assertEquals(serializable.sixth, o.sixth);
+                assertEquals(0.0, o.seventh);
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableEmptyWriteObjectNoReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+        }
+    }
+
+    @Test
+    public void testSerializableEmptyWriteObjectNoReadObject() throws Throwable {
+        final TestSerializableEmptyWriteObjectNoReadObject serializable = new TestSerializableEmptyWriteObjectNoReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                TestSerializableEmptyWriteObjectNoReadObject o = unmarshaller.readObject(TestSerializableEmptyWriteObjectNoReadObject.class);
+                assertEquals(serializable.sixth, o.sixth);
+                assertEquals(0.0, o.seventh);
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableEmptyWriteObjectEmptyReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        }
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+        }
+    }
+
+    @Test
+    public void testSerializableEmptyWriteObjectEmptyReadObject() throws Throwable {
+        final TestSerializableEmptyWriteObjectEmptyReadObject serializable = new TestSerializableEmptyWriteObjectEmptyReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                TestSerializableEmptyWriteObjectEmptyReadObject o = unmarshaller.readObject(TestSerializableEmptyWriteObjectEmptyReadObject.class);
+                assertEquals(serializable.sixth, o.sixth);
+                assertEquals(0.0, o.seventh);
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableDefaultWriteObjectEmptyReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+            oos.defaultWriteObject();
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        }
+    }
+
+    @Test
+    public void testSerializableDefaultWriteObjectEmptyReadObject() throws Throwable {
+        final TestSerializableDefaultWriteObjectEmptyReadObject serializable = new TestSerializableDefaultWriteObjectEmptyReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                TestSerializableDefaultWriteObjectEmptyReadObject o = unmarshaller.readObject(TestSerializableDefaultWriteObjectEmptyReadObject.class);
+                assertEquals(serializable.sixth, o.sixth);
+                assertEquals(0.0, o.seventh);
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableNoWriteObjectEmptyReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double seventh = 4.56;
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        }
+    }
+
+    @Test
+    public void testSerializableNoWriteObjectEmptyReadObject() throws Throwable {
+        final TestSerializableNoWriteObjectEmptyReadObject serializable = new TestSerializableNoWriteObjectEmptyReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                TestSerializableNoWriteObjectEmptyReadObject o = unmarshaller.readObject(TestSerializableNoWriteObjectEmptyReadObject.class);
+                assertEquals(serializable.sixth, o.sixth);
+                assertEquals(0.0, o.seventh);
                 assertEOF(unmarshaller);
             }
         });
@@ -426,6 +519,38 @@ public final class SimpleMarshallerTests extends TestBase {
         final Serializable serializable = new TestSerializableDefaultWriteObjectGetFieldsReadObject();
         runReadWriteTest(new ReadWriteTest() {
             public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableEmptyWriteObjectGetFieldsReadObject extends TestSerializableDefaultWriteObjectNoReadObject {
+
+        private static final long serialVersionUID = 3121360863878480344L;
+        protected double eighth = 5.67;
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ObjectInputStream.GetField getField = ois.readFields();
+            eighth = (double) getField.get("eighth", 0.0);
+        }
+    }
+
+    @Test
+    public void testSerializableEmptyWriteObjectGetFieldsReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializableEmptyWriteObjectGetFieldsReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
                 marshaller.writeObject(serializable);
             }
 
@@ -458,6 +583,40 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(serializable, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static class TestSerializablePutFieldsWriteObjectEmptyReadObject extends TestSerializable {
+
+        private static final long serialVersionUID = 1191166362124148545L;
+        protected double ninth = 6.78;
+
+        private void writeObject(ObjectOutputStream oos) throws IOException {
+            final ObjectOutputStream.PutField field = oos.putFields();
+            field.put("ninth", ninth);
+            oos.writeFields();
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        }
+    }
+
+    @Test
+    public void testSimplePutFieldsWriteObjectEmptyReadObject() throws Throwable {
+        final Serializable serializable = new TestSerializablePutFieldsWriteObjectEmptyReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (! (marshaller instanceof RiverMarshaller)) {
+                    throw new SkipException("Test not relevant for " + marshaller);
+                }
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                TestSerializablePutFieldsWriteObjectEmptyReadObject o = unmarshaller.readObject(TestSerializablePutFieldsWriteObjectEmptyReadObject.class);
+                assertEquals(0.0, o.ninth);
                 assertEOF(unmarshaller);
             }
         });
@@ -545,6 +704,89 @@ public final class SimpleMarshallerTests extends TestBase {
 
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 assertEquals(i, unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static final class TestSerializableThatReferencesSerializableOverridenReadObject implements Serializable {
+
+        private static final long serialVersionUID = 3131360863878480344L;
+        TestSerializableOverridenReadObject anSerializableOverridenReadObject;
+        Integer balance;
+
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (!(obj instanceof TestSerializableThatReferencesSerializableOverridenReadObject)) return false;
+            TestSerializableThatReferencesSerializableOverridenReadObject that = (TestSerializableThatReferencesSerializableOverridenReadObject) obj;
+            if (!safeEquals(balance, that.balance)) return false;
+            if (!safeEquals(anSerializableOverridenReadObject, that.anSerializableOverridenReadObject)) return false;
+            return true;
+        }
+
+        public int hashCode() {
+            int result = 17;
+            result = result * 31 + safeHashCode(balance);
+            result = result * 31 + safeHashCode(anSerializableOverridenReadObject);
+            return result;
+        }
+
+        private static int safeHashCode(Object obj) {
+            return obj == null ? 0 : obj.hashCode();
+        }
+
+        private static boolean safeEquals(Object a, Object b) {
+            return (a == b || (a != null && a.equals(b)));
+        }
+    }
+
+    public static final class TestSerializableOverridenReadObject implements Serializable {
+
+        private static final long serialVersionUID = 3141360863878480344L;
+        String name;
+        String ssn;
+        transient boolean deserialized;
+
+        public TestSerializableOverridenReadObject() {
+            this.name = "Zamarreno";
+            this.ssn = "234-567-8901";
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (!(obj instanceof TestSerializableOverridenReadObject)) return false;
+            TestSerializableOverridenReadObject that = (TestSerializableOverridenReadObject) obj;
+            if (!name.equals(that.name)) return false;
+            if (!ssn.equals(that.ssn)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = 17;
+            result = result * 31 + name.hashCode();
+            result = result * 31 + ssn.hashCode();
+            return result;
+        }
+
+        private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+            ois.defaultReadObject();
+            deserialized = true;
+        }
+    }
+
+    @Test
+    public void testSerializableThatReferencesSerializableOverridenReadObject() throws Throwable {
+        final TestSerializableThatReferencesSerializableOverridenReadObject serializable = new TestSerializableThatReferencesSerializableOverridenReadObject();
+        serializable.anSerializableOverridenReadObject = new TestSerializableOverridenReadObject();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertEquals(serializable, unmarshaller.readObject());
                 assertEOF(unmarshaller);
             }
         });

@@ -21,7 +21,6 @@ package org.jboss.marshalling.reflect;
 import java.io.SerializablePermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * A registry for reflection information usable by serialization implementations.  Objects returned from this registry
@@ -51,11 +50,24 @@ public final class SerializableClassRegistry {
         return INSTANCE;
     }
 
-    private final ConcurrentMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>> registry = new UnlockedHashMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>>();
-
     static SerializableClassRegistry getInstanceUnchecked() {
         return INSTANCE;
     }
+
+    private static final ClassValue<SerializableClass> classValue = new ClassValue<SerializableClass>() {
+        protected SerializableClass computeValue(final Class<?> type) {
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                return AccessController.doPrivileged(new PrivilegedAction<SerializableClass>() {
+                    public SerializableClass run() {
+                        return new SerializableClass(type);
+                    }
+                });
+            } else {
+                return new SerializableClass(type);
+            }
+        }
+    };
 
     /**
      * Look up serialization information for a class.  The resultant object will be cached.
@@ -67,38 +79,17 @@ public final class SerializableClassRegistry {
         if (subject == null) {
             return null;
         }
-        final ClassLoader classLoader = subject.getClassLoader();
-        ConcurrentMap<Class<?>, SerializableClass> loaderMap = registry.get(classLoader);
-        if (loaderMap == null) {
-            final ConcurrentMap<Class<?>, SerializableClass> existing = registry.putIfAbsent(classLoader, loaderMap = new UnlockedHashMap<Class<?>, SerializableClass>());
-            if (existing != null) {
-                loaderMap = existing;
-            }
-        }
-        SerializableClass info = loaderMap.get(subject);
-        if (info != null) {
-            return info;
-        }
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            info = AccessController.doPrivileged(new PrivilegedAction<SerializableClass>() {
-                public SerializableClass run() {
-                    return new SerializableClass(subject);
-                }
-            });
-        } else {
-            info = new SerializableClass(subject);
-        }
-        final SerializableClass existing = loaderMap.putIfAbsent(subject, info);
-        return existing != null ? existing : info;
+        return classValue.get(subject);
     }
 
     /**
      * Release all reflection information belonging to the given class loader.
      *
      * @param classLoader the class loader to release
+     * @deprecated No longer required.
      */
+    @SuppressWarnings("unused")
     public void release(ClassLoader classLoader) {
-        registry.remove(classLoader);
+        // no-op
     }
 }

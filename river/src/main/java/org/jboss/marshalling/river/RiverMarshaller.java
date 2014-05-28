@@ -72,6 +72,8 @@ import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.IdentityIntMap;
+import org.jboss.marshalling.util.Kind;
+
 import static org.jboss.marshalling.river.Protocol.*;
 
 /**
@@ -1495,7 +1497,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 SerializableField field = fields[i];
                 writeUTF(field.getName());
                 try {
-                    writeClass(field.getType());
+                    writeClass(field.getKind() == Kind.OBJECT ? Object.class : field.getType());
                 } catch (ClassNotFoundException e) {
                     throw new InvalidClassException("Class of field was unloaded");
                 }

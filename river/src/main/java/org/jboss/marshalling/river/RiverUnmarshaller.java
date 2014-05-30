@@ -307,7 +307,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final ArrayList<Object> instanceCache = this.instanceCache;
                     final int idx = instanceCache.size();
                     instanceCache.add(null);
-                    final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte()).getType(), 0);
+                    final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte(), true).getType(), 0);
                     instanceCache.set(idx, obj);
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
@@ -664,7 +664,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return replace(readSortedSetData(unshared, idx, len, new TreeSet(comp)));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
-                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
                             return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType)));
                         }
@@ -699,7 +699,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         case ID_CC_ENUM_MAP: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
-                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                            final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
                             return replace(readMapData(unshared, idx, len, new EnumMap(elementType)));
                         }
@@ -853,7 +853,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return new InvalidObjectException("Shared/unshared object mismatch");
     }
 
-    ClassDescriptor doReadClassDescriptor(final int classType) throws IOException, ClassNotFoundException {
+    ClassDescriptor doReadClassDescriptor(final int classType, final boolean required) throws IOException, ClassNotFoundException {
         final ArrayList<ClassDescriptor> classCache = this.classCache;
         switch (classType) {
             case ID_REPEAT_CLASS_FAR: {
@@ -912,7 +912,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final Class<?> type = classTable.readClass(this);
                 final SerializableClass serializableClass = registry.lookup(type);
                 int descType = serializableClass.hasWriteObject() ? ID_WRITE_OBJECT_CLASS : ID_SERIALIZABLE_CLASS;
-                final ClassDescriptor descriptor = new BasicSerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte()), serializableClass.getFields(), descType);
+                final ClassDescriptor descriptor = new BasicSerializableClassDescriptor(serializableClass, doReadClassDescriptor(readUnsignedByte(), true), serializableClass.getFields(), descType);
                 classCache.set(idx, descriptor);
                 return descriptor;
             }
@@ -940,8 +940,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 classCache.add(null);
                 final String className = readString();
                 final long uid = readLong();
-                final Class<?> clazz = classResolver.resolveClass(this, className, uid);
-                final Class<?> superClazz = clazz.getSuperclass();
+                Class<?> clazz = null;
+                try {
+                    clazz = classResolver.resolveClass(this, className, uid);
+                } catch (ClassNotFoundException cnfe) {
+                    if (required) throw cnfe;
+                }
                 final FutureSerializableClassDescriptor descriptor = new FutureSerializableClassDescriptor(clazz, classType);
                 classCache.set(idx, descriptor);
                 final int cnt = readInt();
@@ -950,13 +954,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final boolean[] unshareds = new boolean[cnt];
                 for (int i = 0; i < cnt; i ++) {
                     names[i] = readUTF();
-                    descriptors[i] = doReadClassDescriptor(readUnsignedByte());
+                    descriptors[i] = doReadClassDescriptor(readUnsignedByte(), true);
                     unshareds[i] = readBoolean();
                 }
-                ClassDescriptor superDescriptor = doReadClassDescriptor(readUnsignedByte());
+                ClassDescriptor superDescriptor = doReadClassDescriptor(readUnsignedByte(), false);
+                final Class<?> superClazz = clazz == null ? superDescriptor.getNearestType() : clazz.getSuperclass();
                 if (superDescriptor != null) {
-                    final Class<?> superType = superDescriptor.getType();
-                    if (! superType.isAssignableFrom(clazz)) {
+                    final Class<?> superType = superDescriptor.getNearestType();
+                    if (clazz != null && ! superType.isAssignableFrom(clazz)) {
                         throw new InvalidClassException(clazz.getName(), "Class does not extend stream superclass");
                     }
                     Class<?> cl = superClazz;
@@ -971,10 +976,18 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         cl = cl.getSuperclass();
                     }
                 }
-                final SerializableClass serializableClass = registry.lookup(clazz);
+                final SerializableClass serializableClass;
                 final SerializableField[] fields = new SerializableField[cnt];
-                for (int i = 0; i < cnt; i ++) {
-                    fields[i] = serializableClass.getSerializableField(names[i], descriptors[i].getType(), unshareds[i]);
+                if (clazz != null) {
+                    serializableClass = registry.lookup(clazz);
+                    for (int i = 0; i < cnt; i ++) {
+                        fields[i] = serializableClass.getSerializableField(names[i], descriptors[i].getType(), unshareds[i]);
+                    }
+                } else {
+                    serializableClass = null;
+                    for (int i = 0; i < cnt; i ++) {
+                        fields[i] = new SerializableField(descriptors[i].getType(), names[i], unshareds[i]);
+                    }
                 }
                 descriptor.setResult(new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, classType));
                 return descriptor;
@@ -1004,7 +1017,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return descriptor;
             }
             case ID_OBJECT_ARRAY_TYPE_CLASS: {
-                final ClassDescriptor elementType = doReadClassDescriptor(readUnsignedByte());
+                final ClassDescriptor elementType = doReadClassDescriptor(readUnsignedByte(), true);
                 final SimpleClassDescriptor arrayDescriptor = new SimpleClassDescriptor(Array.newInstance(elementType.getType(), 0).getClass(), ID_OBJECT_ARRAY_TYPE_CLASS);
                 classCache.add(arrayDescriptor);
                 return arrayDescriptor;
@@ -1236,7 +1249,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     protected Object doReadNewObject(final int streamClassType, final boolean unshared) throws ClassNotFoundException, IOException {
-        final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType);
+        final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType, true);
         try {
             final int classType = descriptor.getTypeID();
             final List<Object> instanceCache = this.instanceCache;
@@ -1345,7 +1358,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return resolvedObject;
                 }
                 case ID_CLASS_CLASS: {
-                    final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte());
+                    final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                     // Classes are not resolved and may not be unshared!
                     final Class<?> obj = nestedDescriptor.getType();
                     return obj;
@@ -1572,7 +1585,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return doReadShortArray(cnt, unshared);
             }
             default: {
-                return doReadObjectArray(cnt, doReadClassDescriptor(leadByte).getType(), unshared);
+                return doReadObjectArray(cnt, doReadClassDescriptor(leadByte, true).getType(), unshared);
             }
         }
     }
@@ -1584,7 +1597,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private void doInitSerializable(final Object obj, final SerializableClassDescriptor descriptor) throws IOException, ClassNotFoundException {
         final Class<?> type = descriptor.getType();
-        final SerializableClass info = registry.lookup(type);
         final ClassDescriptor superDescriptor = descriptor.getSuperClassDescriptor();
         if (superDescriptor instanceof SerializableClassDescriptor) {
             final SerializableClassDescriptor serializableSuperDescriptor = (SerializableClassDescriptor) superDescriptor;
@@ -1592,6 +1604,20 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
         final int typeId = descriptor.getTypeID();
         final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
+        if (type == null) {
+            if (descriptor instanceof SerializableGapClassDescriptor) {
+                // skip
+                return;
+            }
+            // consume this class' data silently
+            discardFields(descriptor);
+            if (typeId == ID_WRITE_OBJECT_CLASS) {
+                blockUnmarshaller.readToEndBlockData();
+                blockUnmarshaller.unblock();
+            }
+            return;
+        }
+        final SerializableClass info = registry.lookup(type);
         if (descriptor instanceof SerializableGapClassDescriptor) {
             if (info.hasReadObjectNoData()) {
                 info.callReadObjectNoData(obj);

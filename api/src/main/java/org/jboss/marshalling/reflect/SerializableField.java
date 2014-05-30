@@ -32,6 +32,10 @@ public final class SerializableField {
     private final boolean unshared;
     private final Kind kind;
 
+    public SerializableField(Class<?> type, String name, boolean unshared) {
+        this(type, name, unshared, null);
+    }
+
     SerializableField(Class<?> type, String name, boolean unshared, final Field field) {
         this.type = type;
         this.name = name;

@@ -26,4 +26,8 @@ public abstract class ClassDescriptor {
     public abstract Class<?> getType();
 
     public abstract int getTypeID();
+
+    public Class<?> getNearestType() {
+        return getType();
+    }
 }

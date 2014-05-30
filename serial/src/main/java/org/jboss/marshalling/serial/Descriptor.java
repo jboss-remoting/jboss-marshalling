@@ -42,6 +42,10 @@ abstract class Descriptor implements ExtendedObjectStreamConstants {
         return type;
     }
 
+    protected Class<?> getNearestType() {
+        return type != null ? type : parent != null ? parent.getNearestType() : Object.class;
+    }
+
     protected abstract void readSerial(SerialUnmarshaller serialUnmarshaller, SerializableClass sc, Object subject) throws IOException, ClassNotFoundException;
 
     public int getFlags() {

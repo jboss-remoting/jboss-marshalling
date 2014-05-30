@@ -32,7 +32,7 @@ public final class BasicSerializableClassDescriptor extends SerializableClassDes
     private final SerializableField[] fields;
 
     protected BasicSerializableClassDescriptor(final SerializableClass serializableClass, final ClassDescriptor superClassDescriptor, final SerializableField[] fields, final int classType) throws ClassNotFoundException {
-        type = serializableClass.getSubjectClass();
+        type = serializableClass == null ? null : serializableClass.getSubjectClass();
         typeID = classType;
         this.serializableClass = serializableClass;
         this.superClassDescriptor = superClassDescriptor;

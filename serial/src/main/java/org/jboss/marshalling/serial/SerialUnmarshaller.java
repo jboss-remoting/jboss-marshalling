@@ -341,7 +341,8 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         if (parent != null) {
             doReadSerialObject(parent, obj);
         }
-        descriptor.readSerial(this, registry.lookup(descriptor.getType()), obj);
+        Class<?> type = descriptor.getType();
+        descriptor.readSerial(this, type == null ? null : registry.lookup(type), obj);
     }
 
     private static InvalidClassException objectStreamClassException() {
@@ -349,21 +350,21 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     }
 
     private Descriptor readNonNullClassDescriptor() throws ClassNotFoundException, IOException {
-        final Descriptor desc = readClassDescriptor();
+        final Descriptor desc = readClassDescriptor(true);
         if (desc == null) {
             throw new StreamCorruptedException("Unexpected null class descriptor");
         }
         return desc;
     }
 
-    private Descriptor readClassDescriptor() throws ClassNotFoundException, IOException {
-        return readClassDescriptor(readUnsignedByte());
+    private Descriptor readClassDescriptor(final boolean required) throws ClassNotFoundException, IOException {
+        return readClassDescriptor(readUnsignedByte(), required);
     }
 
     private static final int[] EMPTY_INTS = new int[0];
     private static final String[] EMPTY_STRINGS = new String[0];
 
-    private Descriptor readClassDescriptor(int leadByte) throws IOException, ClassNotFoundException {
+    private Descriptor readClassDescriptor(int leadByte, final boolean required) throws IOException, ClassNotFoundException {
         final BlockUnmarshaller blockUnmarshaller = this.blockUnmarshaller;
         switch (leadByte) {
             case TC_CLASSTABLEDESC: {
@@ -403,18 +404,21 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         }
                     }
                 }
-                final Class<?> clazz = classResolver.resolveClass(blockUnmarshaller, className, svu);
+                Class<?> clazz = null;
+                try {
+                    clazz = classResolver.resolveClass(blockUnmarshaller, className, svu);
+                } catch (ClassNotFoundException cnfe) {
+                    if (required) throw cnfe;
+                }
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();
-                final SerializableClass sc = registry.lookup(clazz);
-                final Descriptor superDescr = readClassDescriptor();
-                final Class<?> superClazz = clazz.getSuperclass();
+                final Descriptor superDescr = readClassDescriptor(false);
                 final Descriptor descriptor;
-                if (superDescr == null || superDescr.getType().isAssignableFrom(superClazz)) {
+                if (clazz == null) {
                     if (descFlags == 0) {
-                        descriptor = new NoDataDescriptor(clazz, bridge(superDescr, superClazz));
+                        descriptor = superDescr;
                     } else {
-                        // HAS FIELDS
+                        // HAS FIELDS - discard content
                         final SerializableField[] fields = new SerializableField[fieldCount];
                         for (int i = 0; i < fieldCount; i ++) {
                             final Class<?> fieldType;
@@ -460,12 +464,70 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                                     throw new StreamCorruptedException("Invalid field typecode " + typecodes[i]);
                                 }
                             }
-                            fields[i] = sc.getSerializableField(names[i], fieldType, false);
+                            fields[i] = new SerializableField(fieldType, names[i], false);
                         }
-                        descriptor = new PlainDescriptor(clazz, bridge(superDescr, superClazz), fields, descFlags);
+                        descriptor = new UnknownDescriptor(superDescr, fields, descFlags);
                     }
                 } else {
-                    throw new InvalidClassException(clazz.getName(), "Class hierarchy mismatch");
+                    final Class<?> superClazz = clazz.getSuperclass();
+                    if (superDescr == null || superDescr.getNearestType().isAssignableFrom(superClazz)) {
+                        if (descFlags == 0) {
+                            descriptor = new NoDataDescriptor(clazz, bridge(superDescr, superClazz));
+                        } else {
+                            // HAS FIELDS
+                            final SerializableField[] fields = new SerializableField[fieldCount];
+                            final SerializableClass sc = registry.lookup(clazz);
+                            for (int i = 0; i < fieldCount; i ++) {
+                                final Class<?> fieldType;
+                                switch (typecodes[i]) {
+                                    case 'B': {
+                                        fieldType = byte.class;
+                                        break;
+                                    }
+                                    case 'C': {
+                                        fieldType = char.class;
+                                        break;
+                                    }
+                                    case 'D': {
+                                        fieldType = double.class;
+                                        break;
+                                    }
+                                    case 'F': {
+                                        fieldType = float.class;
+                                        break;
+                                    }
+                                    case 'I': {
+                                        fieldType = int.class;
+                                        break;
+                                    }
+                                    case 'J': {
+                                        fieldType = long.class;
+                                        break;
+                                    }
+                                    case 'S': {
+                                        fieldType = short.class;
+                                        break;
+                                    }
+                                    case 'Z': {
+                                        fieldType = boolean.class;
+                                        break;
+                                    }
+                                    case 'L':
+                                    case '[': {
+                                        fieldType = Object.class;
+                                        break;
+                                    }
+                                    default: {
+                                        throw new StreamCorruptedException("Invalid field typecode " + typecodes[i]);
+                                    }
+                                }
+                                fields[i] = sc.getSerializableField(names[i], fieldType, false);
+                            }
+                            descriptor = new PlainDescriptor(clazz, bridge(superDescr, superClazz), fields, descFlags);
+                        }
+                    } else {
+                        throw new InvalidClassException(clazz.getName(), "Class hierarchy mismatch");
+                    }
                 }
                 instanceCache.set(idx, descriptor);
                 return descriptor;
@@ -481,7 +543,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                 final Class<?> clazz = classResolver.resolveProxyClass(blockUnmarshaller, interfaces);
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();
-                final Descriptor superDescr = readClassDescriptor();
+                final Descriptor superDescr = readClassDescriptor(true);
                 final ProxyDescriptor descr = new ProxyDescriptor(clazz, superDescr, interfaces);
                 instanceCache.set(idx, descr);
                 return descr;
@@ -509,9 +571,12 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
 
     private Descriptor bridge(final Descriptor descriptor, final Class<?> type) {
         if (descriptor == null) return null;
-        final Class<?> superDescrClazz = descriptor == null ? null : descriptor.getType();
+        final Class<?> superDescrClazz = descriptor.getType();
+        if (superDescrClazz == null) {
+            return descriptor;
+        }
         final Class<?> typeSuperclass = type.getSuperclass();
-        if (type == superDescrClazz || descriptor == null && (typeSuperclass == null || serializabilityChecker.isSerializable(typeSuperclass))) {
+        if (type == superDescrClazz) {
             return descriptor;
         } else {
             return new NoDataDescriptor(type, bridge(descriptor, typeSuperclass));

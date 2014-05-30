@@ -32,6 +32,11 @@ abstract class SerializableClassDescriptor extends ClassDescriptor {
 
     public abstract int getTypeID();
 
+    public Class<?> getNearestType() {
+        Class<?> type = getType();
+        return type == null ? getSuperClassDescriptor().getNearestType() : type;
+    }
+
     public abstract ClassDescriptor getSuperClassDescriptor();
 
     public abstract SerializableField[] getFields();

@@ -3146,4 +3146,236 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    static class OrigLvl1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private int foo;
+        private String bar;
+
+        OrigLvl1(final int foo, final String bar) {
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public int getFoo() {
+            return foo;
+        }
+
+        public void setFoo(final int foo) {
+            this.foo = foo;
+        }
+
+        public String getBar() {
+            return bar;
+        }
+
+        public void setBar(final String bar) {
+            this.bar = bar;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof OrigLvl1 && equals((OrigLvl1) other);
+        }
+
+        public boolean equals(OrigLvl1 other) {
+            return other != null && other.getClass() == getClass() && foo == other.foo && bar.equals(other.bar);
+        }
+    }
+
+    static class OrigLvl2 extends OrigLvl1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private int[] baz;
+        private String zap;
+
+        OrigLvl2(final int foo, final String bar, final int[] baz, final String zap) {
+            super(foo, bar);
+            this.baz = baz;
+            this.zap = zap;
+        }
+
+        public int[] getBaz() {
+            return baz;
+        }
+
+        public void setBaz(final int[] baz) {
+            this.baz = baz;
+        }
+
+        public String getZap() {
+            return zap;
+        }
+
+        public void setZap(final String zap) {
+            this.zap = zap;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof OrigLvl2 && equals((OrigLvl2) other);
+        }
+
+        public boolean equals(final OrigLvl1 other) {
+            return equals((Object) other);
+        }
+
+        public boolean equals(final OrigLvl2 other) {
+            return other != null && other.getClass() == getClass() && super.equals(other) && Arrays.equals(baz, other.baz) && zap.equals(other.zap);
+        }
+    }
+
+    static class OrigLvl3 extends OrigLvl2 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private boolean zab;
+        private String paz;
+
+        OrigLvl3(final int foo, final String bar, final int[] baz, final String zap, final boolean zab, final String paz) {
+            super(foo, bar, baz, zap);
+            this.zab = zab;
+            this.paz = paz;
+        }
+
+        public boolean isZab() {
+            return zab;
+        }
+
+        public void setZab(final boolean zab) {
+            this.zab = zab;
+        }
+
+        public String getPaz() {
+            return paz;
+        }
+
+        public void setPaz(final String paz) {
+            this.paz = paz;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof OrigLvl3 && equals((OrigLvl3) other);
+        }
+
+        public boolean equals(final OrigLvl1 other) {
+            return equals((Object) other);
+        }
+
+        public boolean equals(final OrigLvl2 other) {
+            return equals((Object) other);
+        }
+
+        public boolean equals(final OrigLvl3 other) {
+            return other != null && other.getClass() == getClass() && super.equals(other) && zab == other.zab && paz.equals(other.paz);
+        }
+    }
+
+    static class NewLvl1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private int foo;
+        private String bar;
+
+        NewLvl1(final int foo, final String bar) {
+            this.foo = foo;
+            this.bar = bar;
+        }
+
+        public int getFoo() {
+            return foo;
+        }
+
+        public void setFoo(final int foo) {
+            this.foo = foo;
+        }
+
+        public String getBar() {
+            return bar;
+        }
+
+        public void setBar(final String bar) {
+            this.bar = bar;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof NewLvl1 && equals((NewLvl1) other);
+        }
+
+        public boolean equals(NewLvl1 other) {
+            return other != null && other.getClass() == getClass() && foo == other.foo && bar.equals(other.bar);
+        }
+    }
+
+    static class NewLvl3 extends NewLvl1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private boolean zab;
+        private String paz;
+
+        NewLvl3(final int foo, final String bar, final boolean zab, final String paz) {
+            super(foo, bar);
+            this.zab = zab;
+            this.paz = paz;
+        }
+
+        public boolean isZab() {
+            return zab;
+        }
+
+        public void setZab(final boolean zab) {
+            this.zab = zab;
+        }
+
+        public String getPaz() {
+            return paz;
+        }
+
+        public void setPaz(final String paz) {
+            this.paz = paz;
+        }
+
+        public boolean equals(Object other) {
+            return other instanceof NewLvl3 && equals((NewLvl3) other);
+        }
+
+        public boolean equals(final NewLvl1 other) {
+            return equals((Object) other);
+        }
+
+        public boolean equals(final NewLvl3 other) {
+            return other != null && other.getClass() == getClass() && super.equals(other) && zab == other.zab && paz.equals(other.paz);
+        }
+    }
+
+    @Test
+    public void testClassRemovedFromHierarchy() throws Throwable {
+        final OrigLvl3 origLvl3 = new OrigLvl3(123, "blah", new int[] { 1, 2, 3 }, "bzzzz", true, "fooble");
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassResolver(new SimpleClassResolver(getClass().getClassLoader()) {
+                    public String getClassName(final Class<?> clazz) throws IOException {
+                        if (clazz == OrigLvl1.class || clazz == OrigLvl2.class || clazz == OrigLvl3.class) {
+                            return clazz.getName().replace("Orig", "New");
+                        } else {
+                            return clazz.getName();
+                        }
+                    }
+                });
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(origLvl3);
+                marshaller.writeObject(origLvl3);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                unmarshaller.readObject();
+                unmarshaller.readObject();
+            }
+        });
+    }
 }

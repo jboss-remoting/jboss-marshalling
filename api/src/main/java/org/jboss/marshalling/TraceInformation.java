@@ -70,7 +70,9 @@ public final class TraceInformation extends Throwable {
     }
 
     private static String getNiceClassName(Class<?> clazz) {
-        if (clazz.isArray()) {
+        if (clazz == null) {
+            return "unknown class";
+        } else if (clazz.isArray()) {
             return "(array of " + getNiceClassName(clazz.getComponentType()) + ")";
         } else if (clazz.isEnum() && clazz.getSuperclass() != Enum.class) {
             return getNiceClassName(clazz.getSuperclass());

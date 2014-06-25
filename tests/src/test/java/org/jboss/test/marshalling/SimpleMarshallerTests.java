@@ -73,6 +73,7 @@ import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.river.RiverMarshaller;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
+import org.jboss.marshalling.serial.SerialUnmarshaller;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
 
@@ -3375,6 +3376,128 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runRead(final Unmarshaller unmarshaller) throws Throwable {
                 unmarshaller.readObject();
                 unmarshaller.readObject();
+            }
+        });
+    }
+
+    static boolean isEqual(Object o1, Object o2) {
+        return o1 == null ? o2 == null : o1.equals(o2);
+    }
+
+    static class OrigRem1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String foo;
+        private final OrigRem2 r2;
+
+        OrigRem1(final String foo, final OrigRem2 r2) {
+            this.foo = foo;
+            this.r2 = r2;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof OrigRem1 && isEqual(((OrigRem1) obj).foo, foo) && isEqual(((OrigRem1) obj).r2, r2);
+        }
+
+        public int hashCode() {
+            return foo.hashCode() * 17 + r2.hashCode();
+        }
+
+        public String getFoo() {
+            return foo;
+        }
+
+        public OrigRem2 getR2() {
+            return r2;
+        }
+    }
+
+    static class OrigRem2 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final int abc;
+
+        OrigRem2(final int abc) {
+            this.abc = abc;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof OrigRem2 && ((OrigRem2) obj).abc == abc;
+        }
+
+        public int hashCode() {
+            return abc;
+        }
+
+        public int getAbc() {
+            return abc;
+        }
+    }
+
+    static class NewRem1 implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String foo;
+
+        NewRem1(final String foo) {
+            this.foo = foo;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof NewRem1 && isEqual(((NewRem1) obj).foo, foo);
+        }
+
+        public int hashCode() {
+            return foo.hashCode();
+        }
+
+        public String getFoo() {
+            return foo;
+        }
+    }
+
+    @Test
+    public void testClassOfRemovedFieldMissing() throws Throwable {
+        final OrigRem1 orig = new OrigRem1("This is a simple test.", new OrigRem2(194));
+        runReadWriteTest(new ReadWriteTest() {
+            public void configure(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setClassResolver(new SimpleClassResolver(getClass().getClassLoader()) {
+                    public String getClassName(final Class<?> clazz) throws IOException {
+                        final String oldName = clazz.getName();
+                        final String newName = oldName.replace("Orig", "New");
+                        System.out.printf("Renaming %s to %s%n", oldName, newName);
+                        return newName;
+                    }
+                });
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                if (marshaller instanceof ObjectOutputStreamMarshaller) {
+                    throw new SkipException("Skip for " + marshaller);
+                }
+                marshaller.writeObject(orig);
+                marshaller.writeObject(orig);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                try {
+                    if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+                        throw new SkipException("Skip for " + unmarshaller);
+                    }
+                    if (unmarshaller instanceof SerialUnmarshaller) {
+                        throw new SkipException("Functionality not yet supported on serial unmarshalling");
+                    }
+                    final NewRem1 object = unmarshaller.readObject(NewRem1.class);
+                    assertEquals(object.getFoo(), orig.getFoo());
+                    assertSame(unmarshaller.readObject(), object);
+                } catch (NullPointerException npe) {
+                    npe.printStackTrace(System.out);
+                    System.out.flush();
+                    fail();
+                }
             }
         });
     }

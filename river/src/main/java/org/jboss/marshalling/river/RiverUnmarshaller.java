@@ -174,9 +174,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    Object doReadCollectionObject(final boolean unshared, final int idx, final int size) throws ClassNotFoundException, IOException {
+    Object doReadCollectionObject(final boolean unshared, final int idx, final int size, final boolean discardMissing) throws ClassNotFoundException, IOException {
         try {
-            return doReadObject(unshared);
+            return doReadObject(unshared, discardMissing);
         } catch (IOException e) {
             TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
             throw e;
@@ -189,9 +189,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    Object doReadMapObject(final boolean unshared, final int idx, final int size, final boolean key) throws ClassNotFoundException, IOException {
+    Object doReadMapObject(final boolean unshared, final int idx, final int size, final boolean key, final boolean discardMissing) throws ClassNotFoundException, IOException {
         try {
-            return doReadObject(unshared);
+            return doReadObject(unshared, discardMissing);
         } catch (IOException e) {
             TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
             throw e;
@@ -205,7 +205,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     protected Object doReadObject(final boolean unshared) throws ClassNotFoundException, IOException {
-        final Object obj = doReadObject(readUnsignedByte(), unshared);
+        final Object obj = doReadObject(readUnsignedByte(), unshared, false);
         if (depth == 0) {
             final SortedSet<Validator> validators = this.validators;
             if (validators != null) {
@@ -219,8 +219,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return obj;
     }
 
+    Object doReadObject(final boolean unshared, final boolean discardMissing) throws IOException, ClassNotFoundException {
+        return doReadObject(readUnsignedByte(), unshared, discardMissing);
+    }
+
     @SuppressWarnings({ "unchecked" })
-    Object doReadObject(int leadByte, final boolean unshared) throws IOException, ClassNotFoundException {
+    Object doReadObject(int leadByte, final boolean unshared, final boolean discardMissing) throws IOException, ClassNotFoundException {
         depth ++;
         try {
             for (;;) switch (leadByte) {
@@ -268,7 +272,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (unshared != (leadByte == ID_NEW_OBJECT_UNSHARED)) {
                         throw sharedMismatch();
                     }
-                    return replace(doReadNewObject(readUnsignedByte(), unshared));
+                    return replace(doReadNewObject(readUnsignedByte(), unshared, discardMissing));
                 }
                 // v2 string types
                 case ID_STRING_EMPTY: {
@@ -322,7 +326,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedByte();
-                    return replace(doReadArray(len == 0 ? 0x100 : len, unshared));
+                    return replace(doReadArray(len == 0 ? 0x100 : len, unshared, discardMissing));
                 }
                 case ID_ARRAY_MEDIUM:
                 case ID_ARRAY_MEDIUM_UNSHARED: {
@@ -330,7 +334,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         throw sharedMismatch();
                     }
                     final int len = readUnsignedShort();
-                    return replace(doReadArray(len == 0 ? 0x10000 : len, unshared));
+                    return replace(doReadArray(len == 0 ? 0x10000 : len, unshared, discardMissing));
                 }
                 case ID_ARRAY_LARGE:
                 case ID_ARRAY_LARGE_UNSHARED: {
@@ -341,7 +345,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     if (len <= 0) {
                         throw new StreamCorruptedException("Invalid length value for array in stream (" + len + ")");
                     }
-                    return replace(doReadArray(len, unshared));
+                    return replace(doReadArray(len, unshared, discardMissing));
                 }
                 case ID_PREDEFINED_OBJECT: {
                     if (unshared) {
@@ -723,62 +727,62 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
-                            return replace(readCollectionData(unshared, -1, len, new ArrayList(len)));
+                            return replace(readCollectionData(unshared, -1, len, new ArrayList(len), discardMissing));
                         }
                         case ID_CC_HASH_SET: {
-                            return replace(readCollectionData(unshared, -1, len, new HashSet(len)));
+                            return replace(readCollectionData(unshared, -1, len, new HashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_SET: {
-                            return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len)));
+                            return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_LIST: {
-                            return replace(readCollectionData(unshared, -1, len, new LinkedList()));
+                            return replace(readCollectionData(unshared, -1, len, new LinkedList(), discardMissing));
                         }
                         case ID_CC_TREE_SET: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return replace(readSortedSetData(unshared, idx, len, new TreeSet(comp)));
+                            return replace(readSortedSetData(unshared, idx, len, new TreeSet(comp), discardMissing));
                         }
                         case ID_CC_ENUM_SET_PROXY: {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType)));
+                            return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType), discardMissing));
                         }
                         case ID_CC_VECTOR: {
-                            return replace(readCollectionData(unshared, -1, len, new Vector(len)));
+                            return replace(readCollectionData(unshared, -1, len, new Vector(len), discardMissing));
                         }
                         case ID_CC_STACK: {
-                            return replace(readCollectionData(unshared, -1, len, new Stack()));
+                            return replace(readCollectionData(unshared, -1, len, new Stack(), discardMissing));
                         }
                         case ID_CC_ARRAY_DEQUE: {
-                            return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len)));
+                            return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len), discardMissing));
                         }
 
                         case ID_CC_HASH_MAP: {
-                            return replace(readMapData(unshared, -1, len, new HashMap(len)));
+                            return replace(readMapData(unshared, -1, len, new HashMap(len), discardMissing));
                         }
                         case ID_CC_HASHTABLE: {
-                            return replace(readMapData(unshared, -1, len, new Hashtable(len)));
+                            return replace(readMapData(unshared, -1, len, new Hashtable(len), discardMissing));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
-                            return replace(readMapData(unshared, -1, len, new IdentityHashMap(len)));
+                            return replace(readMapData(unshared, -1, len, new IdentityHashMap(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
-                            return replace(readMapData(unshared, -1, len, new LinkedHashMap(len)));
+                            return replace(readMapData(unshared, -1, len, new LinkedHashMap(len), discardMissing));
                         }
                         case ID_CC_TREE_MAP: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
-                            return replace(readSortedMapData(unshared, idx, len, new TreeMap(comp)));
+                            return replace(readSortedMapData(unshared, idx, len, new TreeMap(comp), discardMissing));
                         }
                         case ID_CC_ENUM_MAP: {
                             int idx = instanceCache.size();
                             instanceCache.add(null);
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
-                            return replace(readMapData(unshared, idx, len, new EnumMap(elementType)));
+                            return replace(readMapData(unshared, idx, len, new EnumMap(elementType), discardMissing));
                         }
                         case ID_CC_NCOPIES: {
                             final int idx = instanceCache.size();
@@ -834,7 +838,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readCollectionData(final boolean unshared, int cacheIdx, final int len, final Collection target) throws ClassNotFoundException, IOException {
+    private Object readCollectionData(final boolean unshared, int cacheIdx, final int len, final Collection target, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
 
@@ -847,7 +851,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
 
         for (int i = 0; i < len; i ++) {
-            target.add(doReadCollectionObject(false, i, len));
+            target.add(doReadCollectionObject(false, i, len, discardMissing));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         instanceCache.set(idx, unshared ? null : resolvedObject);
@@ -856,7 +860,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readSortedSetData(final boolean unshared, int cacheIdx, final int len, final SortedSet target) throws ClassNotFoundException, IOException {
+    private Object readSortedSetData(final boolean unshared, int cacheIdx, final int len, final SortedSet target, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
         final FlatNavigableSet filler = new FlatNavigableSet(target.comparator());
@@ -870,7 +874,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
 
         for (int i = 0; i < len; i ++) {
-            filler.add(doReadCollectionObject(false, i, len));
+            filler.add(doReadCollectionObject(false, i, len, discardMissing));
         }
         target.addAll(filler);
         final Object resolvedObject = objectResolver.readResolve(target);
@@ -880,7 +884,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readMapData(final boolean unshared, int cacheIdx, final int len, final Map target) throws ClassNotFoundException, IOException {
+    private Object readMapData(final boolean unshared, int cacheIdx, final int len, final Map target, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
 
@@ -893,7 +897,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
 
         for (int i = 0; i < len; i ++) {
-            target.put(doReadMapObject(false, i, len, true), doReadMapObject(false, i, len, false));
+            target.put(doReadMapObject(false, i, len, true, discardMissing), doReadMapObject(false, i, len, false, discardMissing));
         }
         final Object resolvedObject = objectResolver.readResolve(target);
         instanceCache.set(idx, unshared ? null : resolvedObject);
@@ -902,7 +906,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     @SuppressWarnings({ "unchecked" })
-    private Object readSortedMapData(final boolean unshared, int cacheIdx, final int len, final SortedMap target) throws ClassNotFoundException, IOException {
+    private Object readSortedMapData(final boolean unshared, int cacheIdx, final int len, final SortedMap target, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final ArrayList<Object> instanceCache = this.instanceCache;
         final int idx;
         final FlatNavigableMap filler = new FlatNavigableMap(target.comparator());
@@ -916,7 +920,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
 
         for (int i = 0; i < len; i ++) {
-            filler.put(doReadMapObject(false, i, len, true), doReadMapObject(false, i, len, false));
+            filler.put(doReadMapObject(false, i, len, true, discardMissing), doReadMapObject(false, i, len, false, discardMissing));
         }
         // should install entries in order, bypassing any circular ref issues, unless the map is mutated during deserialize of one of its elements
         target.putAll(filler);
@@ -1347,8 +1351,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         this.version = version;
     }
 
-    protected Object doReadNewObject(final int streamClassType, final boolean unshared) throws ClassNotFoundException, IOException {
-        final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType, true);
+    protected Object doReadNewObject(final int streamClassType, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
+        final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType, ! discardMissing);
         try {
             final int classType = descriptor.getTypeID();
             final List<Object> instanceCache = this.instanceCache;
@@ -1381,11 +1385,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SERIALIZABLE_CLASS: {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                    final Object obj = serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
+                    final Object obj = serializableClass == null ? null : serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
-                    doInitSerializable(obj, serializableClassDescriptor);
-                    final Object resolvedObject = objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
+                    doInitSerializable(obj, serializableClassDescriptor, discardMissing);
+                    final Object resolvedObject = obj == null ? null : objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
                     if (unshared) {
                         instanceCache.set(idx, null);
                     } else if (obj != resolvedObject) {
@@ -1452,7 +1456,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return resolvedObject;
                 }
                 case ID_OBJECT_ARRAY_TYPE_CLASS: {
-                    return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared);
+                    return doReadObjectArray(readInt(), descriptor.getType().getComponentType(), unshared, discardMissing);
                 }
                 case ID_STRING_CLASS: {
                     // v1 string
@@ -1645,12 +1649,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return resolvedObject;
     }
 
-    private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared) throws ClassNotFoundException, IOException {
+    private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final Object[] array = (Object[]) Array.newInstance(type, cnt);
         final int idx = instanceCache.size();
         instanceCache.add(array);
         for (int i = 0; i < cnt; i ++) {
-            array[i] = doReadCollectionObject(unshared, i, cnt);
+            array[i] = doReadCollectionObject(unshared, i, cnt, discardMissing);
         }
         final Object resolvedObject = objectResolver.readResolve(array);
         if (unshared) {
@@ -1661,7 +1665,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return resolvedObject;
     }
 
-    private Object doReadArray(final int cnt, final boolean unshared) throws ClassNotFoundException, IOException {
+    private Object doReadArray(final int cnt, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
         final int leadByte = readUnsignedByte();
         switch (leadByte) {
             case ID_PRIM_BOOLEAN: {
@@ -1689,7 +1693,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 return doReadShortArray(cnt, unshared);
             }
             default: {
-                return doReadObjectArray(cnt, doReadClassDescriptor(leadByte, true).getType(), unshared);
+                return doReadObjectArray(cnt, doReadClassDescriptor(leadByte, true).getType(), unshared, discardMissing);
             }
         }
     }
@@ -1699,12 +1703,12 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         return Enum.valueOf((Class<? extends Enum>)descriptor.getType(), name);
     }
 
-    private void doInitSerializable(final Object obj, final SerializableClassDescriptor descriptor) throws IOException, ClassNotFoundException {
+    private void doInitSerializable(final Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {
         final Class<?> type = descriptor.getType();
         final ClassDescriptor superDescriptor = descriptor.getSuperClassDescriptor();
         if (superDescriptor instanceof SerializableClassDescriptor) {
             final SerializableClassDescriptor serializableSuperDescriptor = (SerializableClassDescriptor) superDescriptor;
-            doInitSerializable(obj, serializableSuperDescriptor);
+            doInitSerializable(obj, serializableSuperDescriptor, discardMissing);
         }
         final int typeId = descriptor.getTypeID();
         final BlockUnmarshaller blockUnmarshaller = getBlockUnmarshaller();
@@ -1723,7 +1727,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
         final SerializableClass info = registry.lookup(type);
         if (descriptor instanceof SerializableGapClassDescriptor) {
-            if (info.hasReadObjectNoData()) {
+            if (obj != null && info.hasReadObjectNoData()) {
                 info.callReadObjectNoData(obj);
             }
         } else if (info.hasReadObject()) {
@@ -1735,14 +1739,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             try {
                 if (typeId == ID_WRITE_OBJECT_CLASS) {
                     // read fields
-                    info.callReadObject(obj, objectInputStream);
+                    if (obj != null) info.callReadObject(obj, objectInputStream);
                     objectInputStream.finish(restoreState);
                     blockUnmarshaller.readToEndBlockData();
                     blockUnmarshaller.unblock();
                 } else { // typeid == ID_SERIALIZABLE_CLASS
                     // no user data to read - mark the OIS so that it calls endOfBlock after reading fields!
                     objectInputStream.noCustomData();
-                    info.callReadObject(obj, objectInputStream);
+                    if (obj != null) info.callReadObject(obj, objectInputStream);
                     objectInputStream.finish(restoreState);
                     blockUnmarshaller.restore(objectInputStream.getRestoreIdx());
                 }
@@ -1755,7 +1759,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
             }
         } else {
-            readFields(obj, descriptor);
+            if (obj != null) {
+                readFields(obj, descriptor, discardMissing);
+            } else {
+                discardFields(descriptor);
+            }
             if (typeId == ID_WRITE_OBJECT_CLASS) {
                 // useless user data
                 blockUnmarshaller.readToEndBlockData();
@@ -1764,7 +1772,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
-    protected void readFields(final Object obj, final SerializableClassDescriptor descriptor) throws IOException, ClassNotFoundException {
+    protected void readFields(final Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {
         for (SerializableField serializableField : descriptor.getFields()) {
             try {
                 final Field field = serializableField.getField();
@@ -1800,7 +1808,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             break;
                         }
                         case OBJECT: {
-                            doReadObject(serializableField.isUnshared());
+                            doReadObject(serializableField.isUnshared(), true);
                             break;
                         }
                         case SHORT: {
@@ -1839,7 +1847,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             break;
                         }
                         case OBJECT: {
-                            field.set(obj, doReadObject(serializableField.isUnshared()));
+                            field.set(obj, doReadObject(serializableField.isUnshared(), discardMissing));
                             break;
                         }
                         case SHORT: {
@@ -1898,7 +1906,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         break;
                     }
                     case OBJECT: {
-                        doReadObject(serializableField.isUnshared());
+                        doReadObject(serializableField.isUnshared(), true);
                         break;
                     }
                     case SHORT: {
@@ -1931,6 +1939,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
     
     private Object replace(Object object) {
-        return objectPreResolver.readResolve(object);
+        return object == null ? null : objectPreResolver.readResolve(object);
     }
 }

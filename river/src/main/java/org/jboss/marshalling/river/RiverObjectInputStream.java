@@ -78,7 +78,7 @@ public class RiverObjectInputStream extends MarshallerObjectInputStream {
                 throw new NotActiveException("readFields() may only be called when the fields have not yet been read");
         }
         try {
-            unmarshaller.readFields(current, serializableClassDescriptor);
+            unmarshaller.readFields(current, serializableClassDescriptor, false);
             if (old == UNREAD_FIELDS_EOB) {
                 restoreIdx = blockUnmarshaller.tempEndOfStream();
             }

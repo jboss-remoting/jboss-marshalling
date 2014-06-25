@@ -117,7 +117,7 @@ public final class BlockUnmarshaller implements Unmarshaller {
                     break;
                 default:
                     // consume object... or whatever
-                    riverUnmarshaller.doReadObject(b, false);
+                    riverUnmarshaller.doReadObject(b, false, true);
                     break;
             }
         }
@@ -146,7 +146,7 @@ public final class BlockUnmarshaller implements Unmarshaller {
             remaining = -1;
             throw createOptionalDataException(true);
         }
-        return riverUnmarshaller.doReadObject(leadByte, unshared);
+        return riverUnmarshaller.doReadObject(leadByte, unshared, false);
     }
 
     public int read() throws IOException {

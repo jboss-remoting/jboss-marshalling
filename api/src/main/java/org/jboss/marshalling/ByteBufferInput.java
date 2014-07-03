@@ -63,7 +63,7 @@ public class ByteBufferInput extends InputStream implements ByteInput {
             return -1;
         }
         final int c = Math.min(len, rem);
-        buffer.get(b, 0, c);
+        buffer.get(b, off, c);
         return c;
     }
 

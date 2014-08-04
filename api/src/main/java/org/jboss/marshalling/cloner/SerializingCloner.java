@@ -34,10 +34,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HashMap;
@@ -290,13 +293,13 @@ class SerializingCloner implements ObjectCloner {
         fields.defineFields(info);
         if (info.hasWriteObject()) {
             final Queue<Step> steps = new ArrayDeque<Step>();
-            final StepObjectOutputStream stepObjectOutputStream = new StepObjectOutputStream(steps, fields, orig);
+            final StepObjectOutputStream stepObjectOutputStream = createStepObjectOutputStream(orig, fields, steps);
             info.callWriteObject(orig, stepObjectOutputStream);
             stepObjectOutputStream.flush();
             stepObjectOutputStream.doFinish();
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
-                cloneInfo.callReadObject(clone, new StepObjectInputStream(steps, fields, clone, cloneInfo));
+                cloneInfo.callReadObject(clone, createStepObjectInputStream(clone, cloneInfo, fields, steps));
             } else {
                 storeFields(cloneInfo, clone, fields);
             }
@@ -304,9 +307,53 @@ class SerializingCloner implements ObjectCloner {
             prepareFields(orig, fields);
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
-                cloneInfo.callReadObject(clone, new StepObjectInputStream(new ArrayDeque<Step>(), fields, clone, cloneInfo));
+                cloneInfo.callReadObject(clone, createStepObjectInputStream(clone, cloneInfo, fields, new ArrayDeque<Step>()));
             } else {
                 storeFields(cloneInfo, clone, fields);
+            }
+        }
+    }
+
+    private StepObjectInputStream createStepObjectInputStream(final Object clone, final SerializableClass cloneInfo, final ClonerPutField fields, final Queue<Step> steps) throws IOException {
+        try {
+            return System.getSecurityManager() == null ? new StepObjectInputStream(steps, fields, clone, cloneInfo) : AccessController.doPrivileged(new PrivilegedExceptionAction<StepObjectInputStream>() {
+                public StepObjectInputStream run() throws Exception {
+                    return new StepObjectInputStream(steps, fields, clone, cloneInfo);
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            try {
+                throw e.getCause();
+            } catch (IOException ioe) {
+                throw ioe;
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Error er) {
+                throw er;
+            } catch (Throwable throwable) {
+                throw new UndeclaredThrowableException(throwable);
+            }
+        }
+    }
+
+    private StepObjectOutputStream createStepObjectOutputStream(final Object orig, final ClonerPutField fields, final Queue<Step> steps) throws IOException {
+        try {
+            return System.getSecurityManager() == null ? new StepObjectOutputStream(steps, fields, orig) : AccessController.doPrivileged(new PrivilegedExceptionAction<StepObjectOutputStream>() {
+                public StepObjectOutputStream run() throws IOException {
+                    return new StepObjectOutputStream(steps, fields, orig);
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            try {
+                throw e.getCause();
+            } catch (IOException ioe) {
+                throw ioe;
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Error er) {
+                throw er;
+            } catch (Throwable throwable) {
+                throw new UndeclaredThrowableException(throwable);
             }
         }
     }
@@ -371,7 +418,7 @@ class SerializingCloner implements ObjectCloner {
         }
     }
 
-    private static Object simpleClone(final Object orig, final Class<? extends Object> objClass) {
+    private static Object simpleClone(final Object orig, final Class<?> objClass) {
         final int idx = PRIMITIVE_ARRAYS.get(objClass, -1);
         switch (idx) {
             case 0: {

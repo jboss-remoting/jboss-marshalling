@@ -265,19 +265,20 @@ class SerializingCloner implements ObjectCloner {
         }
         final Class<?> cloneSuperClass = cloneClass.getSuperclass();
         final Class<?> origClass = origInfo.getSubjectClass();
-        if (cloneClass != clone(origClass)) {
-            // try superclass first, then fill in "no data"
-            initSerializableClone(orig, origInfo, clone, cloneInfo);
-            if (cloneInfo.hasReadObjectNoData()) {
-                cloneInfo.callReadObjectNoData(clone);
-            }
-            return;
-        }
+
         // first, init the serializable superclass, if any
         final Class<?> origSuperClass = origClass.getSuperclass();
         if (serializabilityChecker.isSerializable(origSuperClass) || serializabilityChecker.isSerializable(cloneSuperClass)) {
             initSerializableClone(orig, registry.lookup(origSuperClass), clone, registry.lookup(cloneSuperClass));
         }
+
+        if (cloneClass != origClass && cloneClass != clone(origClass)) {
+            if (cloneInfo.hasReadObjectNoData()) {
+                cloneInfo.callReadObjectNoData(clone);
+            }
+            return;
+        }
+        
         if (! serializabilityChecker.isSerializable(origClass)) {
             if (cloneInfo.hasReadObjectNoData()) {
                 cloneInfo.callReadObjectNoData(clone);

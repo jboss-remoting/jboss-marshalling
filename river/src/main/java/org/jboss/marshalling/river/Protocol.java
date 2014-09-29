@@ -140,16 +140,23 @@ public final class Protocol {
     public static final int ID_SINGLETON_LIST_OBJECT    = 0x5c;
     public static final int ID_EMPTY_LIST_OBJECT        = 0x5d;
     // sets
+    @Deprecated
     public static final int ID_CC_HASH_SET              = 0x5e;
+    @Deprecated
     public static final int ID_CC_LINKED_HASH_SET       = 0x5f;
+    @Deprecated
     public static final int ID_CC_TREE_SET              = 0x60;
     public static final int ID_SINGLETON_SET_OBJECT     = 0x61;
     public static final int ID_EMPTY_SET_OBJECT         = 0x62;
     // maps
     public static final int ID_CC_IDENTITY_HASH_MAP     = 0x63;
+    @Deprecated
     public static final int ID_CC_HASH_MAP              = 0x64;
+    @Deprecated
     public static final int ID_CC_HASHTABLE             = 0x65;
+    @Deprecated
     public static final int ID_CC_LINKED_HASH_MAP       = 0x66;
+    @Deprecated
     public static final int ID_CC_TREE_MAP              = 0x67;
     public static final int ID_SINGLETON_MAP_OBJECT     = 0x68;
     public static final int ID_EMPTY_MAP_OBJECT         = 0x69;
@@ -164,6 +171,7 @@ public final class Protocol {
     public static final int ID_ABSTRACT_QUEUE           = 0x70;
     public static final int ID_ABSTRACT_SEQUENTIAL_LIST = 0x71;
     // concurrent collections and maps
+    @Deprecated
     public static final int ID_CC_CONCURRENT_HASH_MAP       = 0x72;
     public static final int ID_CC_COPY_ON_WRITE_ARRAY_LIST  = 0x73;
     public static final int ID_CC_COPY_ON_WRITE_ARRAY_SET   = 0x74;

@@ -33,17 +33,10 @@ import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.AbstractCollection;
@@ -53,7 +46,6 @@ import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
 import java.util.Vector;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jboss.marshalling.AbstractMarshaller;
@@ -555,9 +547,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case ID_CC_HASH_SET:
-                case ID_CC_LINKED_HASH_SET:
-                case ID_CC_TREE_SET:
                 case ID_CC_ARRAY_LIST:
                 case ID_CC_LINKED_LIST:
                 case ID_CC_VECTOR:
@@ -569,16 +558,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                     if (len == 0) {
                         write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
-                        if (id == ID_CC_TREE_SET) {
-                            doWriteObject(((TreeSet)collection).comparator(), false);
-                        }
                     } else if (len <= 256) {
                         write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
                         write(len);
                         write(id);
-                        if (id == ID_CC_TREE_SET) {
-                            doWriteObject(((TreeSet)collection).comparator(), false);
-                        }
                         for (Object o : collection) {
                             doWriteObject(o, false);
                         }
@@ -586,9 +569,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
                         writeShort(len);
                         write(id);
-                        if (id == ID_CC_TREE_SET) {
-                            doWriteObject(((TreeSet)collection).comparator(), false);
-                        }
                         for (Object o : collection) {
                             doWriteObject(o, false);
                         }
@@ -596,9 +576,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
                         writeInt(len);
                         write(id);
-                        if (id == ID_CC_TREE_SET) {
-                            doWriteObject(((TreeSet)collection).comparator(), false);
-                        }
                         for (Object o : collection) {
                             doWriteObject(o, false);
                         }
@@ -649,11 +626,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case ID_CC_HASH_MAP:
-                case ID_CC_HASHTABLE:
                 case ID_CC_IDENTITY_HASH_MAP:
-                case ID_CC_LINKED_HASH_MAP:
-                case ID_CC_TREE_MAP:
                 case ID_CC_ENUM_MAP: {
                     instanceCache.put(obj, instanceSeq++);
                     final Map<?, ?> map = (Map<?, ?>) obj;
@@ -662,7 +635,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
                         write(id);
                         switch (id) {
-                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
                             case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                     } else if (len <= 256) {
@@ -670,7 +642,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(len);
                         write(id);
                         switch (id) {
-                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
                             case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -682,7 +653,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         writeShort(len);
                         write(id);
                         switch (id) {
-                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
                             case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -694,7 +664,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                         writeInt(len);
                         write(id);
                         switch (id) {
-                            case ID_CC_TREE_MAP: doWriteObject(((TreeMap)map).comparator(), false); break;
                             case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
                         }
                         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -746,7 +715,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                     return;
                 }
-                case ID_CC_CONCURRENT_HASH_MAP:
                 case ID_CC_COPY_ON_WRITE_ARRAY_LIST:
                 case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
                     info = registry.lookup(objClass);
@@ -1246,15 +1214,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(ArrayList.class, ID_CC_ARRAY_LIST);
         map.put(LinkedList.class, ID_CC_LINKED_LIST);
 
-        map.put(HashSet.class, ID_CC_HASH_SET);
-        map.put(LinkedHashSet.class, ID_CC_LINKED_HASH_SET);
-        map.put(TreeSet.class, ID_CC_TREE_SET);
-
         map.put(IdentityHashMap.class, ID_CC_IDENTITY_HASH_MAP);
-        map.put(HashMap.class, ID_CC_HASH_MAP);
-        map.put(Hashtable.class, ID_CC_HASHTABLE);
-        map.put(LinkedHashMap.class, ID_CC_LINKED_HASH_MAP);
-        map.put(TreeMap.class, ID_CC_TREE_MAP);
 
         map.put(AbstractCollection.class, ID_ABSTRACT_COLLECTION);
         map.put(AbstractList.class, ID_ABSTRACT_LIST);
@@ -1262,7 +1222,6 @@ public class RiverMarshaller extends AbstractMarshaller {
         map.put(AbstractSequentialList.class, ID_ABSTRACT_SEQUENTIAL_LIST);
         map.put(AbstractSet.class, ID_ABSTRACT_SET);
 
-        map.put(ConcurrentHashMap.class, ID_CC_CONCURRENT_HASH_MAP);
         map.put(CopyOnWriteArrayList.class, ID_CC_COPY_ON_WRITE_ARRAY_LIST);
         map.put(CopyOnWriteArraySet.class, ID_CC_COPY_ON_WRITE_ARRAY_SET);
         map.put(Vector.class, ID_CC_VECTOR);

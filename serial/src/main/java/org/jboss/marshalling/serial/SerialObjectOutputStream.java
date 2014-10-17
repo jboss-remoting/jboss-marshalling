@@ -128,9 +128,11 @@ final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
         state = State.ON;
     }
 
+    Map<String, FieldPutter> map;
+    
     public PutField putFields() throws IOException {
         if (state == State.NEW) {
-            final Map<String, FieldPutter> map = new TreeMap<String, FieldPutter>();
+            map = new TreeMap<String, FieldPutter>();
             currentFieldMap = map;
             for (SerializableField serializableField : currentSerializableClass.getFields()) {
                 final FieldPutter putter;
@@ -178,59 +180,58 @@ final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
                 map.put(serializableField.getName(), putter);
             }
             state = State.FIELDS;
-            return new PutField() {
-                public void put(final String name, final boolean val) {
-                    find(name).setBoolean(val);
-                }
-
-                public void put(final String name, final byte val) {
-                    find(name).setByte(val);
-                }
-
-                public void put(final String name, final char val) {
-                    find(name).setChar(val);
-                }
-
-                public void put(final String name, final short val) {
-                    find(name).setShort(val);
-                }
-
-                public void put(final String name, final int val) {
-                    find(name).setInt(val);
-                }
-
-                public void put(final String name, final long val) {
-                    find(name).setLong(val);
-                }
-
-                public void put(final String name, final float val) {
-                    find(name).setFloat(val);
-                }
-
-                public void put(final String name, final double val) {
-                    find(name).setDouble(val);
-                }
-
-                public void put(final String name, final Object val) {
-                    find(name).setObject(val);
-                }
-
-                @Deprecated
-                public void write(final ObjectOutput out) throws IOException {
-                    throw new UnsupportedOperationException("write(ObjectOutput)");
-                }
-
-                private FieldPutter find(final String name) {
-                    final FieldPutter putter = map.get(name);
-                    if (putter == null) {
-                        throw new IllegalArgumentException("No field named '" + name + "' found");
-                    }
-                    return putter;
-                }
-            };
-        } else {
-            throw new IllegalStateException("putFields() may not be called now");
         }
+        
+        return new PutField() {
+            public void put(final String name, final boolean val) {
+                find(name).setBoolean(val);
+            }
+
+            public void put(final String name, final byte val) {
+                find(name).setByte(val);
+            }
+
+            public void put(final String name, final char val) {
+                find(name).setChar(val);
+            }
+
+            public void put(final String name, final short val) {
+                find(name).setShort(val);
+            }
+
+            public void put(final String name, final int val) {
+                find(name).setInt(val);
+            }
+
+            public void put(final String name, final long val) {
+                find(name).setLong(val);
+            }
+
+            public void put(final String name, final float val) {
+                find(name).setFloat(val);
+            }
+
+            public void put(final String name, final double val) {
+                find(name).setDouble(val);
+            }
+
+            public void put(final String name, final Object val) {
+                 find(name).setObject(val);
+            }
+
+            @Deprecated
+            public void write(final ObjectOutput out) throws IOException {
+                throw new UnsupportedOperationException("write(ObjectOutput)");
+            }
+
+            private FieldPutter find(final String name) {
+                final FieldPutter putter = map.get(name);
+                if (putter == null) {
+                    throw new IllegalArgumentException("No field named '" + name + "' found");
+                }
+                return putter;
+            }
+        };
     }
 
     public void defaultWriteObject() throws IOException {

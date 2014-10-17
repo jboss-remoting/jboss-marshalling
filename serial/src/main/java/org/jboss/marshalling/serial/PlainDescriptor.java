@@ -40,6 +40,8 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -105,9 +107,22 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
 
     void defaultReadFields(final SerialUnmarshaller serialUnmarshaller, final Object subject) throws IOException, ClassNotFoundException {
         try {
+            Set<String> excludedIntFields = new HashSet<String>(){{
+                add("segmentMask");
+                add("segmentShift");
+            }};
+            
+            Set<String> excludedObjectFields = new HashSet<String>(){{
+                add("segments");
+            }};
             // first primitive fields
             for (SerializableField serializableField : fields) {
-                final Field realField = serializableField.getField();
+                Field realField = null;
+                if (isExcludedField(serializableField.getName(),excludedIntFields))
+                    serialUnmarshaller.readInt();
+                else
+                    realField = serializableField.getField();
+                
                 if (realField != null) switch (serializableField.getKind()) {
                     case BOOLEAN: {
                         realField.setBoolean(subject, serialUnmarshaller.readBoolean());
@@ -146,7 +161,12 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
             // next object fields
             for (SerializableField serializableField : fields) {
                 if (serializableField.getKind() == Kind.OBJECT) {
-                    final Field realField = serializableField.getField();
+                    Field realField = null;
+                    if (isExcludedField(serializableField.getName(),excludedObjectFields))
+                        serialUnmarshaller.readObject();
+                    else
+                        realField = serializableField.getField();
+                    
                     if (realField !=  null) realField.set(subject, serialUnmarshaller.readObject());
                 }
             }
@@ -315,5 +335,9 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
                 return field == null || field.isDefaulted() ? val : field.getObject();
             }
         };
+    }
+    
+    private boolean isExcludedField(String name, Set<String> excludedFields){
+        return excludedFields.contains(name);
     }
 }

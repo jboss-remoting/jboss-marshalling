@@ -23,6 +23,7 @@ import java.io.EOFException;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.InvalidObjectException;
 import java.io.NotActiveException;
 import java.io.NotSerializableException;
@@ -138,6 +139,9 @@ class SerializingCloner implements ObjectCloner {
     private Object clone(final Object orig, final boolean replace) throws IOException, ClassNotFoundException {
         if (orig == null) {
             return null;
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedIOException("Thread interrupted during cloning process");
         }
         final IdentityHashMap<Object, Object> clones = this.clones;
         Object cached = clones.get(orig);

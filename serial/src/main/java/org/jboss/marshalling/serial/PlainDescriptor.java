@@ -141,6 +141,39 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
                         realField.setShort(subject, serialUnmarshaller.readShort());
                         break;
                     }
+                } else switch (serializableField.getKind()) { // this mucker wrote virtual fields to the stream
+                    case BOOLEAN: {
+                        serialUnmarshaller.readBoolean();
+                        break;
+                    }
+                    case BYTE: {
+                        serialUnmarshaller.readByte();
+                        break;
+                    }
+                    case CHAR: {
+                        serialUnmarshaller.readChar();
+                        break;
+                    }
+                    case DOUBLE: {
+                        serialUnmarshaller.readDouble();
+                        break;
+                    }
+                    case FLOAT: {
+                        serialUnmarshaller.readFloat();
+                        break;
+                    }
+                    case INT: {
+                        serialUnmarshaller.readInt();
+                        break;
+                    }
+                    case LONG: {
+                        serialUnmarshaller.readLong();
+                        break;
+                    }
+                    case SHORT: {
+                        serialUnmarshaller.readShort();
+                        break;
+                    }
                 }
             }
             // next object fields
@@ -148,6 +181,7 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
                 if (serializableField.getKind() == Kind.OBJECT) {
                     final Field realField = serializableField.getField();
                     if (realField !=  null) realField.set(subject, serialUnmarshaller.readObject());
+                    else serialUnmarshaller.readObject(); // this mucker wrote a virtual field to the stream
                 }
             }
         } catch (IllegalAccessException e) {

@@ -56,6 +56,7 @@ final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
     private Object currentObject;
     private SerializableClass currentSerializableClass;
     private Map<String, FieldPutter> currentFieldMap;
+    private PutField curPut;
 
     protected SerialObjectOutputStream(final SerialMarshaller serialMarshaller, final BlockMarshaller blockMarshaller) throws IOException, SecurityException {
         super(blockMarshaller);
@@ -178,7 +179,7 @@ final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
                 map.put(serializableField.getName(), putter);
             }
             state = State.FIELDS;
-            return new PutField() {
+            curPut = new PutField() {
                 public void put(final String name, final boolean val) {
                     find(name).setBoolean(val);
                 }
@@ -228,9 +229,8 @@ final class SerialObjectOutputStream extends MarshallerObjectOutputStream {
                     return putter;
                 }
             };
-        } else {
-            throw new IllegalStateException("putFields() may not be called now");
         }
+        return curPut;
     }
 
     public void defaultWriteObject() throws IOException {

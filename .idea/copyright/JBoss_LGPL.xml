@@ -1,9 +1,0 @@
-<component name="CopyrightManager">
-  <copyright>
-    <option name="notice" value="JBoss, Home of Professional Open Source.&#10;Copyright &amp;#36;today.year, Red Hat, Inc., and individual contributors&#10;as indicated by the @author tags. See the copyright.txt file in the&#10;distribution for a full listing of individual contributors.&#10;&#10;This is free software; you can redistribute it and/or modify it&#10;under the terms of the GNU Lesser General Public License as&#10;published by the Free Software Foundation; either version 2.1 of&#10;the License, or (at your option) any later version.&#10;&#10;This software is distributed in the hope that it will be useful,&#10;but WITHOUT ANY WARRANTY; without even the implied warranty of&#10;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU&#10;Lesser General Public License for more details.&#10;&#10;You should have received a copy of the GNU Lesser General Public&#10;License along with this software; if not, write to the Free&#10;Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA&#10;02110-1301 USA, or see the FSF site: http://www.fsf.org." />
-    <option name="keyword" value="Copyright" />
-    <option name="allowReplaceKeyword" value="" />
-    <option name="myName" value="JBoss LGPL" />
-    <option name="myLocal" value="true" />
-  </copyright>
-</component>

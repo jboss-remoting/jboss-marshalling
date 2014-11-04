@@ -2666,4 +2666,59 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    // the trouble with empty arrays...
+
+    static class ArrayHolder implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final SerializableWithFinalFields[] array;
+
+        ArrayHolder(final SerializableWithFinalFields[] array) {
+            this.array = array;
+        }
+
+        public SerializableWithFinalFields[] getArray() {
+            return array;
+        }
+    }
+
+    @Test
+    public void testEmptyArray() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(new SerializableWithFinalFields[0]);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final SerializableWithFinalFields[] array = (SerializableWithFinalFields[]) unmarshaller.readObject();
+                assertNotNull(array);
+                assertTrue(Arrays.equals(new SerializableWithFinalFields[0], array));
+            }
+        });
+    }
+
+    @Test
+    public void testEmptyArrayInObject() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void configureRead(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setVersion(-1);
+            }
+
+            public void configureWrite(final MarshallingConfiguration configuration) throws Throwable {
+                configuration.setVersion(-1);
+            }
+
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(new ArrayHolder(new SerializableWithFinalFields[0]));
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                final SerializableWithFinalFields[] array = ((ArrayHolder)unmarshaller.readObject()).getArray();
+                assertNotNull(array);
+                assertTrue(Arrays.equals(new SerializableWithFinalFields[0], array));
+            }
+        });
+    }
 }

@@ -310,9 +310,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     final ArrayList<Object> instanceCache = this.instanceCache;
                     final int idx = instanceCache.size();
-                    instanceCache.add(null);
                     final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte(), true).getType(), 0);
-                    instanceCache.set(idx, obj);
+                    instanceCache.add(obj);
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
                         instanceCache.set(idx, null);

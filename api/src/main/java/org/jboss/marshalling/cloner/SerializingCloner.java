@@ -301,6 +301,7 @@ class SerializingCloner implements ObjectCloner {
             info.callWriteObject(orig, stepObjectOutputStream);
             stepObjectOutputStream.flush();
             stepObjectOutputStream.doFinish();
+            prepareFields(orig, fields);
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, createStepObjectInputStream(clone, cloneInfo, fields, steps));

@@ -213,6 +213,13 @@ public final class SerializingClonerTestCase {
         assertNotNull(objectCloner.clone(new ClonerTestException("blah")));
     }
 
+    public void testWriteObject() throws Throwable {
+        final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
+        Object orig = new SerializableWithWriteObject();
+        final Object clone = objectCloner.clone(orig);
+        assertEquals(clone, orig);
+    }
+
     /**
      * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
      */

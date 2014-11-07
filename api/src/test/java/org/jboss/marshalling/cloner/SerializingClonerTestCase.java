@@ -197,4 +197,11 @@ public final class SerializingClonerTestCase {
             assertEquals(clone, orig);
         }
     }
+
+    public void testWriteObject() throws Throwable {
+        final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
+        Object orig = new SerializableWithWriteObject();
+        final Object clone = objectCloner.clone(orig);
+        assertEquals(clone, orig);
+    }
 }

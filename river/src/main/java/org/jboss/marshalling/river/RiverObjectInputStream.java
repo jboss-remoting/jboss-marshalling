@@ -164,13 +164,13 @@ class RiverObjectInputStream extends MarshallerObjectInputStream {
                         throw new IllegalStateException("Wrong field type");
                 }
             } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, field.getName());
+                TraceInformation.addFieldInformation(e, serializableClassDescriptor.getSerializableClass(), field);
                 throw e;
             } catch (ClassNotFoundException e) {
-                TraceInformation.addFieldInformation(e, field.getName());
+                TraceInformation.addFieldInformation(e, serializableClassDescriptor.getSerializableClass(), field);
                 throw e;
             } catch (RuntimeException e) {
-                TraceInformation.addFieldInformation(e, field.getName());
+                TraceInformation.addFieldInformation(e, serializableClassDescriptor.getSerializableClass(), field);
                 throw e;
             }
         }

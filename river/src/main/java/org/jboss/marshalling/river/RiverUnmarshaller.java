@@ -1867,13 +1867,16 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     throw ioe;
                 }
             } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
+                TraceInformation.addObjectInformation(e, obj);
                 throw e;
             } catch (ClassNotFoundException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
+                TraceInformation.addObjectInformation(e, obj);
                 throw e;
             } catch (RuntimeException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
+                TraceInformation.addObjectInformation(e, obj);
                 throw e;
             }
         }
@@ -1921,13 +1924,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                 }
             } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 throw e;
             } catch (ClassNotFoundException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 throw new IOException("Failed to discard field data", e);
             } catch (RuntimeException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 throw e;
             }
         }

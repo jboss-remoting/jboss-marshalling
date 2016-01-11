@@ -21,6 +21,9 @@ package org.jboss.marshalling;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
@@ -36,6 +39,20 @@ import org.jboss.modules.ModuleLoader;
  */
 public final class ModularClassResolver implements ClassResolver {
     private final ModuleLoader moduleLoader;
+    private static final ClassLoader MODULE_CLASS_LOADER;
+
+    static {
+        if (System.getSecurityManager() == null) {
+            MODULE_CLASS_LOADER = Module.class.getClassLoader();
+        } else {
+            MODULE_CLASS_LOADER = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
+                public ClassLoader run() {
+                    return Module.class.getClassLoader();
+                }
+            });
+        }
+    }
 
     private ModularClassResolver(final ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
@@ -94,12 +111,24 @@ public final class ModularClassResolver implements ClassResolver {
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String className, final long serialVersionUID) throws IOException, ClassNotFoundException {
         final String name = (String) unmarshaller.readObject();
         if (name == null) {
-            return Class.forName(className, false, Module.class.getClassLoader());
+            return Class.forName(className, false, MODULE_CLASS_LOADER);
         }
         final String slot = (String) unmarshaller.readObject();
         final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
         try {
-            return Class.forName(className, false, moduleLoader.loadModule(identifier).getClassLoader());
+            final ClassLoader classLoader;
+            final Module module = moduleLoader.loadModule(identifier);
+            if (System.getSecurityManager() == null) {
+                classLoader = module.getClassLoader();
+            } else {
+                classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                    @Override
+                    public ClassLoader run() {
+                        return module.getClassLoader();
+                    }
+                });
+            }
+            return Class.forName(className, false, classLoader);
         } catch (ModuleLoadException e) {
             final InvalidClassException ce = new InvalidClassException(className, "Module load failed");
             ce.initCause(e);
@@ -112,7 +141,7 @@ public final class ModularClassResolver implements ClassResolver {
         final String name = (String) unmarshaller.readObject();
         final ClassLoader classLoader;
         if (name == null) {
-            classLoader = Module.class.getClassLoader();
+            classLoader = MODULE_CLASS_LOADER;
         } else {
             final String slot = (String) unmarshaller.readObject();
             final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);

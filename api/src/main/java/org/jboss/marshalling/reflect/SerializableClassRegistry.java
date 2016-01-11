@@ -67,7 +67,17 @@ public final class SerializableClassRegistry {
         if (subject == null) {
             return null;
         }
-        final ClassLoader classLoader = subject.getClassLoader();
+        final ClassLoader classLoader;
+        if(System.getSecurityManager() == null) {
+            classLoader = subject.getClassLoader();
+        } else {
+            classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
+                public ClassLoader run() {
+                    return subject.getClassLoader();
+                }
+            });
+        }
         ConcurrentMap<Class<?>, SerializableClass> loaderMap = registry.get(classLoader);
         if (loaderMap == null) {
             final ConcurrentMap<Class<?>, SerializableClass> existing = registry.putIfAbsent(classLoader, loaderMap = new UnlockedHashMap<Class<?>, SerializableClass>());

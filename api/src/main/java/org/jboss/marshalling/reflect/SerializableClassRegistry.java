@@ -74,7 +74,7 @@ public final class SerializableClassRegistry {
             classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override
                 public ClassLoader run() {
-                    return  subject.getClassLoader();
+                    return subject.getClassLoader();
                 }
             });
         }

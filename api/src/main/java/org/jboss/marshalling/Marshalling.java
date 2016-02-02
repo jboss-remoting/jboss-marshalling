@@ -18,6 +18,8 @@
 
 package org.jboss.marshalling;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,7 +29,6 @@ import java.io.StreamCorruptedException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -56,8 +57,12 @@ public final class Marshalling {
      * class path.
      */
     @Deprecated
-    public static MarshallerFactory getMarshallerFactory(String name) {
-        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class), name);
+    public static MarshallerFactory getMarshallerFactory(final String name) {
+        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+            public ServiceLoader<ProviderDescriptor> run() {
+                return ServiceLoader.load(ProviderDescriptor.class);
+            }
+        }), name);
     }
 
     /**
@@ -70,8 +75,12 @@ public final class Marshalling {
      *
      * @see ServiceLoader
      */
-    public static MarshallerFactory getMarshallerFactory(String name, ClassLoader classLoader) {
-        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, classLoader), name);
+    public static MarshallerFactory getMarshallerFactory(final String name, final ClassLoader classLoader) {
+        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+            public ServiceLoader<ProviderDescriptor> run() {
+                return ServiceLoader.load(ProviderDescriptor.class, classLoader);
+            }
+        }), name);
     }
 
     /**
@@ -80,8 +89,12 @@ public final class Marshalling {
      * @param name the name of the protocol to acquire
      * @return the marshaller factory, or {@code null} if no matching factory was found
      */
-    public static MarshallerFactory getProvidedMarshallerFactory(String name) {
-        return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader()), name);
+    public static MarshallerFactory getProvidedMarshallerFactory(final String name) {
+        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+            public ServiceLoader<ProviderDescriptor> run() {
+                return ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader());
+            }
+        }), name);
     }
 
     private static MarshallerFactory loadMarshallerFactory(ServiceLoader<ProviderDescriptor> loader, String name) {
@@ -362,7 +375,7 @@ public final class Marshalling {
     }
 
     private static OptionalDataException createOptionalDataException() {
-        return AccessController.doPrivileged(OPTIONAL_DATA_EXCEPTION_CREATE_ACTION);
+        return doPrivileged(OPTIONAL_DATA_EXCEPTION_CREATE_ACTION);
     }
 
     private static final OptionalDataExceptionCreateAction OPTIONAL_DATA_EXCEPTION_CREATE_ACTION = new OptionalDataExceptionCreateAction();
@@ -372,7 +385,7 @@ public final class Marshalling {
         private final Constructor<OptionalDataException> constructor;
 
         private OptionalDataExceptionCreateAction() {
-            constructor = AccessController.doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
+            constructor = doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
                 public Constructor<OptionalDataException> run() {
                     try {
                         final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);

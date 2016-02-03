@@ -28,6 +28,7 @@ public final class Protocol {
     public static final int MIN_VERSION = 2;
     public static final int MAX_VERSION = 3;
 
+    public static final int ID_LEADBYTE_0               = 0x0;
     public static final int ID_NULL                     = 0x01;
     public static final int ID_REPEAT_OBJECT_FAR        = 0x02;
     public static final int ID_PREDEFINED_OBJECT        = 0x03;

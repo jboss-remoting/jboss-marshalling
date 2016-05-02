@@ -108,38 +108,76 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
             // first primitive fields
             for (SerializableField serializableField : fields) {
                 final Field realField = serializableField.getField();
-                if (realField != null) switch (serializableField.getKind()) {
-                    case BOOLEAN: {
-                        realField.setBoolean(subject, serialUnmarshaller.readBoolean());
-                        break;
+                if (realField != null) {
+                    switch (serializableField.getKind()) {
+                        case BOOLEAN: {
+                            realField.setBoolean(subject, serialUnmarshaller.readBoolean());
+                            break;
+                        }
+                        case BYTE: {
+                            realField.setByte(subject, serialUnmarshaller.readByte());
+                            break;
+                        }
+                        case CHAR: {
+                            realField.setChar(subject, serialUnmarshaller.readChar());
+                            break;
+                        }
+                        case DOUBLE: {
+                            realField.setDouble(subject, serialUnmarshaller.readDouble());
+                            break;
+                        }
+                        case FLOAT: {
+                            realField.setFloat(subject, serialUnmarshaller.readFloat());
+                            break;
+                        }
+                        case INT: {
+                            realField.setInt(subject, serialUnmarshaller.readInt());
+                            break;
+                        }
+                        case LONG: {
+                            realField.setLong(subject, serialUnmarshaller.readLong());
+                            break;
+                        }
+                        case SHORT: {
+                            realField.setShort(subject, serialUnmarshaller.readShort());
+                            break;
+                        }
                     }
-                    case BYTE: {
-                        realField.setByte(subject, serialUnmarshaller.readByte());
-                        break;
-                    }
-                    case CHAR: {
-                        realField.setChar(subject, serialUnmarshaller.readChar());
-                        break;
-                    }
-                    case DOUBLE: {
-                        realField.setDouble(subject, serialUnmarshaller.readDouble());
-                        break;
-                    }
-                    case FLOAT: {
-                        realField.setFloat(subject, serialUnmarshaller.readFloat());
-                        break;
-                    }
-                    case INT: {
-                        realField.setInt(subject, serialUnmarshaller.readInt());
-                        break;
-                    }
-                    case LONG: {
-                        realField.setLong(subject, serialUnmarshaller.readLong());
-                        break;
-                    }
-                    case SHORT: {
-                        realField.setShort(subject, serialUnmarshaller.readShort());
-                        break;
+                } else {
+                    // throw away - see JBMAR-185
+                    switch (serializableField.getKind()) {
+                        case BOOLEAN: {
+                            serialUnmarshaller.readBoolean();
+                            break;
+                        }
+                        case BYTE: {
+                            serialUnmarshaller.readByte();
+                            break;
+                        }
+                        case CHAR: {
+                            serialUnmarshaller.readChar();
+                            break;
+                        }
+                        case DOUBLE: {
+                            serialUnmarshaller.readDouble();
+                            break;
+                        }
+                        case FLOAT: {
+                            serialUnmarshaller.readFloat();
+                            break;
+                        }
+                        case INT: {
+                            serialUnmarshaller.readInt();
+                            break;
+                        }
+                        case LONG: {
+                            serialUnmarshaller.readLong();
+                            break;
+                        }
+                        case SHORT: {
+                            serialUnmarshaller.readShort();
+                            break;
+                        }
                     }
                 }
             }
@@ -147,7 +185,12 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
             for (SerializableField serializableField : fields) {
                 if (serializableField.getKind() == Kind.OBJECT) {
                     final Field realField = serializableField.getField();
-                    if (realField !=  null) realField.set(subject, serialUnmarshaller.readObject());
+                    if (realField !=  null) {
+                        realField.set(subject, serialUnmarshaller.readObject());
+                    } else {
+                        // throw away - see JBMAR-185
+                        serialUnmarshaller.readObject();
+                    }
                 }
             }
         } catch (IllegalAccessException e) {

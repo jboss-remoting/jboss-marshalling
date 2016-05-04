@@ -32,6 +32,7 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -46,7 +47,7 @@ import sun.reflect.ReflectionFactory;
  */
 public final class SerializableClass {
     @SuppressWarnings("unchecked")
-    private static final ReflectionFactory reflectionFactory = (ReflectionFactory) AccessController.doPrivileged(new ReflectionFactory.GetReflectionFactoryAction());
+    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged((PrivilegedAction<ReflectionFactory>)ReflectionFactory::getReflectionFactory);
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
 
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;

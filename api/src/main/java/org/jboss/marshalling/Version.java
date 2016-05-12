@@ -18,27 +18,60 @@
 
 package org.jboss.marshalling;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Properties;
+
 /**
  * The version of the Marshalling API.
  * @apiviz.exclude
  */
 public final class Version {
 
+    static {
+        String jarName = "(unknown)";
+        String versionString = "(unknown)";
+        try (final InputStream stream = Version.class.getResourceAsStream("Version.properties")) {
+            if (stream != null) try (final InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                Properties versionProps = new Properties();
+                versionProps.load(reader);
+                jarName = versionProps.getProperty("jarName", jarName);
+                versionString = versionProps.getProperty("version", versionString);
+            }
+        } catch (IOException ignored) {
+        }
+        JAR_NAME = jarName;
+        VERSION = versionString;
+    }
+
     private Version() {
     }
+
+    static final String JAR_NAME;
 
     /**
      * The version.
      */
-    public static final String VERSION = getVersionString();
+    public static final String VERSION;
 
     /**
      * Get the version string.
      *
      * @return the version string
      */
-    static String getVersionString() {
-        return "TRUNK SNAPSHOT";
+    public static String getVersionString() {
+        return VERSION;
+    }
+
+    /**
+     * Get the JAR file name.
+     *
+     * @return the JAR file name
+     */
+    public static String getJarName() {
+        return JAR_NAME;
     }
 
     /**
@@ -47,6 +80,6 @@ public final class Version {
      * @param args ignored
      */
     public static void main(String[] args) {
-        System.out.print(VERSION);
+        System.out.printf("JBoss Marshalling version %s\n", VERSION);
     }
 }

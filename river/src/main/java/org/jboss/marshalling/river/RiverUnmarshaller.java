@@ -1384,7 +1384,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_SERIALIZABLE_CLASS: {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
-                    final Object obj = serializableClass == null ? null : serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
+                    final Object obj;
+                    if(serializableClass == null) {
+                        obj = null;
+                    } else if (!serializableClass.hasNoInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass())) {
+                        throw new NotSerializableException(serializableClass.getSubjectClass().getName());
+                    } else {
+                        obj = serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
+                    }
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     doInitSerializable(obj, serializableClassDescriptor, discardMissing);

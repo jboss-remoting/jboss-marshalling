@@ -21,6 +21,7 @@ package org.jboss.marshalling.reflect;
 import java.io.SerializablePermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -35,6 +36,8 @@ public final class SerializableClassRegistry {
     private static final SerializableClassRegistry INSTANCE = new SerializableClassRegistry();
 
     private static final SerializablePermission PERMISSION = new SerializablePermission("allowSerializationReflection");
+
+    private static final Object NULL_KEY = new Object();
 
     /**
      * Get the serializable class registry instance, if allowed by the current security manager.  The caller must have
@@ -51,7 +54,16 @@ public final class SerializableClassRegistry {
         return INSTANCE;
     }
 
-    private final ConcurrentMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>> registry = new UnlockedHashMap<ClassLoader, ConcurrentMap<Class<?>, SerializableClass>>();
+    private final ConcurrentMap<Object, ConcurrentMap<Class<?>, SerializableClass>> registry = new ConcurrentHashMap<Object, ConcurrentMap<Class<?>, SerializableClass>>();
+
+    /**
+     * Used to avoid null keys in the concurrent hash map.
+     * @param classLoader Desired key.
+     * @return The original key, or a constant non-null reference if the original key is null.
+     */
+    private static Object denull(ClassLoader classLoader) {
+        return null != classLoader ? classLoader : NULL_KEY;
+    }
 
     static SerializableClassRegistry getInstanceUnchecked() {
         return INSTANCE;
@@ -78,9 +90,10 @@ public final class SerializableClassRegistry {
                 }
             });
         }
-        ConcurrentMap<Class<?>, SerializableClass> loaderMap = registry.get(classLoader);
+        final Object registryKey = denull(classLoader);
+        ConcurrentMap<Class<?>, SerializableClass> loaderMap = registry.get(registryKey);
         if (loaderMap == null) {
-            final ConcurrentMap<Class<?>, SerializableClass> existing = registry.putIfAbsent(classLoader, loaderMap = new UnlockedHashMap<Class<?>, SerializableClass>());
+            final ConcurrentMap<Class<?>, SerializableClass> existing = registry.putIfAbsent(registryKey, loaderMap = new ConcurrentHashMap<Class<?>, SerializableClass>());
             if (existing != null) {
                 loaderMap = existing;
             }
@@ -109,6 +122,6 @@ public final class SerializableClassRegistry {
      * @param classLoader the class loader to release
      */
     public void release(ClassLoader classLoader) {
-        registry.remove(classLoader);
+        registry.remove(denull(classLoader));
     }
 }

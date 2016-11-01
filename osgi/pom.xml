@@ -24,6 +24,7 @@
 
     <name>JBoss Marshalling OSGi Bundle</name>
     <description>JBoss Marshalling OSGi Bundle with API and implementations</description>
+    <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-osgi</artifactId>
     <packaging>bundle</packaging>
 
@@ -66,6 +67,15 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>org.jboss.marshalling:jboss-marshalling</artifact>
+                                    <excludes>
+                                        <!-- org.apache.felix:maven-bundle-plugin chokes on Multi-Version jar content :( -->
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <createSourcesJar>true</createSourcesJar>
                             <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                             <transformers>

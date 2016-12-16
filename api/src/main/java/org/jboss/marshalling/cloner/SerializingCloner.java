@@ -238,9 +238,9 @@ class SerializingCloner implements ObjectCloner {
             externalizable.writeExternal(soo);
             soo.doFinish();
             ((Externalizable) clone).readExternal(new StepObjectInput(steps));
-        } else if (serializabilityChecker.isSerializable(objClass)) {
+        } else if (serializabilityChecker.isSerializable(clonedClass)) {
             Class<?> nonSerializable;
-            for (nonSerializable = objClass.getSuperclass(); serializabilityChecker.isSerializable(nonSerializable); nonSerializable = nonSerializable.getSuperclass()) {
+            for (nonSerializable = clonedClass.getSuperclass(); serializabilityChecker.isSerializable(nonSerializable); nonSerializable = nonSerializable.getSuperclass()) {
                 if (nonSerializable == Object.class) break;
             }
             clone = cloneInfo.callNonInitConstructor(nonSerializable);

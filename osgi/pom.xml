@@ -25,7 +25,7 @@
     <name>JBoss Marshalling OSGi Bundle</name>
     <description>JBoss Marshalling OSGi Bundle with API and implementations</description>
     <artifactId>jboss-marshalling-osgi</artifactId>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>org.jboss.marshalling</groupId>
@@ -35,6 +35,8 @@
 
     <properties>
         <bundle.namespace>org.jboss.marshalling</bundle.namespace>
+        <intermediary_jar_name>intermediary-${project.build.finalName}</intermediary_jar_name>
+        <intermediary_jar_path>${project.build.directory}/${intermediary_jar_name}.jar</intermediary_jar_path>
     </properties>
 
     <dependencies>
@@ -61,11 +63,22 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>none-default</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>org.jboss.marshalling:jboss-marshalling</artifact>
+                                    <excludes>
+                                        <!-- org.apache.felix:maven-bundle-plugin chokes on Multi-Version jar content :( -->
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <finalName>${intermediary_jar_name}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                             <transformers>
@@ -81,18 +94,32 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.4.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-DocURL>http://jboss.org/jbossmarshalling</Bundle-DocURL>
-                        <Import-Package>org.jboss.modules.*;sun.reflect.*;resolution:=optional</Import-Package>
-                        <Export-Package>org.jboss.marshalling.*;version=${project.version};-split-package:=error</Export-Package>
-                    </instructions>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-bundle</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>bundle-package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <configuration>
+                            <instructions>
+                                <Include-Resource>@${intermediary_jar_path}</Include-Resource>
+                                <Bundle-DocURL>http://jboss.org/jbossmarshalling</Bundle-DocURL>
+                                <Import-Package>org.jboss.modules.*;sun.reflect.*;resolution:=optional</Import-Package>
+                                <Export-Package>org.jboss.marshalling.*;version=${project.version};-split-package:=error</Export-Package>
+                            </instructions>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
-
 
 </project>

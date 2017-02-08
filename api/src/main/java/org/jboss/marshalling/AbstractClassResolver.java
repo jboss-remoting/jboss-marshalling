@@ -110,7 +110,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
      */
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String name, final long serialVersionUID) throws IOException, ClassNotFoundException {
         final Class<?> clazz = loadClass(name);
-        if (enforceSerialVersionUid) {
+        if (enforceSerialVersionUid && serialVersionUID != 0L) {
             final long uid = registry.lookup(clazz).getEffectiveSerialVersionUID();
             if (uid != serialVersionUID) {
                 throw new StreamCorruptedException("serialVersionUID does not match!");

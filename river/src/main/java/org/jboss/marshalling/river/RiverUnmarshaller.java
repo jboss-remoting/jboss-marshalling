@@ -1018,7 +1018,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             case ID_SERIALIZABLE_CLASS: {
                 int idx = classCache.size();
                 classCache.add(null);
-                final String className = readString();
+                final String className = configuredVersion >= 4 ? readObject(String.class) : readString();
                 final long uid = readLong();
                 Class<?> clazz = null;
                 try {
@@ -1033,7 +1033,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 final ClassDescriptor[] descriptors = new ClassDescriptor[cnt];
                 final boolean[] unshareds = new boolean[cnt];
                 for (int i = 0; i < cnt; i ++) {
-                    names[i] = readUTF();
+                    names[i] = configuredVersion >= 4 ? readObject(String.class) : readUTF();
                     descriptors[i] = doReadClassDescriptor(readUnsignedByte(), true);
                     unshareds[i] = readBoolean();
                 }

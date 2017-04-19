@@ -1481,7 +1481,12 @@ public class RiverMarshaller extends AbstractMarshaller {
             } else {
                 write(ID_SERIALIZABLE_CLASS);
             }
-            writeString(classResolver.getClassName(objClass));
+            final String className = classResolver.getClassName(objClass);
+            if (configuredVersion >= 4) {
+                writeObject(className);
+            } else {
+                writeString(className);
+            }
             writeLong(info.getEffectiveSerialVersionUID());
             classCache.put(objClass, classSeq++);
             classResolver.annotateClass(this, objClass);
@@ -1490,7 +1495,11 @@ public class RiverMarshaller extends AbstractMarshaller {
             writeInt(cnt);
             for (int i = 0; i < cnt; i++) {
                 SerializableField field = fields[i];
-                writeUTF(field.getName());
+                if (configuredVersion >= 4) {
+                    writeObject(field.getName());
+                } else {
+                    writeUTF(field.getName());
+                }
                 try {
                     writeClass(field.getKind() == Kind.OBJECT ? Object.class : field.getType());
                 } catch (ClassNotFoundException e) {

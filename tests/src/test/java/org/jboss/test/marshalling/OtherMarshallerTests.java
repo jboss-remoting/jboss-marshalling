@@ -18,6 +18,7 @@
 
 package org.jboss.test.marshalling;
 
+import java.io.Serializable;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.jboss.marshalling.cloner.ClonerConfiguration;
 import org.jboss.marshalling.MarshallingConfiguration;
@@ -37,20 +38,21 @@ public final class OtherMarshallerTests extends TestBase {
     }    
 
     @Test
-    public void testPriorityBlockingQueue() throws Throwable {
+    public synchronized void testPriorityBlockingQueue() throws Throwable {
         final ObjectClonerFactory clonerFactory = ObjectCloners.getSerializingObjectClonerFactory();
         final ClonerConfiguration configuration = new ClonerConfiguration();
         final ObjectCloner cloner = clonerFactory.createCloner(configuration);
         PriorityBlockingQueueTestObject testObject = new PriorityBlockingQueueTestObject<Integer>();
-        testObject.add(new Integer(100));
-        cloner.clone(testObject);
+        if(testObject != null) {
+            testObject.add(new Integer(100));
+            cloner.clone(testObject);
+        }
     }
 
-    public static class PriorityBlockingQueueTestObject<T> {
-        private PriorityBlockingQueue<T> queue;
+    public static class PriorityBlockingQueueTestObject<T> implements Serializable {
+        private PriorityBlockingQueue<T> queue = new PriorityBlockingQueue<T>();
         public void add(T item) {
             this.queue.add(item);
         }
     }
-
 }

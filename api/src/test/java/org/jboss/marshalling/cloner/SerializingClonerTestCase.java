@@ -213,11 +213,79 @@ public final class SerializingClonerTestCase {
         assertNotNull(objectCloner.clone(new ClonerTestException("blah")));
     }
 
-    public void testWriteObject() throws Throwable {
-        final ObjectCloner objectCloner = ObjectCloners.getSerializingObjectClonerFactory().createCloner(new ClonerConfiguration());
-        Object orig = new SerializableWithWriteObject();
-        final Object clone = objectCloner.clone(orig);
-        assertEquals(clone, orig);
+    @Test
+    public void testObjectWithSerializationTimeVariable() throws Throwable {
+        final ObjectClonerFactory clonerFactory = ObjectCloners.getSerializingObjectClonerFactory();
+        final ClonerConfiguration configuration = new ClonerConfiguration();
+        final ObjectCloner cloner = clonerFactory.createCloner(configuration);
+
+        CloneTesterWithSerializeOnlyVariable original = new CloneTesterWithSerializeOnlyVariable("foo");
+        CloneTesterWithSerializeOnlyVariable clone = (CloneTesterWithSerializeOnlyVariable) cloner.clone(original);
+
+        assertNull(original.tmp);
+        assertEquals(clone.tmp, "foo");
+        assertEquals(clone.test, "foo");
+    }
+
+    @Test
+    public void testObjectWithSelectiveSerialization() throws Throwable {
+        final ObjectClonerFactory clonerFactory = ObjectCloners.getSerializingObjectClonerFactory();
+        final ClonerConfiguration configuration = new ClonerConfiguration();
+        final ObjectCloner cloner = clonerFactory.createCloner(configuration);
+        CloneTestWithSelectiveSerialization clone = (CloneTestWithSelectiveSerialization) cloner.clone(new CloneTestWithSelectiveSerialization("foo"));
+        assertNull(clone.tmp);
+        assertEquals(clone.test, "foo");
+    }
+
+    public static class CloneTesterWithSerializeOnlyVariable implements Serializable {
+        private String test;
+        private String tmp;
+
+        public CloneTesterWithSerializeOnlyVariable() {
+
+        }
+
+        public CloneTesterWithSerializeOnlyVariable(String value) {
+            this.test = value;
+        }
+
+
+        // copy the variable 'test' in 'tmp' during serialization. After deserialization both values should be populated.
+        private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+            try {
+                tmp = test;
+                s.defaultWriteObject();
+            } finally {
+                tmp = null;
+            }
+        }
+    }
+
+    public static class CloneTestWithSelectiveSerialization implements Serializable {
+        private String test;
+        private String tmp;
+
+        public CloneTestWithSelectiveSerialization() {}
+
+        public CloneTestWithSelectiveSerialization(String value) {
+            this.test=value;
+            this.tmp =value;
+        }
+
+        // serialize 'test' field only. After deserialization 'tmp' should be empty
+        private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+            ObjectOutputStream.PutField putField = s.putFields();
+            putField.put("test", this.test);
+            s.writeFields();
+        }
+
+        private void readObject(java.io.ObjectInputStream s) throws IOException {
+            try {
+                this.test = (String) s.readFields().get("test", null);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**

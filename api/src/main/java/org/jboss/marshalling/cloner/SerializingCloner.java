@@ -297,7 +297,6 @@ class SerializingCloner implements ObjectCloner {
             origInfo.callWriteObject(orig, stepObjectOutputStream);
             stepObjectOutputStream.flush();
             stepObjectOutputStream.doFinish();
-            prepareFields(orig, fields);
             cloneFields(fields);
             if (cloneInfo.hasReadObject()) {
                 cloneInfo.callReadObject(clone, createStepObjectInputStream(clone, cloneInfo, fields, steps));
@@ -389,7 +388,8 @@ class SerializingCloner implements ObjectCloner {
         final Map<String, ReadField> map = fields.fieldMap;
         for (String name : defMap.keySet()) {
             final SerializableField field = defMap.get(name);
-            if (field.getKind() == Kind.OBJECT) {
+            // only clone object field if it has been serialized
+            if (field.getKind() == Kind.OBJECT && map.get(name) != null) {
                 map.put(name, new ObjectReadField(field, clone(map.get(name).getObject())));
                 continue;
             }

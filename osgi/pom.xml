@@ -25,7 +25,7 @@
     <name>JBoss Marshalling OSGi Bundle</name>
     <description>JBoss Marshalling OSGi Bundle with API and implementations</description>
     <artifactId>jboss-marshalling-osgi</artifactId>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>org.jboss.marshalling</groupId>
@@ -35,6 +35,8 @@
 
     <properties>
         <bundle.namespace>org.jboss.marshalling</bundle.namespace>
+        <intermediary_jar_name>intermediary-${project.build.finalName}</intermediary_jar_name>
+        <intermediary_jar_path>${project.build.directory}/${intermediary_jar_name}.jar</intermediary_jar_path>
     </properties>
 
     <dependencies>
@@ -42,16 +44,19 @@
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling-river</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling-serial</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -66,13 +71,16 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <finalName>${intermediary_jar_name}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/services/org.jboss.marshalling.ProviderDescriptor</resource>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -81,15 +89,61 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.4.0</version>
+                <version>3.3.0</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-DocURL>http://jboss.org/jbossmarshalling</Bundle-DocURL>
-                        <Import-Package>org.jboss.modules.*;sun.reflect.*;resolution:=optional</Import-Package>
-                        <Export-Package>org.jboss.marshalling.*;version=${project.version};-split-package:=error</Export-Package>
-                    </instructions>
-                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <configuration>
+                            <instructions>
+                                <Include-Resource>
+                                    @${intermediary_jar_path},
+                                </Include-Resource>
+                                <Bundle-DocURL>http://jboss.org/jbossmarshalling</Bundle-DocURL>
+                                <Import-Package>org.jboss.modules.*;sun.reflect.*;resolution:=optional</Import-Package>
+                                <Export-Package>
+                                    org.jboss.marshalling.*;version=${project.version};-split-package:=error
+                                </Export-Package>
+                            </instructions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>target/${project.build.finalName}-shaded-sources.jar</file>
+                                    <type>jar</type>
+                                    <classifier>sources</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

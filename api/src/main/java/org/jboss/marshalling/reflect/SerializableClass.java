@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -40,16 +38,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import sun.reflect.ReflectionFactory;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
+ *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SerializableClass {
-    @SuppressWarnings("unchecked")
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged((PrivilegedAction<ReflectionFactory>)ReflectionFactory::getReflectionFactory);
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
-
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
     private final Method writeObject;
@@ -80,7 +76,7 @@ public final class SerializableClass {
             final SerializableClass lookedUp = REGISTRY.lookup(t);
             final Constructor<?> constructor = lookedUp.noArgConstructor;
             if (constructor != null) {
-                final Constructor newConstructor = reflectionFactory.newConstructorForSerialization(subject, constructor);
+                final Constructor newConstructor = JDKSpecific.newConstructorForSerialization(subject, constructor);
                 newConstructor.setAccessible(true);
                 constructorMap.put(t, newConstructor);
             }

@@ -31,23 +31,19 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import sun.reflect.ReflectionFactory;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
+ *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SerializableClass {
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
-        public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
-    });
     private final Class<?> subject;
     private final Method writeObject;
     private final Method writeReplace;
@@ -555,7 +551,7 @@ public final class SerializableClass {
             return null;
         }
         topConstructor.setAccessible(true);
-        final Constructor<T> generatedConstructor = (Constructor<T>) reflectionFactory.newConstructorForSerialization(subject, topConstructor);
+        final Constructor<T> generatedConstructor = (Constructor<T>) JDKSpecific.newConstructorForSerialization(subject, topConstructor);
         generatedConstructor.setAccessible(true);
         return generatedConstructor;
     }

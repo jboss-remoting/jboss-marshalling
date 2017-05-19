@@ -70,6 +70,15 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>org.jboss.marshalling:jboss-marshalling</artifact>
+                                    <excludes>
+                                        <!-- org.apache.felix:maven-bundle-plugin chokes on Multi-Version jar content :( -->
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <finalName>${intermediary_jar_name}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
@@ -113,6 +122,5 @@
             </plugin>
         </plugins>
     </build>
-
 
 </project>

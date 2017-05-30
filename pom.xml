@@ -80,12 +80,6 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
                         <detectJavaApiLink>false</detectJavaApiLink>
-                        <doclet>net.gleamynode.apiviz.APIviz</doclet>
-                        <docletArtifact>
-                            <groupId>org.jboss.apiviz</groupId>
-                            <artifactId>apiviz</artifactId>
-                            <version>1.3.2.GA</version>
-                        </docletArtifact>
                         <doctitle>JBoss Marshalling ${project.version}</doctitle>
                         <header>JBoss Marshalling ${project.version}</header>
                         <footer>JBoss Marshalling ${project.version}</footer>

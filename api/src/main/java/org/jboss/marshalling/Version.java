@@ -21,7 +21,6 @@ package org.jboss.marshalling;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 /**
@@ -33,14 +32,16 @@ public final class Version {
     static {
         String jarName = "(unknown)";
         String versionString = "(unknown)";
-        try (final InputStream stream = Version.class.getResourceAsStream("Version.properties")) {
-            if (stream != null) try (final InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+        final InputStream stream = Version.class.getResourceAsStream("Version.properties");
+        if (stream != null) { 
+            try {
+                final InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
                 Properties versionProps = new Properties();
                 versionProps.load(reader);
                 jarName = versionProps.getProperty("jarName", jarName);
                 versionString = versionProps.getProperty("version", versionString);
+            } catch(IOException ignored) {
             }
-        } catch (IOException ignored) {
         }
         JAR_NAME = jarName;
         VERSION = versionString;

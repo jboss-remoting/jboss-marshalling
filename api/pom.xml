@@ -38,7 +38,7 @@
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling-jdk9-supplement</artifactId>
-            <version>1.0.Final</version>
+            <version>1.0.1.Final</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

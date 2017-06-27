@@ -27,7 +27,7 @@
     <groupId>org.jboss.marshalling</groupId>
     <artifactId>jboss-marshalling-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.10.SP3-SNAPSHOT</version>
+    <version>1.4.10.SP3</version>
 
     <parent>
         <groupId>org.jboss</groupId>

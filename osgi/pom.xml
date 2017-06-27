@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.jboss.marshalling</groupId>
         <artifactId>jboss-marshalling-parent</artifactId>
-        <version>1.4.10.SP3</version>
+        <version>1.4.10.SP4-SNAPSHOT</version>
     </parent>
 
     <properties>

@@ -229,6 +229,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         depth ++;
         try {
             for (;;) switch (leadByte) {
+                case ID_LEADBYTE_0:
+                    return "LEADBYTE_0";
                 case ID_NULL: {
                     return null;
                 }

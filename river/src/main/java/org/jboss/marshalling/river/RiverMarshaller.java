@@ -1039,10 +1039,12 @@ public class RiverMarshaller extends AbstractMarshaller {
                     throw ioe;
                 }
             } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, info, serializableField);
+                TraceInformation.addObjectInformation(e, obj);
                 throw e;
             } catch (RuntimeException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, info, serializableField);
+                TraceInformation.addObjectInformation(e, obj);
                 throw e;
             }
         }
@@ -1091,10 +1093,10 @@ public class RiverMarshaller extends AbstractMarshaller {
                     }
                 }
             } catch (IOException e){
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, info, serializableField);
                 throw e;
             } catch (RuntimeException e) {
-                TraceInformation.addFieldInformation(e, serializableField.getName());
+                TraceInformation.addFieldInformation(e, info, serializableField);
                 throw e;
             }
         }

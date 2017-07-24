@@ -18,6 +18,9 @@
 
 package org.jboss.marshalling;
 
+import org.jboss.marshalling.reflect.SerializableClass;
+import org.jboss.marshalling.reflect.SerializableField;
+
 import java.io.Serializable;
 
 /**
@@ -103,6 +106,19 @@ public final class TraceInformation extends Throwable {
         final TraceInformation ti = getOrAddTraceInformation(t);
         final Info oldInfo = ti.info;
         ti.info = new FieldInfo(oldInfo, fieldName);
+    }
+
+    /**
+     * Add information about a field which was being marshalled.
+     *
+     * @param t the throwable to update
+     * @param owner
+     *      Reference to the class that owns the field.
+     * @param field
+     *      The field being (un-)marshalled.
+     */
+    public static void addFieldInformation(Throwable t, SerializableClass owner, SerializableField field) {
+        addFieldInformation(t,owner.getSubjectClass().getName()+"."+field.getName());
     }
 
     /**

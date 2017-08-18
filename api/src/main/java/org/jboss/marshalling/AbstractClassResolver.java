@@ -81,14 +81,6 @@ public abstract class AbstractClassResolver implements ClassResolver {
         // no operation
     }
 
-    private ClassLoader getClassLoaderChecked() throws ClassNotFoundException {
-        final ClassLoader loader = getClassLoader();
-        if (loader == null) {
-            throw new ClassNotFoundException("No classloader available");
-        }
-        return loader;
-    }
-
     /** {@inheritDoc}  The base implementation returns the name of the class. */
     public String getClassName(final Class<?> clazz) throws IOException {
         return clazz.getName();
@@ -128,7 +120,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
      */
     protected Class<?> loadClass(final String name) throws ClassNotFoundException {
         final Class<?> prim = primitives.get(name);
-        return prim != null ? prim : Class.forName(name, false, getClassLoaderChecked());
+        return prim != null ? prim : Class.forName(name, false, getClassLoader());
     }
 
     /**
@@ -136,7 +128,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
      * each interface by name, returning a proxy class from that class loader.
      */
     public Class<?> resolveProxyClass(final Unmarshaller unmarshaller, final String[] interfaces) throws IOException, ClassNotFoundException {
-        final ClassLoader classLoader = getClassLoaderChecked();
+        final ClassLoader classLoader = getClassLoader();
         final int length = interfaces.length;
         Class<?>[] classes = new Class<?>[length];
         for (int i = 0; i < length; i ++) {

@@ -1656,7 +1656,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
-        final Object[] array = (Object[]) Array.newInstance(type, cnt);
+        final Object[] array = (Object[]) replace(Array.newInstance(type, cnt));
         final int idx = instanceCache.size();
         instanceCache.add(array);
         for (int i = 0; i < cnt; i ++) {

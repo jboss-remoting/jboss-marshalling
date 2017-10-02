@@ -47,6 +47,13 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.jboss.marshalling</groupId>
+            <artifactId>jboss-marshalling-jdk9-supplement</artifactId>
+            <version>1.0.1.Final</version>
+            <classifier>sources</classifier>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.modules</groupId>
             <artifactId>jboss-modules</artifactId>
             <scope>provided</scope>
@@ -86,9 +93,9 @@
                         </goals>
                         <configuration>
                             <includeGroupIds>org.jboss.marshalling</includeGroupIds>
-                            <includeArtifactIds>jboss-marshalling-jdk9-supplement</includeArtifactIds>
+                            <includeArtifactIds>jboss-marshalling-jdk9-supplement,jboss-marshalling-jdk9-supplement-sources</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
-                            <includes>**/*.class</includes>
+                            <includes>**/*.class,**/*.java</includes>
                             <outputDirectory>${project.build.directory}/generated-resources/META-INF/versions/9</outputDirectory>
                         </configuration>
                     </execution>
@@ -106,8 +113,16 @@
                             <Multi-Release>true</Multi-Release>
                         </manifestEntries>
                     </archive>
+                    <excludes>**/*.java</excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                   <groupId>org.apache.maven.plugins</groupId>
+                   <artifactId>maven-source-plugin</artifactId>
+                   <configuration>
+                       <excludes>**/*.class</excludes>
+                   </configuration>
+                 </plugin>
         </plugins>
     </build>
 </project>

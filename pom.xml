@@ -46,6 +46,8 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+
+        <jacoco-maven-plugin.version>0.7.9</jacoco-maven-plugin.version>
     </properties>
 
     <modules>
@@ -142,6 +144,11 @@
                 <version>6.8.8</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -175,4 +182,87 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+
+    <profiles>
+        <profile>
+            <id>jacoco</id>
+            <activation>
+                <property>
+                    <name>jacoco</name>
+                </property>
+            </activation>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco-maven-plugin.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.jacoco</groupId>
+                            <artifactId>jacoco-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>jacoco-prepare</id>
+                                    <goals>
+                                        <goal>prepare-agent</goal>
+                                    </goals>
+                                    <configuration>
+                                        <destFile>${project.build.directory}/jacoco.exec</destFile>
+                                        <propertyName>surefireArgLine</propertyName>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <argLine>${surefireArgLine}</argLine>
+                                <skipTests>false</skipTests>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>jacoco-generate-report</id>
+            <activation>
+                <property>
+                    <name>jacoco.generate.report</name>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.jacoco</groupId>
+                            <artifactId>jacoco-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>jacoco-report</id>
+                                    <goals>
+                                        <goal>report</goal>
+                                    </goals>
+                                    <configuration>
+                                        <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                                        <excludes>
+                                            <exclude>**/JDKSpecific*</exclude>
+                                        </excludes>
+                                        <outputDirectory>${project.build.directory}/jacoco-report</outputDirectory>
+                                        <outputEncoding>UTF-8</outputEncoding>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 </project>

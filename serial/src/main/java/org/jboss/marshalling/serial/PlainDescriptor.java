@@ -33,11 +33,9 @@ import org.jboss.marshalling.util.ShortReadField;
 import org.jboss.marshalling.util.Kind;
 import java.io.IOException;
 import java.io.ObjectStreamConstants;
-import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.StreamCorruptedException;
-import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -104,99 +102,91 @@ class PlainDescriptor extends Descriptor implements ObjectStreamConstants {
     }
 
     void defaultReadFields(final SerialUnmarshaller serialUnmarshaller, final Object subject) throws IOException, ClassNotFoundException {
-        try {
-            // first primitive fields
-            for (SerializableField serializableField : fields) {
-                final Field realField = serializableField.getField();
-                if (realField != null) {
-                    switch (serializableField.getKind()) {
-                        case BOOLEAN: {
-                            realField.setBoolean(subject, serialUnmarshaller.readBoolean());
-                            break;
-                        }
-                        case BYTE: {
-                            realField.setByte(subject, serialUnmarshaller.readByte());
-                            break;
-                        }
-                        case CHAR: {
-                            realField.setChar(subject, serialUnmarshaller.readChar());
-                            break;
-                        }
-                        case DOUBLE: {
-                            realField.setDouble(subject, serialUnmarshaller.readDouble());
-                            break;
-                        }
-                        case FLOAT: {
-                            realField.setFloat(subject, serialUnmarshaller.readFloat());
-                            break;
-                        }
-                        case INT: {
-                            realField.setInt(subject, serialUnmarshaller.readInt());
-                            break;
-                        }
-                        case LONG: {
-                            realField.setLong(subject, serialUnmarshaller.readLong());
-                            break;
-                        }
-                        case SHORT: {
-                            realField.setShort(subject, serialUnmarshaller.readShort());
-                            break;
-                        }
+        // first primitive fields
+        for (SerializableField serializableField : fields) {
+            if (serializableField.isAccessible()) {
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        serializableField.setBoolean(subject, serialUnmarshaller.readBoolean());
+                        break;
                     }
+                    case BYTE: {
+                        serializableField.setByte(subject, serialUnmarshaller.readByte());
+                        break;
+                    }
+                    case CHAR: {
+                        serializableField.setChar(subject, serialUnmarshaller.readChar());
+                        break;
+                    }
+                    case DOUBLE: {
+                        serializableField.setDouble(subject, serialUnmarshaller.readDouble());
+                        break;
+                    }
+                    case FLOAT: {
+                        serializableField.setFloat(subject, serialUnmarshaller.readFloat());
+                        break;
+                    }
+                    case INT: {
+                        serializableField.setInt(subject, serialUnmarshaller.readInt());
+                        break;
+                    }
+                    case LONG: {
+                        serializableField.setLong(subject, serialUnmarshaller.readLong());
+                        break;
+                    }
+                    case SHORT: {
+                        serializableField.setShort(subject, serialUnmarshaller.readShort());
+                        break;
+                    }
+                }
+            } else {
+                // throw away - see JBMAR-185
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        serialUnmarshaller.readBoolean();
+                        break;
+                    }
+                    case BYTE: {
+                        serialUnmarshaller.readByte();
+                        break;
+                    }
+                    case CHAR: {
+                        serialUnmarshaller.readChar();
+                        break;
+                    }
+                    case DOUBLE: {
+                        serialUnmarshaller.readDouble();
+                        break;
+                    }
+                    case FLOAT: {
+                        serialUnmarshaller.readFloat();
+                        break;
+                    }
+                    case INT: {
+                        serialUnmarshaller.readInt();
+                        break;
+                    }
+                    case LONG: {
+                        serialUnmarshaller.readLong();
+                        break;
+                    }
+                    case SHORT: {
+                        serialUnmarshaller.readShort();
+                        break;
+                    }
+                }
+            }
+        }
+        // next object fields
+        for (SerializableField serializableField : fields) {
+            if (serializableField.getKind() == Kind.OBJECT) {
+                if (serializableField.isAccessible()) {
+                    serializableField.setObject(subject, serialUnmarshaller.readObject());
                 } else {
                     // throw away - see JBMAR-185
-                    switch (serializableField.getKind()) {
-                        case BOOLEAN: {
-                            serialUnmarshaller.readBoolean();
-                            break;
-                        }
-                        case BYTE: {
-                            serialUnmarshaller.readByte();
-                            break;
-                        }
-                        case CHAR: {
-                            serialUnmarshaller.readChar();
-                            break;
-                        }
-                        case DOUBLE: {
-                            serialUnmarshaller.readDouble();
-                            break;
-                        }
-                        case FLOAT: {
-                            serialUnmarshaller.readFloat();
-                            break;
-                        }
-                        case INT: {
-                            serialUnmarshaller.readInt();
-                            break;
-                        }
-                        case LONG: {
-                            serialUnmarshaller.readLong();
-                            break;
-                        }
-                        case SHORT: {
-                            serialUnmarshaller.readShort();
-                            break;
-                        }
-                    }
+                    serialUnmarshaller.readObject();
                 }
             }
-            // next object fields
-            for (SerializableField serializableField : fields) {
-                if (serializableField.getKind() == Kind.OBJECT) {
-                    final Field realField = serializableField.getField();
-                    if (realField !=  null) {
-                        realField.set(subject, serialUnmarshaller.readObject());
-                    } else {
-                        // throw away - see JBMAR-185
-                        serialUnmarshaller.readObject();
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            final InvalidClassException ice = new InvalidClassException("Unexpected illegal access");
-            ice.initCause(e);
-            throw ice;
         }
     }
 

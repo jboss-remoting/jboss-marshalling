@@ -1781,8 +1781,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     protected void readFields(final Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {
         for (SerializableField serializableField : descriptor.getFields()) {
             try {
-                final Field field = serializableField.getField();
-                if (field == null) {
+                if (! serializableField.isAccessible()) {
                     // missing; consume stream data only
                     switch (serializableField.getKind()) {
                         case BOOLEAN: {
@@ -1822,59 +1821,47 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             break;
                         }
                     }
-                } else try {
+                } else {
                     switch (serializableField.getKind()) {
                         case BOOLEAN: {
-                            field.setBoolean(obj, readBoolean());
+                            serializableField.setBoolean(obj, readBoolean());
                             break;
                         }
                         case BYTE: {
-                            field.setByte(obj, readByte());
+                            serializableField.setByte(obj, readByte());
                             break;
                         }
                         case CHAR: {
-                            field.setChar(obj, readChar());
+                            serializableField.setChar(obj, readChar());
                             break;
                         }
                         case DOUBLE: {
-                            field.setDouble(obj, readDouble());
+                            serializableField.setDouble(obj, readDouble());
                             break;
                         }
                         case FLOAT: {
-                            field.setFloat(obj, readFloat());
+                            serializableField.setFloat(obj, readFloat());
                             break;
                         }
                         case INT: {
-                            field.setInt(obj, readInt());
+                            serializableField.setInt(obj, readInt());
                             break;
                         }
                         case LONG: {
-                            field.setLong(obj, readLong());
+                            serializableField.setLong(obj, readLong());
                             break;
                         }
                         case OBJECT: {
-                            field.set(obj, doReadObject(serializableField.isUnshared(), discardMissing));
+                            serializableField.setObject(obj, doReadObject(serializableField.isUnshared(), discardMissing));
                             break;
                         }
                         case SHORT: {
-                            field.setShort(obj, readShort());
+                            serializableField.setShort(obj, readShort());
                             break;
                         }
                     }
-                } catch (IllegalAccessException e) {
-                    final InvalidObjectException ioe = new InvalidObjectException("Unable to set a field");
-                    ioe.initCause(e);
-                    throw ioe;
                 }
-            } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
-                TraceInformation.addObjectInformation(e, obj);
-                throw e;
-            } catch (ClassNotFoundException e) {
-                TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
-                TraceInformation.addObjectInformation(e, obj);
-                throw e;
-            } catch (RuntimeException e) {
+            } catch (IOException | ClassNotFoundException | RuntimeException e) {
                 TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 TraceInformation.addObjectInformation(e, obj);
                 throw e;

@@ -1092,56 +1092,45 @@ public class RiverMarshaller extends AbstractMarshaller {
         final SerializableField[] serializableFields = info.getFields();
         for (SerializableField serializableField : serializableFields) {
             try {
-                try {
-                    final Field field = serializableField.getField();
-                    switch (serializableField.getKind()) {
-                        case BOOLEAN: {
-                            writeBoolean(field == null ? false : field.getBoolean(obj));
-                            break;
-                        }
-                        case BYTE: {
-                            writeByte(field == null ? 0 : field.getByte(obj));
-                            break;
-                        }
-                        case SHORT: {
-                            writeShort(field == null ? 0 : field.getShort(obj));
-                            break;
-                        }
-                        case INT: {
-                            writeInt(field == null ? 0 : field.getInt(obj));
-                            break;
-                        }
-                        case CHAR: {
-                            writeChar(field == null ? 0 : field.getChar(obj));
-                            break;
-                        }
-                        case LONG: {
-                            writeLong(field == null ? 0 : field.getLong(obj));
-                            break;
-                        }
-                        case DOUBLE: {
-                            writeDouble(field == null ? 0 : field.getDouble(obj));
-                            break;
-                        }
-                        case FLOAT: {
-                            writeFloat(field == null ? 0 : field.getFloat(obj));
-                            break;
-                        }
-                        case OBJECT: {
-                            doWriteObject(field == null ? null : field.get(obj), serializableField.isUnshared());
-                            break;
-                        }
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        writeBoolean(serializableField.isAccessible() && serializableField.getBoolean(obj));
+                        break;
                     }
-                } catch (IllegalAccessException e) {
-                    final InvalidObjectException ioe = new InvalidObjectException("Unexpected illegal access exception");
-                    ioe.initCause(e);
-                    throw ioe;
+                    case BYTE: {
+                        writeByte(serializableField.isAccessible() ? serializableField.getByte(obj) : 0);
+                        break;
+                    }
+                    case SHORT: {
+                        writeShort(serializableField.isAccessible() ? serializableField.getShort(obj) : 0);
+                        break;
+                    }
+                    case INT: {
+                        writeInt(serializableField.isAccessible() ? serializableField.getInt(obj) : 0);
+                        break;
+                    }
+                    case CHAR: {
+                        writeChar(serializableField.isAccessible() ? serializableField.getChar(obj) : 0);
+                        break;
+                    }
+                    case LONG: {
+                        writeLong(serializableField.isAccessible() ? serializableField.getLong(obj) : 0);
+                        break;
+                    }
+                    case DOUBLE: {
+                        writeDouble(serializableField.isAccessible() ? serializableField.getDouble(obj) : 0);
+                        break;
+                    }
+                    case FLOAT: {
+                        writeFloat(serializableField.isAccessible() ? serializableField.getFloat(obj) : 0);
+                        break;
+                    }
+                    case OBJECT: {
+                        doWriteObject(serializableField.isAccessible() ? serializableField.getObject(obj) : null, serializableField.isUnshared());
+                        break;
+                    }
                 }
-            } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, info, serializableField);
-                TraceInformation.addObjectInformation(e, obj);
-                throw e;
-            } catch (RuntimeException e) {
+            } catch (IOException | RuntimeException e) {
                 TraceInformation.addFieldInformation(e, info, serializableField);
                 TraceInformation.addObjectInformation(e, obj);
                 throw e;
@@ -1191,10 +1180,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                         break;
                     }
                 }
-            } catch (IOException e){
-                TraceInformation.addFieldInformation(e, info, serializableField);
-                throw e;
-            } catch (RuntimeException e) {
+            } catch (IOException | RuntimeException e){
                 TraceInformation.addFieldInformation(e, info, serializableField);
                 throw e;
             }

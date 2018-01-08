@@ -61,6 +61,7 @@
                         <include>**/*TestFactory.java</include>
                     </includes>
                     <argLine>-Xmx1024m</argLine>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <plugin>

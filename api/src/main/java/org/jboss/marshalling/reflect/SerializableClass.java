@@ -179,7 +179,6 @@ public final class SerializableClass {
         if (objectStreamFields != null) {
             final Map<String, Field> map = new HashMap<String, Field>();
             for (Field field : declaredFields) {
-                field.setAccessible(true);
                 map.put(field.getName(), field);
             }
             SerializableField[] fields = new SerializableField[objectStreamFields.length];
@@ -201,7 +200,6 @@ public final class SerializableClass {
         final ArrayList<SerializableField> fields = new ArrayList<SerializableField>(declaredFields.length);
         for (Field field : declaredFields) {
             if ((field.getModifiers() & (Modifier.TRANSIENT | Modifier.STATIC)) == 0) {
-                field.setAccessible(true);
                 fields.add(new SerializableField(field.getType(), field.getName(), false, field));
             }
         }

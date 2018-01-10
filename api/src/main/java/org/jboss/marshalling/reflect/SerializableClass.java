@@ -21,7 +21,6 @@ package org.jboss.marshalling.reflect;
 import java.io.ObjectInput;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
@@ -48,11 +47,7 @@ public final class SerializableClass {
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
-    private final Method writeObject;
-    private final Method writeReplace;
-    private final Method readObject;
-    private final Method readObjectNoData;
-    private final Method readResolve;
+    private final JDKSpecific.SerMethods serMethods;
     private final Constructor<?> noArgConstructor;
     private final Constructor<?> objectInputConstructor;
     private final SerializableField[] fields;
@@ -83,68 +78,7 @@ public final class SerializableClass {
         }
         nonInitConstructors = constructorMap;
         // private methods
-        Method writeObject = null;
-        Method readObject = null;
-        Method readObjectNoData = null;
-        Method writeReplace = null;
-        Method readResolve = null;
-        for (Method method : subject.getDeclaredMethods()) {
-            final int modifiers = method.getModifiers();
-            final String methodName = method.getName();
-            final Class<?> methodReturnType = method.getReturnType();
-            if (! Modifier.isStatic(modifiers)) {
-                if (Modifier.isPrivate(modifiers) && methodReturnType == void.class) {
-                    if (methodName.equals("writeObject")) {
-                        final Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 1 && parameterTypes[0] == ObjectOutputStream.class) {
-                            writeObject = method;
-                            writeObject.setAccessible(true);
-                        }
-                    } else if (methodName.equals("readObject")) {
-                        final Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInputStream.class) {
-                            readObject = method;
-                            readObject.setAccessible(true);
-                        }
-                    } else if (methodName.equals("readObjectNoData")) {
-                        final Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 0) {
-                            readObjectNoData = method;
-                            readObjectNoData.setAccessible(true);
-                        }
-                    }
-                } else if (methodReturnType == Object.class) {
-                    // inheritable
-                    if (methodName.equals("writeReplace")) {
-                        final Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 0) {
-                            writeReplace = method;
-                            writeReplace.setAccessible(true);
-                        }
-                    } else if (methodName.equals("readResolve")) {
-                        final Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 0) {
-                            readResolve = method;
-                            readResolve.setAccessible(true);
-                        }
-                    }
-                }
-            }
-        }
-        if (readResolve == null || writeReplace == null) {
-            final Class<?> superclass = subject.getSuperclass();
-            if (superclass != null) {
-                final SerializableClass superInfo = REGISTRY.lookup(superclass);
-                final Method otherReadResolve = superInfo.readResolve;
-                if (readResolve == null && otherReadResolve != null && ! Modifier.isPrivate(otherReadResolve.getModifiers())) {
-                    readResolve = otherReadResolve;
-                }
-                final Method otherWriteReplace = superInfo.writeReplace;
-                if (writeReplace == null && otherWriteReplace != null && ! Modifier.isPrivate(otherWriteReplace.getModifiers())) {
-                    writeReplace = otherWriteReplace;
-                }
-            }
-        }
+        serMethods = new JDKSpecific.SerMethods(subject);
         Constructor<?> noArgConstructor = null;
         Constructor<?> objectInputConstructor = null;
         for (Constructor<?> constructor : subject.getDeclaredConstructors()) {
@@ -157,13 +91,8 @@ public final class SerializableClass {
                 objectInputConstructor.setAccessible(true);
             }
         }
-        this.writeObject = writeObject;
-        this.readObject = readObject;
-        this.readObjectNoData = readObjectNoData;
         this.noArgConstructor = noArgConstructor;
         this.objectInputConstructor = objectInputConstructor;
-        this.readResolve = readResolve;
-        this.writeReplace = writeReplace;
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
@@ -264,7 +193,7 @@ public final class SerializableClass {
      * @return {@code true} if there is a {@code writeObject()} method
      */
     public boolean hasWriteObject() {
-        return writeObject != null;
+        return serMethods.hasWriteObject();
     }
 
     /**
@@ -275,22 +204,7 @@ public final class SerializableClass {
      * @throws IOException if an I/O error occurs
      */
     public void callWriteObject(Object object, ObjectOutputStream outputStream) throws IOException {
-        try {
-            writeObject.invoke(object, outputStream);
-        } catch (InvocationTargetException e) {
-            final Throwable te = e.getTargetException();
-            if (te instanceof IOException) {
-                throw (IOException)te;
-            } else if (te instanceof RuntimeException) {
-                throw (RuntimeException)te;
-            } else if (te instanceof Error) {
-                throw (Error)te;
-            } else {
-                throw new IllegalStateException("Unexpected exception", te);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Method is unexpectedly inaccessible");
-        }
+        serMethods.callWriteObject(object, outputStream);
     }
 
     /**
@@ -299,7 +213,7 @@ public final class SerializableClass {
      * @return {@code true} if there is a {@code readObject()} method
      */
     public boolean hasReadObject() {
-        return readObject != null;
+        return serMethods.hasReadObject();
     }
 
     /**
@@ -311,24 +225,7 @@ public final class SerializableClass {
      * @throws ClassNotFoundException if a class was not able to be loaded
      */
     public void callReadObject(Object object, ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
-        try {
-            readObject.invoke(object, inputStream);
-        } catch (InvocationTargetException e) {
-            final Throwable te = e.getTargetException();
-            if (te instanceof IOException) {
-                throw (IOException)te;
-            } else if (te instanceof ClassNotFoundException) {
-                throw (ClassNotFoundException)te;
-            } else if (te instanceof RuntimeException) {
-                throw (RuntimeException)te;
-            } else if (te instanceof Error) {
-                throw (Error)te;
-            } else {
-                throw new IllegalStateException("Unexpected exception", te);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Method is unexpectedly inaccessible");
-        }
+        serMethods.callReadObject(object, inputStream);
     }
 
     /**
@@ -337,7 +234,7 @@ public final class SerializableClass {
      * @return {@code true} if there is a {@code readObjectNoData()} method
      */
     public boolean hasReadObjectNoData() {
-        return readObjectNoData != null;
+        return serMethods.hasReadObjectNoData();
     }
 
     /**
@@ -347,22 +244,7 @@ public final class SerializableClass {
      * @throws ObjectStreamException if an I/O error occurs
      */
     public void callReadObjectNoData(Object object) throws ObjectStreamException {
-        try {
-            readObjectNoData.invoke(object);
-        } catch (InvocationTargetException e) {
-            final Throwable te = e.getTargetException();
-            if (te instanceof ObjectStreamException) {
-                throw (ObjectStreamException)te;
-            } else if (te instanceof RuntimeException) {
-                throw (RuntimeException)te;
-            } else if (te instanceof Error) {
-                throw (Error)te;
-            } else {
-                throw new IllegalStateException("Unexpected exception", te);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Method is unexpectedly inaccessible");
-        }
+        serMethods.callReadObjectNoData(object);
     }
 
     /**
@@ -371,7 +253,7 @@ public final class SerializableClass {
      * @return {@code true} if there is a {@code writeReplace()} method
      */
     public boolean hasWriteReplace() {
-        return writeReplace != null;
+        return serMethods.hasWriteReplace();
     }
 
     /**
@@ -382,22 +264,7 @@ public final class SerializableClass {
      * @throws ObjectStreamException if an I/O error occurs
      */
     public Object callWriteReplace(Object object) throws ObjectStreamException {
-        try {
-            return writeReplace.invoke(object);
-        } catch (InvocationTargetException e) {
-            final Throwable te = e.getTargetException();
-            if (te instanceof ObjectStreamException) {
-                throw (ObjectStreamException)te;
-            } else if (te instanceof RuntimeException) {
-                throw (RuntimeException)te;
-            } else if (te instanceof Error) {
-                throw (Error)te;
-            } else {
-                throw new IllegalStateException("Unexpected exception", te);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Method is unexpectedly inaccessible");
-        }
+        return serMethods.callWriteReplace(object);
     }
 
     /**
@@ -406,7 +273,7 @@ public final class SerializableClass {
      * @return {@code true} if there is a {@code readResolve()} method
      */
     public boolean hasReadResolve() {
-        return readResolve != null;
+        return serMethods.hasReadResolve();
     }
 
     /**
@@ -417,22 +284,7 @@ public final class SerializableClass {
      * @throws ObjectStreamException if an I/O error occurs
      */
     public Object callReadResolve(Object object) throws ObjectStreamException {
-        try {
-            return readResolve.invoke(object);
-        } catch (InvocationTargetException e) {
-            final Throwable te = e.getTargetException();
-            if (te instanceof ObjectStreamException) {
-                throw (ObjectStreamException)te;
-            } else if (te instanceof RuntimeException) {
-                throw (RuntimeException)te;
-            } else if (te instanceof Error) {
-                throw (Error)te;
-            } else {
-                throw new IllegalStateException("Unexpected exception", te);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Method is unexpectedly inaccessible");
-        }
+        return serMethods.callReadResolve(object);
     }
 
     /**
@@ -572,5 +424,9 @@ public final class SerializableClass {
             clazz = clazz.getSuperclass();
         }
         return (Constructor<T>) nonInitConstructors.get(clazz);
+    }
+
+    JDKSpecific.SerMethods getSerMethods() {
+        return serMethods;
     }
 }

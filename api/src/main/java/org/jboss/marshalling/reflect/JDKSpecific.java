@@ -19,6 +19,7 @@
 package org.jboss.marshalling.reflect;
 
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
@@ -52,6 +53,8 @@ final class JDKSpecific {
         private final Method writeObject;
         private final Method readResolve;
         private final Method writeReplace;
+        private final Constructor<?> noArgConstructor;
+        private final Constructor<?> objectInputConstructor;
 
         SerMethods(Class<?> clazz) {
             Method writeObject = null;
@@ -121,6 +124,20 @@ final class JDKSpecific {
             this.writeObject = writeObject;
             this.readResolve = readResolve;
             this.writeReplace = writeReplace;
+            Constructor<?> noArgConstructor = null;
+            Constructor<?> objectInputConstructor = null;
+            for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+                final Class<?>[] parameterTypes = constructor.getParameterTypes();
+                if (parameterTypes.length == 0) {
+                    noArgConstructor = constructor;
+                    noArgConstructor.setAccessible(true);
+                } else if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInput.class) {
+                    objectInputConstructor = constructor;
+                    objectInputConstructor.setAccessible(true);
+                }
+            }
+            this.noArgConstructor = noArgConstructor;
+            this.objectInputConstructor = objectInputConstructor;
         }
 
         boolean hasWriteObject() {
@@ -240,5 +257,12 @@ final class JDKSpecific {
             }
         }
 
+        Constructor<?> getNoArgConstructor() {
+            return noArgConstructor;
+        }
+
+        Constructor<?> getObjectInputConstructor() {
+            return objectInputConstructor;
+        }
     }
 }

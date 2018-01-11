@@ -53,8 +53,6 @@ public final class SerializableClass {
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
     private final JDKSpecific.SerMethods serMethods;
-    private final Constructor<?> noArgConstructor;
-    private final Constructor<?> objectInputConstructor;
     private final SerializableField[] fields;
     private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
@@ -74,7 +72,7 @@ public final class SerializableClass {
         final IdentityHashMap<Class<?>, Constructor<?>> constructorMap = new IdentityHashMap<Class<?>, Constructor<?>>();
         for (Class<?> t = subject.getSuperclass(); t != null; t = t.getSuperclass()) {
             final SerializableClass lookedUp = REGISTRY.lookup(t);
-            final Constructor<?> constructor = lookedUp.noArgConstructor;
+            final Constructor<?> constructor = lookedUp.serMethods.getNoArgConstructor();
             if (constructor != null) {
                 constructorMap.put(t, JDKSpecific.newConstructorForSerialization(subject, constructor));
             }
@@ -82,20 +80,6 @@ public final class SerializableClass {
         nonInitConstructors = constructorMap;
         // private methods
         serMethods = new JDKSpecific.SerMethods(subject);
-        Constructor<?> noArgConstructor = null;
-        Constructor<?> objectInputConstructor = null;
-        for (Constructor<?> constructor : subject.getDeclaredConstructors()) {
-            final Class<?>[] parameterTypes = constructor.getParameterTypes();
-            if (parameterTypes.length == 0) {
-                noArgConstructor = constructor;
-                noArgConstructor.setAccessible(true);
-            } else if (parameterTypes.length == 1 && parameterTypes[0] == ObjectInput.class) {
-                objectInputConstructor = constructor;
-                objectInputConstructor.setAccessible(true);
-            }
-        }
-        this.noArgConstructor = noArgConstructor;
-        this.objectInputConstructor = objectInputConstructor;
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
@@ -293,6 +277,7 @@ public final class SerializableClass {
      * @return {@code true} if there is such a constructor
      */
     public boolean hasPublicNoArgConstructor() {
+        final Constructor<?> noArgConstructor = serMethods.getNoArgConstructor();
         return noArgConstructor != null && Modifier.isPublic(noArgConstructor.getModifiers());
     }
 
@@ -303,6 +288,7 @@ public final class SerializableClass {
      * @throws IOException if an I/O error occurs
      */
     public Object callNoArgConstructor() throws IOException {
+        final Constructor<?> noArgConstructor = serMethods.getNoArgConstructor();
         return invokeConstructor(noArgConstructor);
     }
 
@@ -312,6 +298,7 @@ public final class SerializableClass {
      * @return {@code true} if there is such a constructor
      */
     public boolean hasObjectInputConstructor() {
+        final Constructor<?> objectInputConstructor = serMethods.getObjectInputConstructor();
         return objectInputConstructor != null && Modifier.isPublic(objectInputConstructor.getModifiers());
     }
 
@@ -323,6 +310,7 @@ public final class SerializableClass {
      * @throws IOException if an I/O error occurs
      */
     public Object callObjectInputConstructor(final ObjectInput objectInput) throws IOException {
+        final Constructor<?> objectInputConstructor = serMethods.getObjectInputConstructor();
         return invokeConstructor(objectInputConstructor, objectInput);
     }
 
@@ -410,7 +398,7 @@ public final class SerializableClass {
 
     @SuppressWarnings("unchecked")
     <T> Constructor<T> getNoArgConstructor() {
-        return (Constructor<T>) noArgConstructor;
+        return (Constructor<T>) serMethods.getNoArgConstructor();
     }
 
     public String toString() {

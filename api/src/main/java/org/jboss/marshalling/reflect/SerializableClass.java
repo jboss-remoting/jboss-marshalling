@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -38,12 +39,16 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import org.jboss.marshalling._private.GetUnsafeAction;
+import sun.misc.Unsafe;
+
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SerializableClass {
+    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
@@ -148,11 +153,8 @@ public final class SerializableClass {
         if ((field.getModifiers() & requiredModifiers) != requiredModifiers) {
             return null;
         }
-        field.setAccessible(true);
         try {
-            return (ObjectStreamField[]) field.get(null);
-        } catch (IllegalAccessException e) {
-            return null;
+            return (ObjectStreamField[]) unsafe.getObject(unsafe.staticFieldBase(field), unsafe.staticFieldOffset(field));
         } catch (ClassCastException e) {
             return null;
         }

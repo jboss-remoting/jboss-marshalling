@@ -62,6 +62,7 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.SerializabilityChecker;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling._private.GetUnsafeAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -77,6 +78,7 @@ import org.jboss.marshalling.util.LongReadField;
 import org.jboss.marshalling.util.ObjectReadField;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;
+import sun.misc.Unsafe;
 
 /**
  * An object cloner which uses serialization methods to clone objects.
@@ -452,11 +454,7 @@ class SerializingCloner implements ObjectCloner {
     }
 
     private static InvocationHandler getInvocationHandler(final Object orig) {
-        try {
-            return (InvocationHandler) proxyInvocationHandler.get(orig);
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
-        }
+        return (InvocationHandler) unsafe.getObjectVolatile(orig, proxyInvocationHandlerOffset);
     }
 
     private abstract static class Step {
@@ -466,7 +464,10 @@ class SerializingCloner implements ObjectCloner {
     private static final Set<Class<?>> UNCLONED;
     private static final IdentityIntMap<Class<?>> PRIMITIVE_ARRAYS;
 
+    private static final Unsafe unsafe;
+
     private static final Field proxyInvocationHandler;
+    private static final long proxyInvocationHandlerOffset;
 
     static {
         final Set<Class<?>> set = new HashSet<Class<?>>();
@@ -502,17 +503,15 @@ class SerializingCloner implements ObjectCloner {
         map.put(double[].class, 6);
         map.put(char[].class, 7);
         PRIMITIVE_ARRAYS = map;
-        proxyInvocationHandler = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    final Field field = Proxy.class.getDeclaredField("h");
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new NoSuchFieldError(e.getMessage());
-                }
-            }
-        });
+        final Field field;
+        try {
+            field = Proxy.class.getDeclaredField("h");
+        } catch (NoSuchFieldException e) {
+            throw new NoSuchFieldError(e.getMessage());
+        }
+        unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+        proxyInvocationHandler = field;
+        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
     }
 
     class StepObjectOutput extends AbstractObjectOutput implements Marshaller {

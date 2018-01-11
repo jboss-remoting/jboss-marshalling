@@ -71,9 +71,7 @@ public final class SerializableClass {
             final SerializableClass lookedUp = REGISTRY.lookup(t);
             final Constructor<?> constructor = lookedUp.noArgConstructor;
             if (constructor != null) {
-                final Constructor newConstructor = JDKSpecific.newConstructorForSerialization(subject, constructor);
-                newConstructor.setAccessible(true);
-                constructorMap.put(t, newConstructor);
+                constructorMap.put(t, JDKSpecific.newConstructorForSerialization(subject, constructor));
             }
         }
         nonInitConstructors = constructorMap;

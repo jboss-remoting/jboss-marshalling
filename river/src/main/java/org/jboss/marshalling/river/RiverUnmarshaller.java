@@ -27,6 +27,7 @@ import java.io.ObjectInputValidation;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -70,11 +71,13 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling._private.GetUnsafeAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.FlatNavigableMap;
 import org.jboss.marshalling.util.FlatNavigableSet;
+import sun.misc.Unsafe;
 
 import static org.jboss.marshalling.river.Protocol.*;
 
@@ -93,20 +96,18 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private SortedSet<Validator> validators;
     private int validatorSeq;
 
+
+    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
     private static final Field proxyInvocationHandler;
+    private static final long proxyInvocationHandlerOffset;
 
     static {
-        proxyInvocationHandler = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    final Field field = Proxy.class.getDeclaredField("h");
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new NoSuchFieldError(e.getMessage());
-                }
-            }
-        });
+        try {
+            proxyInvocationHandler = Proxy.class.getDeclaredField("h");
+        } catch (NoSuchFieldException e) {
+            throw new NoSuchFieldError(e.getMessage());
+        }
+        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
     }
 
     protected RiverUnmarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {
@@ -1367,11 +1368,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final Object obj = registry.lookup(type).callNonInitConstructor(nonSerializableSuperclass);
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
-                    try {
-                        proxyInvocationHandler.set(obj, doReadNestedObject(unshared, "[proxy invocation handler]"));
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidClassException(type.getName(), "Unable to set proxy invocation handler");
-                    }
+                    // force a cast for safety
+                    unsafe.putObject(obj, proxyInvocationHandlerOffset, InvocationHandler.class.cast(doReadNestedObject(unshared, "[proxy invocation handler]")));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
                         instanceCache.set(idx, null);

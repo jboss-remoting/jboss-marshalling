@@ -28,7 +28,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+
+import org.jboss.marshalling._private.GetReflectionFactoryAction;
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -37,11 +38,11 @@ import sun.reflect.ReflectionFactory;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class JDKSpecific {
+    private JDKSpecific() {}
+
     static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
 
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
-        public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
-    });
+    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
 
     static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
         return reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);

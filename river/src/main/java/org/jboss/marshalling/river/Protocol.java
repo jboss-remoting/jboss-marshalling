@@ -31,6 +31,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.jboss.marshalling._private.GetReflectionFactoryAction;
+import org.jboss.marshalling._private.GetUnsafeAction;
+import sun.misc.Unsafe;
+import sun.reflect.ReflectionFactory;
+
 /**
  *
  */
@@ -205,6 +210,8 @@ final class Protocol {
 
     public static final int ID_UNMODIFIABLE_MAP_ENTRY_SET = 0x82;
 
+    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
     static final Class<?> singletonMapClass = Collections.singletonMap(null, null).getClass();
@@ -242,47 +249,39 @@ final class Protocol {
     static final Field unmodifiableMapEntrySetField;
     static final Constructor<?> unmodifiableMapEntrySetCtor;
 
+    static Object readField(Field field, final Object obj) {
+        return unsafe.getObject(obj, unsafe.objectFieldOffset(field));
+    }
+
     static Field findUnmodifiableField(final Class<?> search) {
-        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            @Override
-            public Field run() {
-                Class<?> clazz = search;
-                final HashSet<String> strings = new HashSet<String>(Arrays.asList("c", "ss", "list", "m"));
-                for (;;) {
-                    if (clazz == Object.class) {
-                        throw new IllegalStateException("No candidate collection fields found in " + clazz);
-                    }
-                    for (Field field : clazz.getDeclaredFields()) {
-                        if (strings.contains(field.getName())) {
-                            field.setAccessible(true);
-                            return field;
-                        }
-                    }
-                    clazz = clazz.getSuperclass();
+        Class<?> clazz = search;
+        final HashSet<String> strings = new HashSet<String>(Arrays.asList("c", "ss", "list", "m"));
+        for (;;) {
+            if (clazz == Object.class) {
+                throw new IllegalStateException("No candidate collection fields found in " + clazz);
+            }
+            for (Field field : clazz.getDeclaredFields()) {
+                if (strings.contains(field.getName())) {
+                    return field;
                 }
             }
-        });
-
+            clazz = clazz.getSuperclass();
+        }
     }
 
     static {
-        Class<?> clazz = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> {
-            try {
-                return Class.forName("java.util.EnumSet$SerializationProxy");
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("No standard serialization proxy found for enum set!");
+        try {
+            enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("No standard serialization proxy found for enum set!");
+        }
+        Field field = null;
+        for (Field declared : reverseOrder2Class.getDeclaredFields()) {
+            if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
+                field = declared;
+                break;
             }
-        });
-        enumSetProxyClass = clazz;
-        Field field = AccessController.doPrivileged((PrivilegedAction<Field>) () -> {
-            for (Field declared : reverseOrder2Class.getDeclaredFields()) {
-                if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
-                    declared.setAccessible(true);
-                    return declared;
-                }
-            }
-            return null;
-        });
+        }
         if (field == null) {
             throw new IllegalStateException("No standard field found for reverse order comparator!");
         }
@@ -296,20 +295,12 @@ final class Protocol {
         unmodifiableSortedMapField = findUnmodifiableField(unmodifiableSortedMapClass);
 
         unmodifiableMapEntrySetField = findUnmodifiableField(unmodifiableMapEntrySetClass);
-        Constructor<?> ctor = AccessController.doPrivileged((PrivilegedAction<Constructor<?>>) () -> {
-            for (Constructor<?> declared : unmodifiableMapEntrySetClass.getDeclaredConstructors()) {
-                final Class<?>[] parameterTypes = declared.getParameterTypes();
-                if (parameterTypes.length == 1 && parameterTypes[0].isAssignableFrom(Set.class)) {
-                    declared.setAccessible(true);
-                    return declared;
-                }
-            }
-            return null;
-        });
-        if (ctor == null) {
+        ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
+        try {
+            unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, unmodifiableMapEntrySetClass.getDeclaredConstructor(Set.class));
+        } catch (NoSuchMethodException e) {
             throw new IllegalStateException("No standard constructor found for unmodifiable map entry set!");
         }
-        unmodifiableMapEntrySetCtor = ctor;
     }
 
     private Protocol() {

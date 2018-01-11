@@ -18,20 +18,29 @@
 
 package org.jboss.marshalling;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
+import org.jboss.marshalling._private.GetUnsafeAction;
+import sun.misc.Unsafe;
 
 /**
  * A setter for a (possibly final) field, which allows for correct object initialization of {@link java.io.Serializable} objects
  * with {@code readObject()} methods, even in the presence of {@code final} fields.
  */
 public final class FieldSetter {
-    private final Field field;
+    static final Unsafe unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
+
+    private final Class<?> clazz;
+    private final Class<?> fieldType;
+    private final long fieldOffset;
 
     private FieldSetter(final Field field) {
-        this.field = field;
+        this.clazz = field.getDeclaringClass();
+        this.fieldType = field.getType();
+        fieldOffset = unsafe.objectFieldOffset(field);
     }
 
     /**
@@ -42,11 +51,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void set(Object instance, Object value) throws IllegalArgumentException {
-        try {
-            field.set(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (! fieldType.isInstance(value)) {
+            throw incorrectValueType();
+        }
+        unsafe.putObject(instance, fieldOffset, value);
     }
 
     /**
@@ -57,11 +68,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setBoolean(Object instance, boolean value) throws IllegalArgumentException {
-        try {
-            field.setBoolean(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != boolean.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putBoolean(instance, fieldOffset, value);
     }
 
     /**
@@ -72,11 +85,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setByte(Object instance, byte value) throws IllegalArgumentException {
-        try {
-            field.setByte(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != byte.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putByte(instance, fieldOffset, value);
     }
 
     /**
@@ -87,11 +102,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setChar(Object instance, char value) throws IllegalArgumentException {
-        try {
-            field.setChar(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != char.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putChar(instance, fieldOffset, value);
     }
 
     /**
@@ -102,11 +119,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setDouble(Object instance, double value) throws IllegalArgumentException {
-        try {
-            field.setDouble(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != double.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putDouble(instance, fieldOffset, value);
     }
 
     /**
@@ -117,11 +136,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setFloat(Object instance, float value) throws IllegalArgumentException {
-        try {
-            field.setFloat(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != float.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putFloat(instance, fieldOffset, value);
     }
 
     /**
@@ -132,11 +153,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setInt(Object instance, int value) throws IllegalArgumentException {
-        try {
-            field.setInt(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != int.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putInt(instance, fieldOffset, value);
     }
 
     /**
@@ -147,11 +170,13 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setLong(Object instance, long value) throws IllegalArgumentException {
-        try {
-            field.setLong(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != long.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putLong(instance, fieldOffset, value);
     }
 
     /**
@@ -162,15 +187,21 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if the given instance is {@code null} or not of the correct class
      */
     public void setShort(Object instance, short value) throws IllegalArgumentException {
-        try {
-            field.setShort(instance, value);
-        } catch (IllegalAccessException e) {
-            throw illegalState(e);
+        if (! clazz.isInstance(instance)) {
+            throw incorrectType();
         }
+        if (fieldType != short.class) {
+            throw incorrectValueType();
+        }
+        unsafe.putShort(instance, fieldOffset, value);
     }
 
-    private IllegalStateException illegalState(final IllegalAccessException e) {
-        return new IllegalStateException("Unexpected illegal access of accessible field", e);
+    private static IllegalArgumentException incorrectType() {
+        return new IllegalArgumentException("Instance is not of the correct type");
+    }
+
+    private static IllegalArgumentException incorrectValueType() {
+        return new IllegalArgumentException("Value is not of the correct type");
     }
 
     /**
@@ -183,57 +214,20 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if there is no field of the given name on the given class
      */
     public static FieldSetter get(final Class<?> clazz, final String name) throws SecurityException, IllegalArgumentException {
-        final Class[] stackTrace = Holder.STACK_TRACE_READER.getClassContext();
-        if (stackTrace[2] != clazz) {
-            throw new SecurityException("Cannot get accessible field from someone else's class");
+        final Class<?> caller = JDKSpecific.getMyCaller();
+        if (caller != clazz) {
+            throw new SecurityException("Cannot get field from someone else's class");
         }
-        return new FieldSetter(AccessController.doPrivileged(new GetFieldAction(clazz, name)));
-    }
-
-    private static final class Holder {
-
-        static final StackTraceReader STACK_TRACE_READER;
-
-        static {
-            STACK_TRACE_READER = AccessController.doPrivileged(new PrivilegedAction<StackTraceReader>() {
-                public StackTraceReader run() {
-                    return new StackTraceReader();
-                }
-            });
+        final Field field;
+        try {
+            field = clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            throw new IllegalArgumentException("No such field '" + name + "'", e);
         }
-
-        private Holder() {
+        final int modifiers = field.getModifiers();
+        if (Modifier.isStatic(modifiers)) {
+            throw new SecurityException("Cannot get access to static field '" + name + "'");
         }
-
-        static final class StackTraceReader extends SecurityManager {
-            protected Class[] getClassContext() {
-                return super.getClassContext();
-            }
-        }
-    }
-
-    private static class GetFieldAction implements PrivilegedAction<Field> {
-
-        private final Class<?> clazz;
-        private final String name;
-
-        private GetFieldAction(final Class<?> clazz, final String name) {
-            this.clazz = clazz;
-            this.name = name;
-        }
-
-        public Field run() {
-            try {
-                final Field field = clazz.getDeclaredField(name);
-                final int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers)) {
-                    throw new SecurityException("Cannot get access to static field '" + name + "'");
-                }
-                field.setAccessible(true);
-                return field;
-            } catch (NoSuchFieldException e) {
-                throw new IllegalArgumentException("No such field '" + name + "'", e);
-            }
-        }
+        return new FieldSetter(field);
     }
 }

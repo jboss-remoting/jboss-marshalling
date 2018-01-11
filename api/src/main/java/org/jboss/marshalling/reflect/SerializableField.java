@@ -25,8 +25,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.PrivilegedAction;
 
+import org.jboss.marshalling._private.GetUnsafeAction;
 import org.jboss.marshalling.util.Kind;
 import sun.misc.Unsafe;
 
@@ -34,21 +34,7 @@ import sun.misc.Unsafe;
  * Reflection information about a field on a serializable class.
  */
 public final class SerializableField {
-    static final Unsafe unsafe;
-
-    static {
-        unsafe = doPrivileged(new PrivilegedAction<Unsafe>() {
-            public Unsafe run() {
-                try {
-                    Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-                    unsafeField.setAccessible(true);
-                    return (Unsafe) unsafeField.get(null);
-                } catch (IllegalAccessException | NoSuchFieldException e) {
-                    throw new Error(e);
-                }
-            }
-        });
-    }
+    static final Unsafe unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
 
     // the type of the field itself
     private final Class<?> type;

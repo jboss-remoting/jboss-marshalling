@@ -23,6 +23,7 @@ import static java.security.AccessController.doPrivileged;
 import java.io.OptionalDataException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -49,6 +50,10 @@ final class JDKSpecific {
 
     static OptionalDataException createOptionalDataException() {
         return doPrivileged(OptionalDataExceptionCreateAction.INSTANCE);
+    }
+
+    static Class<?> getMyCaller() {
+        return Holder.STACK_TRACE_READER.getClassContext()[3];
     }
 
     static final class OptionalDataExceptionCreateAction implements PrivilegedAction<OptionalDataException> {
@@ -80,6 +85,31 @@ final class JDKSpecific {
                 throw new IllegalAccessError(e.getMessage());
             } catch (InvocationTargetException e) {
                 throw new RuntimeException("Error invoking constructor", e);
+            }
+        }
+    }
+
+    static final class Holder {
+
+        static final Holder.StackTraceReader STACK_TRACE_READER;
+
+        static {
+            STACK_TRACE_READER = AccessController.doPrivileged(new PrivilegedAction<Holder.StackTraceReader>() {
+                public Holder.StackTraceReader run() {
+                    return new Holder.StackTraceReader();
+                }
+            });
+        }
+
+        private Holder() {
+        }
+
+        static final class StackTraceReader extends SecurityManager {
+            StackTraceReader() {
+            }
+
+            protected Class[] getClassContext() {
+                return super.getClassContext();
             }
         }
     }

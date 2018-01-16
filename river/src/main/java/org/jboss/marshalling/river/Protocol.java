@@ -308,6 +308,15 @@ final class Protocol {
         ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
         try {
             unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, unmodifiableMapEntrySetClass.getDeclaredConstructor(Set.class));
+            if (! unmodifiableMapEntrySetCtor.isAccessible()) {
+                // Java 8 doesn't do this, sometimes :(
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        unmodifiableMapEntrySetCtor.setAccessible(true);
+                        return null;
+                    }
+                });
+            }
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException("No standard constructor found for unmodifiable map entry set!");
         }

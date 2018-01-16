@@ -25,6 +25,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -231,7 +232,7 @@ final class Protocol {
     static final Class<?> unmodifiableMapEntrySetClass = Collections.unmodifiableMap(Collections.emptyMap()).entrySet().getClass();
 
     static final Class<?> reverseOrderClass = Collections.reverseOrder().getClass();
-    static final Class<?> reverseOrder2Class = Collections.reverseOrder(Collections.<Object>reverseOrder()).getClass();
+    static final Class<?> reverseOrder2Class = Collections.reverseOrder(new TrivialComparator()).getClass();
     static final Field reverseOrder2Field;
 
     static final Class<?> nCopiesClass = Collections.nCopies(1, null).getClass();
@@ -266,6 +267,15 @@ final class Protocol {
                 }
             }
             clazz = clazz.getSuperclass();
+        }
+    }
+
+    static class TrivialComparator implements Comparator<Object> {
+        TrivialComparator() {
+        }
+
+        public int compare(final Object o1, final Object o2) {
+            return 0;
         }
     }
 

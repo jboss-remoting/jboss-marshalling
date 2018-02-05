@@ -21,7 +21,6 @@ package org.jboss.marshalling.river;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidClassException;
-import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutput;
 import java.lang.reflect.Field;
@@ -29,7 +28,6 @@ import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -711,11 +709,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 case ID_REVERSE_ORDER2_OBJECT: {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(Protocol.reverseOrder2Field.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for reverse-order comparator");
-                    }
+                    doWriteObject(Protocol.readField(reverseOrder2Field, obj), false);
                     return;
                 }
                 case ID_CC_COPY_ON_WRITE_ARRAY_LIST:
@@ -763,11 +757,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableCollectionField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableCollectionField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -777,11 +767,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableSetField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableSetField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -791,11 +777,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject((objClass == unmodifiableRandomAccessListClass ? unmodifiableRandomAccessListField : unmodifiableListField).get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(objClass == unmodifiableRandomAccessListClass ? unmodifiableRandomAccessListField : unmodifiableListField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -805,11 +787,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableMapField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableMapField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -819,11 +797,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableSortedMapField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableSortedMapField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -834,11 +808,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableSortedSetField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableSortedSetField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -848,11 +818,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 {
                     instanceCache.put(obj, instanceSeq++);
                     write(id);
-                    try {
-                        doWriteObject(unmodifiableMapEntrySetField.get(obj), false);
-                    } catch (IllegalAccessException e) {
-                        throw new InvalidObjectException("Cannot access standard field for unmodifiable collections class");
-                    }
+                    doWriteObject(Protocol.readField(unmodifiableMapEntrySetField, obj), false);
                     if (unshared) {
                         instanceCache.put(obj, -1);
                     }
@@ -972,29 +938,15 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     private static Class<? extends Enum> getEnumMapKeyType(final Object obj) {
-        return getAccessibleEnumFieldValue(ENUM_MAP_KEY_TYPE_FIELD, obj);
+        return ((Class<?>) Protocol.readField(ENUM_MAP_KEY_TYPE_FIELD, obj)).asSubclass(Enum.class);
     }
 
     private static Class<? extends Enum> getEnumSetElementType(final Object obj) {
-        return getAccessibleEnumFieldValue(ENUM_SET_ELEMENT_TYPE_FIELD, obj);
+        return ((Class<?>) Protocol.readField(ENUM_SET_ELEMENT_TYPE_FIELD, obj)).asSubclass(Enum.class);
     }
 
     private static Enum[] getEnumSetElements(final Object obj) {
-        try {
-            return (Enum[]) ENUM_SET_VALUES_FIELD.get(obj);
-        } catch (IllegalAccessException e) {
-            // should not happen
-            throw new IllegalStateException("Unexpected state", e);
-        }
-    }
-
-    private static Class<? extends Enum> getAccessibleEnumFieldValue(final Field field, final Object obj) {
-        try {
-            return ((Class<?>) field.get(obj)).asSubclass(Enum.class);
-        } catch (IllegalAccessException e) {
-            // should not happen
-            throw new IllegalStateException("Unexpected state", e);
-        }
+        return (Enum[]) Protocol.readField(ENUM_SET_VALUES_FIELD, obj);
     }
 
     private void writeBooleanArray(final boolean[] booleans) throws IOException {
@@ -1092,56 +1044,45 @@ public class RiverMarshaller extends AbstractMarshaller {
         final SerializableField[] serializableFields = info.getFields();
         for (SerializableField serializableField : serializableFields) {
             try {
-                try {
-                    final Field field = serializableField.getField();
-                    switch (serializableField.getKind()) {
-                        case BOOLEAN: {
-                            writeBoolean(field == null ? false : field.getBoolean(obj));
-                            break;
-                        }
-                        case BYTE: {
-                            writeByte(field == null ? 0 : field.getByte(obj));
-                            break;
-                        }
-                        case SHORT: {
-                            writeShort(field == null ? 0 : field.getShort(obj));
-                            break;
-                        }
-                        case INT: {
-                            writeInt(field == null ? 0 : field.getInt(obj));
-                            break;
-                        }
-                        case CHAR: {
-                            writeChar(field == null ? 0 : field.getChar(obj));
-                            break;
-                        }
-                        case LONG: {
-                            writeLong(field == null ? 0 : field.getLong(obj));
-                            break;
-                        }
-                        case DOUBLE: {
-                            writeDouble(field == null ? 0 : field.getDouble(obj));
-                            break;
-                        }
-                        case FLOAT: {
-                            writeFloat(field == null ? 0 : field.getFloat(obj));
-                            break;
-                        }
-                        case OBJECT: {
-                            doWriteObject(field == null ? null : field.get(obj), serializableField.isUnshared());
-                            break;
-                        }
+                switch (serializableField.getKind()) {
+                    case BOOLEAN: {
+                        writeBoolean(serializableField.isAccessible() && serializableField.getBoolean(obj));
+                        break;
                     }
-                } catch (IllegalAccessException e) {
-                    final InvalidObjectException ioe = new InvalidObjectException("Unexpected illegal access exception");
-                    ioe.initCause(e);
-                    throw ioe;
+                    case BYTE: {
+                        writeByte(serializableField.isAccessible() ? serializableField.getByte(obj) : 0);
+                        break;
+                    }
+                    case SHORT: {
+                        writeShort(serializableField.isAccessible() ? serializableField.getShort(obj) : 0);
+                        break;
+                    }
+                    case INT: {
+                        writeInt(serializableField.isAccessible() ? serializableField.getInt(obj) : 0);
+                        break;
+                    }
+                    case CHAR: {
+                        writeChar(serializableField.isAccessible() ? serializableField.getChar(obj) : 0);
+                        break;
+                    }
+                    case LONG: {
+                        writeLong(serializableField.isAccessible() ? serializableField.getLong(obj) : 0);
+                        break;
+                    }
+                    case DOUBLE: {
+                        writeDouble(serializableField.isAccessible() ? serializableField.getDouble(obj) : 0);
+                        break;
+                    }
+                    case FLOAT: {
+                        writeFloat(serializableField.isAccessible() ? serializableField.getFloat(obj) : 0);
+                        break;
+                    }
+                    case OBJECT: {
+                        doWriteObject(serializableField.isAccessible() ? serializableField.getObject(obj) : null, serializableField.isUnshared());
+                        break;
+                    }
                 }
-            } catch (IOException e) {
-                TraceInformation.addFieldInformation(e, info, serializableField);
-                TraceInformation.addObjectInformation(e, obj);
-                throw e;
-            } catch (RuntimeException e) {
+            } catch (IOException | RuntimeException e) {
                 TraceInformation.addFieldInformation(e, info, serializableField);
                 TraceInformation.addObjectInformation(e, obj);
                 throw e;
@@ -1191,10 +1132,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                         break;
                     }
                 }
-            } catch (IOException e){
-                TraceInformation.addFieldInformation(e, info, serializableField);
-                throw e;
-            } catch (RuntimeException e) {
+            } catch (IOException | RuntimeException e){
                 TraceInformation.addFieldInformation(e, info, serializableField);
                 throw e;
             }
@@ -1367,39 +1305,21 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
         // do something tricky involving ObjectStreamField anyway...
-        ENUM_SET_VALUES_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    final Field field = enumSetProxyClass.getDeclaredField("elements");
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException("Cannot locate the elements field on EnumSet's serialization proxy!");
-                }
-            }
-        });
-        ENUM_SET_ELEMENT_TYPE_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    final Field field = enumSetProxyClass.getDeclaredField("elementType");
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException("Cannot locate the elementType field on EnumSet's serialization proxy!");
-                }
-            }
-        });
-        ENUM_MAP_KEY_TYPE_FIELD = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    final Field field = EnumMap.class.getDeclaredField("keyType");
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException("Cannot locate the keyType field on EnumMap!");
-                }
-            }
-        });
+        try {
+            ENUM_SET_VALUES_FIELD = enumSetProxyClass.getDeclaredField("elements");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Cannot locate the elements field on EnumSet's serialization proxy!");
+        }
+        try {
+            ENUM_SET_ELEMENT_TYPE_FIELD = enumSetProxyClass.getDeclaredField("elementType");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Cannot locate the elementType field on EnumSet's serialization proxy!");
+        }
+        try {
+            ENUM_MAP_KEY_TYPE_FIELD = EnumMap.class.getDeclaredField("keyType");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Cannot locate the keyType field on EnumMap!");
+        }
     }
 
     protected void writeNewClass(final Class<?> objClass) throws IOException {

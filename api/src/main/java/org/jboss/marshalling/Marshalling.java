@@ -29,8 +29,6 @@ import java.io.StreamCorruptedException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedAction;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.ServiceLoader;
 
@@ -352,13 +350,7 @@ public final class Marshalling {
      * @return a new OptionalDataException
      */
     public static OptionalDataException createOptionalDataException(boolean eof) {
-        final OptionalDataException optionalDataException = createOptionalDataException();
-        final StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        final StackTraceElement[] copyStackTrace = new StackTraceElement[stackTrace.length - 1];
-        System.arraycopy(stackTrace, 1, copyStackTrace, 0, copyStackTrace.length);
-        optionalDataException.setStackTrace(copyStackTrace);
-        optionalDataException.eof = eof;
-        return optionalDataException;
+        return JDKSpecific.createOptionalDataException(eof);
     }
 
     /**
@@ -369,45 +361,6 @@ public final class Marshalling {
      * @return a new OptionalDataException
      */
     public static OptionalDataException createOptionalDataException(int length) {
-        final OptionalDataException optionalDataException = createOptionalDataException();
-        optionalDataException.length = length;
-        return optionalDataException;
-    }
-
-    private static OptionalDataException createOptionalDataException() {
-        return doPrivileged(OPTIONAL_DATA_EXCEPTION_CREATE_ACTION);
-    }
-
-    private static final OptionalDataExceptionCreateAction OPTIONAL_DATA_EXCEPTION_CREATE_ACTION = new OptionalDataExceptionCreateAction();
-
-    private static final class OptionalDataExceptionCreateAction implements PrivilegedAction<OptionalDataException> {
-
-        private final Constructor<OptionalDataException> constructor;
-
-        private OptionalDataExceptionCreateAction() {
-            constructor = doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
-                public Constructor<OptionalDataException> run() {
-                    try {
-                        final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
-                        constructor.setAccessible(true);
-                        return constructor;
-                    } catch (NoSuchMethodException e) {
-                        throw new NoSuchMethodError(e.getMessage());
-                    }
-                }
-            });
-        }
-
-        public OptionalDataException run() {
-            try {
-                return constructor.newInstance(Boolean.FALSE);
-            } catch (InstantiationException e) {
-                throw new InstantiationError(e.getMessage());
-            } catch (IllegalAccessException e) {
-                throw new IllegalAccessError(e.getMessage());
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException("Error invoking constructor", e);
-            }
-        }
+        return JDKSpecific.createOptionalDataException(length);
     }
 }

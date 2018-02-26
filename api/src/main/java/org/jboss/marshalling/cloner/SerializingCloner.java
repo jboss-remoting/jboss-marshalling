@@ -39,7 +39,6 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -62,6 +61,7 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.SerializabilityChecker;
 import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling._private.GetDeclaredFieldAction;
 import org.jboss.marshalling._private.GetUnsafeAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
@@ -504,11 +504,7 @@ class SerializingCloner implements ObjectCloner {
         map.put(char[].class, 7);
         PRIMITIVE_ARRAYS = map;
         final Field field;
-        try {
-            field = Proxy.class.getDeclaredField("h");
-        } catch (NoSuchFieldException e) {
-            throw new NoSuchFieldError(e.getMessage());
-        }
+        field = AccessController.doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
         unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
         proxyInvocationHandler = field;
         proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);

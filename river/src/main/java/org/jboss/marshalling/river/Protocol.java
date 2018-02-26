@@ -21,7 +21,6 @@ package org.jboss.marshalling.river;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,8 +31,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.jboss.marshalling._private.GetDeclaredConstructorAction;
+import org.jboss.marshalling._private.GetDeclaredFieldsAction;
 import org.jboss.marshalling._private.GetReflectionFactoryAction;
 import org.jboss.marshalling._private.GetUnsafeAction;
+import org.jboss.marshalling._private.SetAccessibleAction;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
@@ -261,7 +263,7 @@ final class Protocol {
             if (clazz == Object.class) {
                 throw new IllegalStateException("No candidate collection fields found in " + clazz);
             }
-            for (Field field : clazz.getDeclaredFields()) {
+            for (Field field : AccessController.doPrivileged(new GetDeclaredFieldsAction(clazz))) {
                 if (strings.contains(field.getName())) {
                     return field;
                 }
@@ -286,7 +288,7 @@ final class Protocol {
             throw new IllegalStateException("No standard serialization proxy found for enum set!");
         }
         Field field = null;
-        for (Field declared : reverseOrder2Class.getDeclaredFields()) {
+        for (Field declared : AccessController.doPrivileged(new GetDeclaredFieldsAction(reverseOrder2Class))) {
             if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
                 field = declared;
                 break;
@@ -305,20 +307,12 @@ final class Protocol {
         unmodifiableSortedMapField = findUnmodifiableField(unmodifiableSortedMapClass);
 
         unmodifiableMapEntrySetField = findUnmodifiableField(unmodifiableMapEntrySetClass);
-        ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
-        try {
-            unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, unmodifiableMapEntrySetClass.getDeclaredConstructor(Set.class));
-            if (! unmodifiableMapEntrySetCtor.isAccessible()) {
-                // Java 8 doesn't do this, sometimes :(
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        unmodifiableMapEntrySetCtor.setAccessible(true);
-                        return null;
-                    }
-                });
-            }
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("No standard constructor found for unmodifiable map entry set!");
+        final ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
+        final Constructor<?> ctor = AccessController.doPrivileged(GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class));
+        unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, ctor);
+        if (! unmodifiableMapEntrySetCtor.isAccessible()) {
+            // Java 8 doesn't do this, sometimes :(
+            AccessController.doPrivileged(new SetAccessibleAction(unmodifiableMapEntrySetCtor));
         }
     }
 

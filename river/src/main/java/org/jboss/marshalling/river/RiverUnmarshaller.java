@@ -30,7 +30,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -71,6 +70,7 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling._private.GetDeclaredFieldAction;
 import org.jboss.marshalling._private.GetUnsafeAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
@@ -102,11 +102,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private static final long proxyInvocationHandlerOffset;
 
     static {
-        try {
-            proxyInvocationHandler = Proxy.class.getDeclaredField("h");
-        } catch (NoSuchFieldException e) {
-            throw new NoSuchFieldError(e.getMessage());
-        }
+        proxyInvocationHandler = AccessController.doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
         proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
     }
 

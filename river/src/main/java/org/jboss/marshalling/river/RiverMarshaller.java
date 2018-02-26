@@ -57,6 +57,7 @@ import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling._private.GetDeclaredFieldAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -1306,18 +1307,18 @@ public class RiverMarshaller extends AbstractMarshaller {
         // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
         // do something tricky involving ObjectStreamField anyway...
         try {
-            ENUM_SET_VALUES_FIELD = enumSetProxyClass.getDeclaredField("elements");
-        } catch (NoSuchFieldException e) {
+            ENUM_SET_VALUES_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elements"));
+        } catch (NoSuchFieldError e) {
             throw new RuntimeException("Cannot locate the elements field on EnumSet's serialization proxy!");
         }
         try {
-            ENUM_SET_ELEMENT_TYPE_FIELD = enumSetProxyClass.getDeclaredField("elementType");
-        } catch (NoSuchFieldException e) {
+            ENUM_SET_ELEMENT_TYPE_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elementType"));
+        } catch (NoSuchFieldError e) {
             throw new RuntimeException("Cannot locate the elementType field on EnumSet's serialization proxy!");
         }
         try {
-            ENUM_MAP_KEY_TYPE_FIELD = EnumMap.class.getDeclaredField("keyType");
-        } catch (NoSuchFieldException e) {
+            ENUM_MAP_KEY_TYPE_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(EnumMap.class, "keyType"));
+        } catch (NoSuchFieldError e) {
             throw new RuntimeException("Cannot locate the keyType field on EnumMap!");
         }
     }

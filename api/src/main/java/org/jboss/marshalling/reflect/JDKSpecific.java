@@ -30,6 +30,7 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 
 import org.jboss.marshalling._private.GetReflectionFactoryAction;
+import org.jboss.marshalling._private.SetAccessibleAction;
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -45,7 +46,12 @@ final class JDKSpecific {
     private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
 
     static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
-        return reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
+        final Constructor<?> serCtor = reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
+        if (! serCtor.isAccessible()) {
+            // older JDK 8...
+            AccessController.doPrivileged(new SetAccessibleAction(serCtor));
+        }
+        return serCtor;
     }
 
     static final class SerMethods {

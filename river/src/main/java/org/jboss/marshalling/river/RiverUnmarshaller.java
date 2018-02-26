@@ -102,12 +102,22 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private static final long proxyInvocationHandlerOffset;
 
     static {
-        try {
-            proxyInvocationHandler = Proxy.class.getDeclaredField("h");
-        } catch (NoSuchFieldException e) {
-            throw new NoSuchFieldError(e.getMessage());
-        }
-        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
+        proxyInvocationHandler = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            @Override
+            public Field run() {
+                try {
+                     return Proxy.class.getDeclaredField("h");
+                } catch (NoSuchFieldException e) {
+                    throw new NoSuchFieldError(e.getMessage());
+                }
+            }
+        });
+        proxyInvocationHandlerOffset = AccessController.doPrivileged(new PrivilegedAction<Long>() {
+            @Override
+            public Long run() {
+                return unsafe.objectFieldOffset(proxyInvocationHandler);
+            }
+        });
     }
 
     protected RiverUnmarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {

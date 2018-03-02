@@ -79,7 +79,7 @@ class CloneableCloner implements ObjectCloner {
             if ((cached = clones.get(orig)) != null) {
                 return cached;
             }
-            if ((cached = cloneTable.clone(cached, this, ClassCloner.IDENTITY)) != null) {
+            if ((cached = cloneTable.clone(orig, this, ClassCloner.IDENTITY)) != null) {
                 clones.put(orig, cached);
                 return cached;
             }

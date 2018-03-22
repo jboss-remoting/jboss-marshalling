@@ -3557,4 +3557,38 @@ public final class SimpleMarshallerTests extends TestBase {
             }
         });
     }
+
+    /*
+    test case for [JBMAR-218]
+    Object replacement does not function correctly with null values
+     */
+    @Test
+    public void testNullReadValues() throws Throwable {
+        C1 object = new C1();
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(object);
+                marshaller.writeObject(object);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                assertSame(unmarshaller.readObject(), unmarshaller.readObject());
+                assertEOF(unmarshaller);
+            }
+        });
+    }
+
+    public static class C2 implements Serializable {
+        Object readResolve() {
+            return null;
+        }
+    }
+
+    public static class C1 implements Serializable {
+        C2 x, y;
+        public C1() {
+            x = new C2();
+            y = x;
+        }
+    }
 }

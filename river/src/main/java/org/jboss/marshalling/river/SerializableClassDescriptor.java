@@ -21,6 +21,8 @@ package org.jboss.marshalling.river;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.reflect.SerializableClass;
 
+import java.io.Serializable;
+
 /**
  *
  */
@@ -54,10 +56,10 @@ abstract class SerializableClassDescriptor extends ClassDescriptor {
 
     public Class<?> getNonSerializableSuperclass() {
         final ClassDescriptor descriptor = getSuperClassDescriptor();
-        if (descriptor instanceof SerializableClassDescriptor) {
+        final Class<?> type = descriptor.getType();
+        if (type == null) return Object.class;
+        if (Serializable.class.isAssignableFrom(type) && descriptor instanceof SerializableClassDescriptor)
             return ((SerializableClassDescriptor) descriptor).getNonSerializableSuperclass();
-        } else {
-            return descriptor.getType();
-        }
+        return type;
     }
 }

@@ -3591,4 +3591,73 @@ public final class SimpleMarshallerTests extends TestBase {
             y = x;
         }
     }
+
+    static class NonSerializableParent {
+
+        private transient boolean _mutable_one;
+        private transient boolean _mutable_two;
+        private transient boolean _mutable_three;
+
+        public NonSerializableParent() {
+            this._mutable_one = true;
+            this._mutable_two = false;
+            this._mutable_three = true;
+        }
+
+        public boolean is_mutable_one() {
+            return _mutable_one;
+        }
+        public void set_mutable_one(boolean _mutable_one) {
+            this._mutable_one = _mutable_one;
+        }
+        public boolean is_mutable_two() {
+            return _mutable_two;
+        }
+        public void set_mutable_two(boolean _mutable_two) {
+            this._mutable_two = _mutable_two;
+        }
+
+        public boolean is_mutable_three() {
+            return _mutable_three;
+        }
+
+        public void set_mutable_three(boolean _mutable_three) {
+            this._mutable_three = _mutable_three;
+        }
+    }
+
+    static class MySerializable extends NonSerializableParent implements Serializable {
+
+        private String name;
+        public MySerializable(String name) {
+            this.name = name;
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("name: %s\n", name));
+            sb.append(String.format("mutable_one: %s\n", this.is_mutable_one()));
+            sb.append(String.format("mutable_two: %s\n", this.is_mutable_two()));
+            sb.append(String.format("mutable_three: %s\n", this.is_mutable_three()));
+            return sb.toString();
+        }
+    }
+
+    @Test(description = "JBMAR-221")
+    public void testNonSerializableParentConstructor() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            @Override
+            public void runWrite(Marshaller marshaller) throws Throwable {
+                final MySerializable input = new MySerializable("test");
+                assertTrue("Sanity check failed", input.is_mutable_one());
+                marshaller.writeObject(input);
+            }
+
+            @Override
+            public void runRead(Unmarshaller unmarshaller) throws Throwable {
+                final MySerializable result = unmarshaller.readObject(MySerializable.class);
+                assertTrue("JBMAR-221: NonSerializableParent constructor was not executed", result.is_mutable_one());
+            }
+        });
+    }
 }

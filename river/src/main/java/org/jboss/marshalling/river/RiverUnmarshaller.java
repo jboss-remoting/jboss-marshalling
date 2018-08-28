@@ -1023,7 +1023,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 } catch (ClassNotFoundException cnfe) {
                     if (required) throw cnfe;
                 }
-                final FutureSerializableClassDescriptor descriptor = new FutureSerializableClassDescriptor(clazz, classType);
+                final boolean localSerializable = clazz != null && serializabilityChecker.isSerializable(clazz);
+                if (! localSerializable && required) {
+                    throw new ClassNotFoundException(className);
+                }
+                final FutureSerializableClassDescriptor descriptor = new FutureSerializableClassDescriptor(localSerializable ? clazz : null, classType);
                 classCache.set(idx, descriptor);
                 final int cnt = readInt();
                 final String[] names = new String[cnt];
@@ -1036,7 +1040,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 ClassDescriptor superDescriptor = doReadClassDescriptor(readUnsignedByte(), false);
                 final Class<?> superClazz = clazz == null ? superDescriptor.getNearestType() : clazz.getSuperclass();
-                if (superDescriptor != null) {
+                if (superDescriptor != null && (clazz == null || localSerializable)) {
                     final Class<?> superType = superDescriptor.getNearestType();
                     if (clazz != null && ! superType.isAssignableFrom(clazz)) {
                         throw new InvalidClassException(clazz.getName(), "Class does not extend stream superclass");
@@ -1055,7 +1059,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
                 final SerializableClass serializableClass;
                 final SerializableField[] fields = new SerializableField[cnt];
-                if (clazz != null) {
+                if (clazz != null && localSerializable) {
                     serializableClass = registry.lookup(clazz);
                     for (int i = 0; i < cnt; i ++) {
                         fields[i] = serializableClass.getSerializableField(names[i], descriptors[i].getType(), unshareds[i]);
@@ -1066,7 +1070,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                         fields[i] = new SerializableField(descriptors[i].getType(), names[i], unshareds[i]);
                     }
                 }
-                descriptor.setResult(new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, classType));
+                descriptor.setResult(new BasicSerializableClassDescriptor(localSerializable ? serializableClass : null, superDescriptor, fields, classType));
                 return descriptor;
             }
             case ID_EXTERNALIZABLE_CLASS: {
@@ -1357,7 +1361,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final Class<?> type = descriptor.getType();
                     final Class<?> nonSerializableSuperclass;
                     if (descriptor instanceof SerializableClassDescriptor) {
-                        nonSerializableSuperclass = ((SerializableClassDescriptor) descriptor).getNonSerializableSuperclass();
+                        nonSerializableSuperclass = ((SerializableClassDescriptor) descriptor).getNonSerializableSuperclass(serializabilityChecker);
                     } else {
                         nonSerializableSuperclass = Object.class;
                     }
@@ -1381,10 +1385,10 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final Object obj;
                     if(serializableClass == null) {
                         obj = null;
-                    } else if (!serializableClass.hasNoInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass())) {
+                    } else if (!serializableClass.hasNoInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass(serializabilityChecker))) {
                         throw new NotSerializableException(serializableClass.getSubjectClass().getName());
                     } else {
-                        obj = serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass());
+                        obj = serializableClass.callNonInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass(serializabilityChecker));
                     }
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);

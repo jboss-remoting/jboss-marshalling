@@ -33,20 +33,25 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -3659,5 +3664,73 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertTrue("JBMAR-221: NonSerializableParent constructor was not executed", result.is_mutable_one());
             }
         });
+    }
+
+    @Test(description = "JBMAR-222_vector")
+    private void testConcurrentVesctor() throws Throwable {
+        testConcurrentAccess(new Vector(), Vector.class);
+    }
+
+    @Test(description = "JBMAR-222_stack")
+    private void testConcurrentStack() throws Throwable {
+        testConcurrentAccess(new Stack(), Stack.class);
+    }
+
+    private void testConcurrentAccess(Collection instance, Class<? extends Collection> collectionClass) throws Throwable {
+        //if versin is not -1, we have to assert whether run wasn't fail
+        if((testMarshallerProvider instanceof  MarshallerFactoryTestMarshallerProvider && ((MarshallerFactoryTestMarshallerProvider)testMarshallerProvider).getVersion() == -1) ||
+                (testUnmarshallerProvider instanceof  MarshallerFactoryTestUnmarshallerProvider && ((MarshallerFactoryTestUnmarshallerProvider)testUnmarshallerProvider).getVersion() == -1)) {
+            throw new SkipException("Test not relevant for configuration version -1");
+        }
+
+        instance.add(new SlowSerialize());
+        AtomicBoolean failed = new AtomicBoolean(false);
+        StringBuilder sb = new StringBuilder();
+        // Kick off serialization
+        Thread t = new Thread() {
+            public void run () {
+                try {
+                    runReadWriteTest(new ReadWriteTest() {
+                        @Override
+                        public void runWrite(Marshaller marshaller) throws Throwable {
+                            marshaller.writeObject(instance);
+                        }
+
+                        @Override
+                        public void runRead(Unmarshaller unmarshaller) throws Throwable {
+                            Collection result = unmarshaller.readObject(collectionClass);
+                            assertEquals("JBMAR-222: ", 1,  result.size());
+                        }
+                    });
+                } catch ( Throwable t ) {
+                    failed.set(true);
+                    t.printStackTrace();
+                    StringWriter writer = new StringWriter();
+                    PrintWriter printWriter= new PrintWriter(writer);
+                    t.printStackTrace(printWriter);
+                    sb.append(t.toString()).append(writer.toString());
+                }
+            }
+        };
+        t.start ();
+
+        // Wait for serialization to start, then modify the Vector
+        try { Thread.sleep ( 500 ); } catch ( InterruptedException e ) {        }
+        instance.add(2);
+
+        t.join();
+
+        assertFalse(sb.toString(), failed.get());
+    }
+
+
+    private static class SlowSerialize implements Serializable
+    {
+        // Sleep during serialization, to allow time for the Vector to be modified
+        private void writeObject ( ObjectOutputStream out ) throws IOException
+        {
+            out.defaultWriteObject();
+            try { Thread.sleep ( 1000 ); } catch ( InterruptedException e ) {}
+        }
     }
 }

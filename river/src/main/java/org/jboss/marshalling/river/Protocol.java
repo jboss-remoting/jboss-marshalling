@@ -193,8 +193,6 @@ final class Protocol {
     public static final int ID_CC_CONCURRENT_HASH_MAP       = 0x72;
     public static final int ID_CC_COPY_ON_WRITE_ARRAY_LIST  = 0x73;
     public static final int ID_CC_COPY_ON_WRITE_ARRAY_SET   = 0x74;
-    public static final int ID_CC_VECTOR                    = 0x75;
-    public static final int ID_CC_STACK                     = 0x76;
 
     // protocol version >= 3
     public static final int ID_PAIR                     = 0x77;

@@ -551,8 +551,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 case ID_CC_ARRAY_LIST:
                 case ID_CC_LINKED_LIST:
-                case ID_CC_VECTOR:
-                case ID_CC_STACK:
                 case ID_CC_ARRAY_DEQUE: {
                     instanceCache.put(obj, instanceSeq++);
                     final Collection<?> collection = (Collection<?>) obj;
@@ -1268,8 +1266,6 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         map.put(CopyOnWriteArrayList.class, ID_CC_COPY_ON_WRITE_ARRAY_LIST);
         map.put(CopyOnWriteArraySet.class, ID_CC_COPY_ON_WRITE_ARRAY_SET);
-        map.put(Vector.class, ID_CC_VECTOR);
-        map.put(Stack.class, ID_CC_STACK);
 
         map.put(emptyListClass, ID_EMPTY_LIST_OBJECT); // special case
         map.put(singletonListClass, ID_SINGLETON_LIST_OBJECT); // special case

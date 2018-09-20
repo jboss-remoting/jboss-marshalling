@@ -49,4 +49,8 @@ public class MarshallerFactoryTestMarshallerProvider implements TestMarshallerPr
         marshaller.start(target);
         return marshaller;
     }
+
+    public int getVersion() {
+        return version;
+    }
 }

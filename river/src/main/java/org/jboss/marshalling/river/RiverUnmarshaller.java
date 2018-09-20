@@ -540,12 +540,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
                     return CopyOnWriteArraySet.class;
                 }
-                case ID_CC_VECTOR: {
-                    return Vector.class;
-                }
-                case ID_CC_STACK: {
-                    return Stack.class;
-                }
 
                 case ID_CC_NCOPIES: {
                     return nCopiesClass;
@@ -744,12 +738,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
                             return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType), discardMissing));
-                        }
-                        case ID_CC_VECTOR: {
-                            return replace(readCollectionData(unshared, -1, len, new Vector(len), discardMissing));
-                        }
-                        case ID_CC_STACK: {
-                            return replace(readCollectionData(unshared, -1, len, new Stack(), discardMissing));
                         }
                         case ID_CC_ARRAY_DEQUE: {
                             return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len), discardMissing));
@@ -1168,12 +1156,6 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
             case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
                 return ClassDescriptors.COPY_ON_WRITE_ARRAY_SET;
-            }
-            case ID_CC_VECTOR: {
-                return ClassDescriptors.VECTOR;
-            }
-            case ID_CC_STACK: {
-                return ClassDescriptors.STACK;
             }
             case ID_CC_ARRAY_DEQUE: {
                 return ClassDescriptors.ARRAY_DEQUE;

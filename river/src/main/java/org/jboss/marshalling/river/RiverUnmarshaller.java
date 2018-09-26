@@ -91,6 +91,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final SerializableClassRegistry registry;
     private int version;
     private int depth;
+    private long totalRefs;
     private BlockUnmarshaller blockUnmarshaller;
     private RiverObjectInputStream objectInputStream;
     private SortedSet<Validator> validators;
@@ -223,6 +224,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     @SuppressWarnings({ "unchecked" })
     Object doReadObject(int leadByte, final boolean unshared, final boolean discardMissing) throws IOException, ClassNotFoundException {
         depth ++;
+        totalRefs ++;
         try {
             for (;;) switch (leadByte) {
                 case ID_NULL: {
@@ -1093,7 +1095,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             }
 
             case ID_ENUM_TYPE_CLASS: {
-                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(classResolver.resolveClass(this, readString(), 0L), ID_ENUM_TYPE_CLASS);
+                Class<?> clazz = classResolver.resolveClass(this, readString(), 0L);
+                final SimpleClassDescriptor descriptor = new SimpleClassDescriptor(clazz, ID_ENUM_TYPE_CLASS);
                 classCache.add(descriptor);
                 return descriptor;
             }
@@ -1355,6 +1358,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType, ! discardMissing);
         try {
             final int classType = descriptor.getTypeID();
+            checkInput(new FilterInfo(descriptor.getType(), -1, depth, totalRefs, totalBytesRead));
             final List<Object> instanceCache = this.instanceCache;
             switch (classType) {
                 case ID_PROXY_CLASS: {
@@ -1654,6 +1658,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
+        checkInput(new FilterInfo(type, cnt, depth, totalRefs, totalBytesRead));
         final Object[] array = (Object[]) replace(Array.newInstance(type, cnt));
         final int idx = instanceCache.size();
         instanceCache.add(array);

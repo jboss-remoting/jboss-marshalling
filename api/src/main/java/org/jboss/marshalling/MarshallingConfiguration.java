@@ -37,6 +37,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private int bufferSize = 512;
     private int version = -1;
     private ObjectResolver objectPreResolver;
+    private InputFilter inputFilter;
 
     /**
      * Construct a new instance.
@@ -129,7 +130,7 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the object pre resolver, or {@code null} to use none.
      * Invoked before user replacement and global object resolver
      *
-     * @param objectResolver the object resolver
+     * @param objectPreResolver the object resolver
      */
     public void setObjectPreResolver(final ObjectResolver objectPreResolver) {
         this.objectPreResolver = objectPreResolver;
@@ -281,6 +282,24 @@ public final class MarshallingConfiguration implements Cloneable {
      */
     public void setSerializabilityChecker(final SerializabilityChecker serializabilityChecker) {
         this.serializabilityChecker = serializabilityChecker;
+    }
+
+    /**
+     * Get the input filter.
+     *
+     * @return the input filter
+     */
+    public InputFilter getInputFilter() {
+        return inputFilter;
+    }
+
+    /**
+     * Set the input filter.
+     *
+     * @param inputFilter the new inputFilter
+     */
+    public void setInputFilter(InputFilter inputFilter) {
+        this.inputFilter = inputFilter;
     }
 
     /**

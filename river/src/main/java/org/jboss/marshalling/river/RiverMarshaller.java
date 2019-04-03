@@ -551,8 +551,6 @@ public class RiverMarshaller extends AbstractMarshaller {
                 }
                 case ID_CC_ARRAY_LIST:
                 case ID_CC_LINKED_LIST:
-                case ID_CC_VECTOR:
-                case ID_CC_STACK:
                 case ID_CC_ARRAY_DEQUE: {
                     instanceCache.put(obj, instanceSeq++);
                     final Collection<?> collection = (Collection<?>) obj;
@@ -580,6 +578,43 @@ public class RiverMarshaller extends AbstractMarshaller {
                         write(id);
                         for (Object o : collection) {
                             doWriteObject(o, false);
+                        }
+                    }
+                    if (unshared) {
+                        instanceCache.put(obj, -1);
+                    }
+                    return;
+                }
+                case ID_CC_VECTOR:
+                case ID_CC_STACK: {
+                    instanceCache.put(obj, instanceSeq++);
+                    final Collection<?> collection = (Collection<?>) obj;
+                    synchronized (collection) {
+                        final int len = collection.size();
+                        if (len == 0) {
+                            write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                            write(id);
+                        } else if (len <= 256) {
+                            write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                            write(len);
+                            write(id);
+                            for (Object o : collection) {
+                                doWriteObject(o, false);
+                            }
+                        } else if (len <= 65536) {
+                            write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                            writeShort(len);
+                            write(id);
+                            for (Object o : collection) {
+                                doWriteObject(o, false);
+                            }
+                        } else {
+                            write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                            writeInt(len);
+                            write(id);
+                            for (Object o : collection) {
+                                doWriteObject(o, false);
+                            }
                         }
                     }
                     if (unshared) {

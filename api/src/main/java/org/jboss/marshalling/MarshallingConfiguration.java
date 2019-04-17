@@ -18,6 +18,11 @@
 
 package org.jboss.marshalling;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
+import java.util.Objects;
+
 /**
  * A Marshaller configuration.
  * @apiviz.landmark
@@ -37,13 +42,44 @@ public final class MarshallingConfiguration implements Cloneable {
     private int bufferSize = 512;
     private int version = -1;
     private ObjectResolver objectPreResolver;
-    private InputFilter inputFilter;
+    private InputFilter configuredFilter;
+    private InputFilter serialFilter;
 
     /**
      * Construct a new instance.
      */
     public MarshallingConfiguration() {
+        initFilter();
     }
+
+    private void initFilter() {
+        configuredFilter = AccessController.doPrivileged((PrivilegedAction<InputFilter>) () -> {
+            String props = System.getProperty(SERIAL_FILTER_PROPNAME);
+            if (props == null) {
+                props = Security.getProperty(SERIAL_FILTER_PROPNAME);
+            }
+            if (props != null) {
+                System.out.println("Creating serialization filter from " + props);
+                try {
+                    return createFilter(props);
+                } catch (RuntimeException re) {
+                    System.out.println("Error configuring filter: " + re);
+                }
+            }
+            return null;
+        });
+        serialFilter = configuredFilter;
+    }
+
+    /**
+     * Lock object for process-wide filter.
+     */
+    private Object serialFilterLock = new Object();
+
+    /**
+     * The name for the process-wide deserialization filter. Used as a system property and a java.security.Security property.
+     */
+    private final static String SERIAL_FILTER_PROPNAME = "jdk.serialFilter";
 
     /**
      * Get the class externalizer factory, or {@code null} if none is specified.
@@ -285,21 +321,93 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
-     * Get the input filter.
+     * Get the serialFilter.
      *
-     * @return the input filter
+     * @return the serialFilter
      */
-    public InputFilter getInputFilter() {
-        return inputFilter;
+    public InputFilter getSerialFilter() {
+        synchronized (serialFilterLock) {
+            return this.serialFilter;
+        }
     }
 
     /**
-     * Set the input filter.
+     * Set the serialFilter.
      *
-     * @param inputFilter the new inputFilter
+     * @param serialFilter the new serialFilter
      */
-    public void setInputFilter(InputFilter inputFilter) {
-        this.inputFilter = inputFilter;
+    public void setSerialFilter(InputFilter inputFilter) {
+        Objects.requireNonNull(inputFilter, "inputFilter");
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ExtendedObjectStreamConstants.SERIAL_FILTER_PERMISSION);
+        }
+        synchronized (serialFilterLock) {
+            if (serialFilter != null) {
+                throw new IllegalStateException("Serial filter can only be set once");
+            }
+            this.serialFilter = inputFilter;
+        }
+    }
+
+    /**
+     * Returns an InputFilterFilter from a string of patterns.
+     * <p>
+     * Patterns are separated by ";" (semicolon). Whitespace is significant and
+     * is considered part of the pattern.
+     * If a pattern includes an equals assignment, "{@code =}" it sets a limit.
+     * If a limit appears more than once the last value is used.
+     * <ul>
+     *     <li>maxdepth={@code value} - the maximum depth of a graph</li>
+     *     <li>maxrefs={@code value}  - the maximum number of internal references</li>
+     *     <li>maxbytes={@code value} - the maximum number of bytes in the input stream</li>
+     *     <li>maxarray={@code value} - the maximum array length allowed</li>
+     * </ul>
+     * <p>
+     * Other patterns match or reject class or package name
+     * as returned from {@link Class#getName() Class.getName()} and
+     * if an optional module name is present
+     * {@link java.lang.reflect.Module#getName() class.getModule().getName()}.
+     * Note that for arrays the element type is used in the pattern,
+     * not the array type.
+     * <ul>
+     * <li>If the pattern starts with "!", the class is rejected if the remaining pattern is matched;
+     *     otherwise the class is allowed if the pattern matches.
+     * <li>If the pattern contains "/", the non-empty prefix up to the "/" is the module name;
+     *     if the module name matches the module name of the class then
+     *     the remaining pattern is matched with the class name.
+     *     If there is no "/", the module name is not compared.
+     * <li>If the pattern ends with ".**" it matches any class in the package and all subpackages.
+     * <li>If the pattern ends with ".*" it matches any class in the package.
+     * <li>If the pattern ends with "*", it matches any class with the pattern as a prefix.
+     * <li>If the pattern is equal to the class name, it matches.
+     * <li>Otherwise, the pattern is not matched.
+     * </ul>
+     * <p>
+     * The resulting filter performs the limit checks and then
+     * tries to match the class, if any. If any of the limits are exceeded,
+     * the filter returns {@link Status#REJECTED Status.REJECTED}.
+     * If the class is an array type, the class to be matched is the element type.
+     * Arrays of any number of dimensions are treated the same as the element type.
+     * For example, a pattern of "{@code !example.Foo}",
+     * rejects creation of any instance or array of {@code example.Foo}.
+     * The first pattern that matches, working from left to right, determines
+     * the {@link Status#ALLOWED Status.ALLOWED}
+     * or {@link Status#REJECTED Status.REJECTED} result.
+     * If nothing matches, the result is {@link Status#UNDECIDED Status.UNDECIDED}.
+     *
+     * @param pattern the pattern string to parse; not null
+     * @return a filter to check a class being deserialized; may be null;
+     *          {@code null} if no patterns
+     * @throws IllegalArgumentException
+     *                if a limit is missing the name, or the long value
+     *                is not a number or is negative,
+     *                or the module name is missing if the pattern contains "/"
+     *                or if the package is missing for ".*" and ".**"
+     */
+    public static InputFilter createFilter(String pattern) {
+        Objects.requireNonNull(pattern, "pattern");
+        return InputFilter.Global.createFilter(pattern);
     }
 
     /**

@@ -165,7 +165,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     instanceCache.add(UNRESOLVED);
                     final int size = readInt();
                     final Class<?> type = descriptor.getType();
-                    checkInput(new FilterInfo(type, size, depth, totalRefs, totalBytesRead));
+                    filterCheck(new FilterValues(type, size, depth, totalRefs, totalBytesRead));
                     if (! type.isArray()) {
                         throw new InvalidClassException(type.getName(), "Expected array type");
                     }
@@ -238,7 +238,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     } catch (ClassCastException e) {
                         throw new InvalidClassException("Expected an enum class descriptor");
                     }
-                    checkInput(new FilterInfo(enumType, -1, depth, totalRefs, totalBytesRead));
+                    filterCheck(new FilterValues(enumType, -1, depth, totalRefs, totalBytesRead));
                     final int idx = instanceCache.size();
                     instanceCache.add(UNRESOLVED);
                     final String constName = (String) doReadObject(false);
@@ -254,7 +254,7 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                     final Object obj;
                     final int idx;
                     final Class<?> objClass = descriptor.getType();
-                    checkInput(new FilterInfo(objClass, -1, depth, totalRefs, totalBytesRead));
+                    filterCheck(new FilterValues(objClass, -1, depth, totalRefs, totalBytesRead));
                     final SerializableClass sc = registry.lookup(objClass);
                     if ((descriptor.getFlags() & SC_EXTERNALIZABLE) != 0) {
                         if (sc.hasObjectInputConstructor()) {

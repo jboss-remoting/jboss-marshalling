@@ -20,6 +20,7 @@ package org.jboss.marshalling;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.util.Objects;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -48,7 +49,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
     /** The configured version. */
     protected final int configuredVersion;
     /** The input filter to stop deserialization process if needed. */
-    protected final InputFilter inputFilter;
+    protected final InputFilter serialFilter;
 
     /**
      * Construct a new unmarshaller instance.
@@ -78,8 +79,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
-        final InputFilter inputFilter = configuration.getInputFilter();
-        this.inputFilter = inputFilter == null ? info -> InputFilter.Status.UNDECIDED : inputFilter;
+        this.serialFilter = configuration.getSerialFilter();
     }
 
     /** {@inheritDoc} */
@@ -97,20 +97,39 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         clearClassCache();
     }
 
-    protected void checkInput(InputFilter.FilterInfo info) throws InvalidClassException {
-        if (InputFilter.Status.REJECTED == inputFilter.checkInput(info)) {
-            throw new InvalidClassException("Rejected by input filter: " + info);
+    protected void filterCheck(InputFilter.FilterInfo info) throws InvalidClassException {
+        if (serialFilter != null) {
+            RuntimeException ex = null;
+            InputFilter.Status status;
+            try {
+                status = serialFilter.checkInput(info);
+            } catch (RuntimeException e) {
+                // Preventive interception of an exception to log
+                status = InputFilter.Status.REJECTED;
+                ex = e;
+            }
+
+            System.out.println("ObjectInputFilter " + status + ":" + info.serialClass() + ", array length: "
+                    + info.arrayLength() + ", nRefs: " + info.references() + ", depth: " + info.depth() + ", bytes: "
+                    + info.streamBytes() + ", ex: " + Objects.toString(ex, "n/a"));
+
+            if (status == null || status == InputFilter.Status.REJECTED) {
+                InvalidClassException ice = new InvalidClassException("filter status: " + status);
+                ice.initCause(ex);
+                throw ice;
+            }
         }
+
     }
 
-    protected final class FilterInfo implements InputFilter.FilterInfo {
+    public static final class FilterValues implements InputFilter.FilterInfo {
         final Class<?> serialClass;
         final long arrayLength;
         final long depth;
         final long references;
         final long streamBytes;
 
-        public FilterInfo(Class<?> serialClass, long arrayLength, long depth, long references, long streamBytes) {
+        public FilterValues(Class<?> serialClass, long arrayLength, long depth, long references, long streamBytes) {
             this.serialClass = serialClass;
             this.arrayLength = arrayLength;
             this.depth = depth;

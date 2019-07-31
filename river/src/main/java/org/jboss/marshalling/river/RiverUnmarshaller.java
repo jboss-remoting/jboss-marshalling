@@ -150,6 +150,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         try {
+            if(System.getSecurityManager() == null) {
+                return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            }
             return AccessController.doPrivileged(createObjectInputStreamAction);
         } catch (PrivilegedActionException e) {
             throw (IOException) e.getCause();

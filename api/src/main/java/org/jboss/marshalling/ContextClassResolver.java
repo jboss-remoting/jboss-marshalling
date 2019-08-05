@@ -18,7 +18,9 @@
 
 package org.jboss.marshalling;
 
-import java.security.AccessController;
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.security.PrivilegedAction;
 
 /**
@@ -26,7 +28,7 @@ import java.security.PrivilegedAction;
  */
 public class ContextClassResolver extends AbstractClassResolver {
 
-    private static final PrivilegedAction<ClassLoader> classLoaderAction = new PrivilegedAction<ClassLoader>() {
+    private static final PrivilegedAction<ClassLoader> GET_TCCL_ACTION = new PrivilegedAction<ClassLoader>() {
         public ClassLoader run() {
             return Thread.currentThread().getContextClassLoader();
         }
@@ -49,11 +51,10 @@ public class ContextClassResolver extends AbstractClassResolver {
 
     /** {@inheritDoc} */
     protected ClassLoader getClassLoader() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            return AccessController.doPrivileged(classLoaderAction);
-        } else {
+        if (getSecurityManager() == null) {
             return Thread.currentThread().getContextClassLoader();
+        } else {
+            return doPrivileged(GET_TCCL_ACTION);
         }
     }
 }

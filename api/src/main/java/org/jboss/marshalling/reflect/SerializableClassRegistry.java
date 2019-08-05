@@ -18,8 +18,10 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.SerializablePermission;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -43,7 +45,7 @@ public final class SerializableClassRegistry {
      * @throws SecurityException if the caller does not have sufficient privileges
      */
     public static SerializableClassRegistry getInstance() throws SecurityException {
-        SecurityManager manager = System.getSecurityManager();
+        final SecurityManager manager = getSecurityManager();
         if (manager != null) {
             manager.checkPermission(PERMISSION);
         }
@@ -56,15 +58,14 @@ public final class SerializableClassRegistry {
 
     private static final ClassValue<SerializableClass> classValue = new ClassValue<SerializableClass>() {
         protected SerializableClass computeValue(final Class<?> type) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                return AccessController.doPrivileged(new PrivilegedAction<SerializableClass>() {
+            if (getSecurityManager() == null) {
+                return new SerializableClass(type);
+            } else {
+                return doPrivileged(new PrivilegedAction<SerializableClass>() {
                     public SerializableClass run() {
                         return new SerializableClass(type);
                     }
                 });
-            } else {
-                return new SerializableClass(type);
             }
         }
     };

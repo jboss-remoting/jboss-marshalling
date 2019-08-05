@@ -18,9 +18,12 @@
 
 package org.jboss.marshalling.river;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static sun.reflect.ReflectionFactory.getReflectionFactory;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -213,7 +216,7 @@ final class Protocol {
 
     public static final int ID_UNMODIFIABLE_MAP_ENTRY_SET = 0x82;
 
-    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+    private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
@@ -263,7 +266,7 @@ final class Protocol {
             if (clazz == Object.class) {
                 throw new IllegalStateException("No candidate collection fields found in " + clazz);
             }
-            for (Field field : AccessController.doPrivileged(new GetDeclaredFieldsAction(clazz))) {
+            for (Field field : getSecurityManager() == null ? clazz.getDeclaredFields() : doPrivileged(new GetDeclaredFieldsAction(clazz))) {
                 if (strings.contains(field.getName())) {
                     return field;
                 }
@@ -288,7 +291,8 @@ final class Protocol {
             throw new IllegalStateException("No standard serialization proxy found for enum set!");
         }
         Field field = null;
-        for (Field declared : AccessController.doPrivileged(new GetDeclaredFieldsAction(reverseOrder2Class))) {
+        final SecurityManager sm = getSecurityManager();
+        for (Field declared : sm == null ? reverseOrder2Class.getDeclaredFields() : doPrivileged(new GetDeclaredFieldsAction(reverseOrder2Class))) {
             if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
                 field = declared;
                 break;
@@ -307,12 +311,17 @@ final class Protocol {
         unmodifiableSortedMapField = findUnmodifiableField(unmodifiableSortedMapClass);
 
         unmodifiableMapEntrySetField = findUnmodifiableField(unmodifiableMapEntrySetClass);
-        final ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
-        final Constructor<?> ctor = AccessController.doPrivileged(GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class));
+        final ReflectionFactory reflectionFactory = sm == null ? getReflectionFactory() : doPrivileged(GetReflectionFactoryAction.INSTANCE);
+        final Constructor<?> ctor = sm == null ? GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class).run() :
+                doPrivileged(GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class));
         unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, ctor);
         if (! unmodifiableMapEntrySetCtor.isAccessible()) {
             // Java 8 doesn't do this, sometimes :(
-            AccessController.doPrivileged(new SetAccessibleAction(unmodifiableMapEntrySetCtor));
+            if (sm == null) {
+                unmodifiableMapEntrySetCtor.setAccessible(true);
+            } else {
+                doPrivileged(new SetAccessibleAction(unmodifiableMapEntrySetCtor));
+            }
         }
     }
 

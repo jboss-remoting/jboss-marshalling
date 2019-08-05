@@ -18,6 +18,9 @@
 
 package org.jboss.marshalling.serial;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.AbstractMarshallerFactory;
@@ -38,13 +41,10 @@ import java.io.ObjectStreamClass;
 import java.io.Externalizable;
 import java.io.NotSerializableException;
 import java.io.InvalidClassException;
-import java.io.InvalidObjectException;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Field;
 import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 
 /**
@@ -310,10 +310,14 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
     };
 
     private SerialObjectOutputStream createObjectOutputStream() throws IOException {
-        try {
-            return AccessController.doPrivileged(createObjectOutputStreamAction);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getCause();
+        if (getSecurityManager() == null) {
+            return new SerialObjectOutputStream(SerialMarshaller.this, blockMarshaller);
+        } else {
+            try {
+                return doPrivileged(createObjectOutputStreamAction);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getCause();
+            }
         }
     }
 

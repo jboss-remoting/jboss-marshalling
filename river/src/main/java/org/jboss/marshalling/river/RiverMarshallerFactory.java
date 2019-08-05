@@ -18,13 +18,15 @@
 
 package org.jboss.marshalling.river;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import org.jboss.marshalling.AbstractMarshallerFactory;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.MarshallingConfiguration;
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -37,11 +39,15 @@ public class RiverMarshallerFactory extends AbstractMarshallerFactory {
      * Construct a new instance of a River marshaller factory.
      */
     public RiverMarshallerFactory() {
-        registry = AccessController.doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
-            public SerializableClassRegistry run() {
-                return SerializableClassRegistry.getInstance();
-            }
-        });
+        if (getSecurityManager() == null) {
+            registry = SerializableClassRegistry.getInstance();
+        } else {
+            registry = doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
+                public SerializableClassRegistry run() {
+                    return SerializableClassRegistry.getInstance();
+                }
+            });
+        }
     }
 
     /** {@inheritDoc} */

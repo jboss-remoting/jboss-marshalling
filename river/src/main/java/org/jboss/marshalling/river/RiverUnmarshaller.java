@@ -18,6 +18,10 @@
 
 package org.jboss.marshalling.river;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static org.jboss.marshalling.river.Protocol.*;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -29,7 +33,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -79,8 +82,6 @@ import org.jboss.marshalling.util.FlatNavigableMap;
 import org.jboss.marshalling.util.FlatNavigableSet;
 import sun.misc.Unsafe;
 
-import static org.jboss.marshalling.river.Protocol.*;
-
 /**
  *
  */
@@ -96,13 +97,19 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private SortedSet<Validator> validators;
     private int validatorSeq;
 
-    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+    private static final Unsafe unsafe;
     private static final Object UNRESOLVED = new Object();
     private static final Field proxyInvocationHandler;
     private static final long proxyInvocationHandlerOffset;
 
     static {
-        proxyInvocationHandler = AccessController.doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
+        if (getSecurityManager() == null) {
+            unsafe = GetUnsafeAction.INSTANCE.run();
+            proxyInvocationHandler = new GetDeclaredFieldAction(Proxy.class, "h").run();
+        } else {
+            unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
+            proxyInvocationHandler = doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
+        }
         proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
     }
 
@@ -149,10 +156,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private RiverObjectInputStream createObjectInputStream() throws IOException {
-        try {
-            return AccessController.doPrivileged(createObjectInputStreamAction);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getCause();
+        if (getSecurityManager() == null) {
+            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+        } else {
+            try {
+                return doPrivileged(createObjectInputStreamAction);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getCause();
+            }
         }
     }
 

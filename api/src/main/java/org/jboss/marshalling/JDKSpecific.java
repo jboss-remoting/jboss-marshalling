@@ -18,12 +18,12 @@
 
 package org.jboss.marshalling;
 
+import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.OptionalDataException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -49,7 +49,7 @@ final class JDKSpecific {
     }
 
     static OptionalDataException createOptionalDataException() {
-        return doPrivileged(OptionalDataExceptionCreateAction.INSTANCE);
+        return getSecurityManager() == null ? OptionalDataExceptionCreateAction.INSTANCE.run() : doPrivileged(OptionalDataExceptionCreateAction.INSTANCE);
     }
 
     static Class<?> getMyCaller() {
@@ -63,17 +63,26 @@ final class JDKSpecific {
         private final Constructor<OptionalDataException> constructor;
 
         OptionalDataExceptionCreateAction() {
-            constructor = doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
-                public Constructor<OptionalDataException> run() {
-                    try {
-                        final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
-                        constructor.setAccessible(true);
-                        return constructor;
-                    } catch (NoSuchMethodException e) {
-                        throw new NoSuchMethodError(e.getMessage());
-                    }
+            if (getSecurityManager() == null) {
+                try {
+                    constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
+                    constructor.setAccessible(true);
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodError(e.getMessage());
                 }
-            });
+            } else {
+                constructor = doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
+                    public Constructor<OptionalDataException> run() {
+                        try {
+                            final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
+                            constructor.setAccessible(true);
+                            return constructor;
+                        } catch (NoSuchMethodException e) {
+                            throw new NoSuchMethodError(e.getMessage());
+                        }
+                    }
+                });
+            }
         }
 
         public OptionalDataException run() {
@@ -94,7 +103,7 @@ final class JDKSpecific {
         static final Holder.StackTraceReader STACK_TRACE_READER;
 
         static {
-            STACK_TRACE_READER = AccessController.doPrivileged(new PrivilegedAction<Holder.StackTraceReader>() {
+            STACK_TRACE_READER = getSecurityManager() == null ? new Holder.StackTraceReader() : doPrivileged(new PrivilegedAction<Holder.StackTraceReader>() {
                 public Holder.StackTraceReader run() {
                     return new Holder.StackTraceReader();
                 }

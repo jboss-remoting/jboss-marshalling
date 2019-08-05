@@ -18,6 +18,9 @@
 
 package org.jboss.marshalling.cloner;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.Externalizable;
@@ -38,7 +41,6 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -319,7 +321,7 @@ class SerializingCloner implements ObjectCloner {
 
     private StepObjectInputStream createStepObjectInputStream(final Object clone, final SerializableClass cloneInfo, final ClonerPutField fields, final Queue<Step> steps) throws IOException {
         try {
-            return System.getSecurityManager() == null ? new StepObjectInputStream(steps, fields, clone, cloneInfo) : AccessController.doPrivileged(new PrivilegedExceptionAction<StepObjectInputStream>() {
+            return getSecurityManager() == null ? new StepObjectInputStream(steps, fields, clone, cloneInfo) : doPrivileged(new PrivilegedExceptionAction<StepObjectInputStream>() {
                 public StepObjectInputStream run() throws Exception {
                     return new StepObjectInputStream(steps, fields, clone, cloneInfo);
                 }
@@ -341,7 +343,7 @@ class SerializingCloner implements ObjectCloner {
 
     private StepObjectOutputStream createStepObjectOutputStream(final Object orig, final ClonerPutField fields, final Queue<Step> steps) throws IOException {
         try {
-            return System.getSecurityManager() == null ? new StepObjectOutputStream(steps, fields, orig) : AccessController.doPrivileged(new PrivilegedExceptionAction<StepObjectOutputStream>() {
+            return getSecurityManager() == null ? new StepObjectOutputStream(steps, fields, orig) : doPrivileged(new PrivilegedExceptionAction<StepObjectOutputStream>() {
                 public StepObjectOutputStream run() throws IOException {
                     return new StepObjectOutputStream(steps, fields, orig);
                 }
@@ -504,8 +506,9 @@ class SerializingCloner implements ObjectCloner {
         map.put(char[].class, 7);
         PRIMITIVE_ARRAYS = map;
         final Field field;
-        field = AccessController.doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
-        unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+        final SecurityManager sm = getSecurityManager();
+        field = sm == null ? new GetDeclaredFieldAction(Proxy.class, "h").run() : doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
+        unsafe = sm == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
         proxyInvocationHandler = field;
         proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
     }

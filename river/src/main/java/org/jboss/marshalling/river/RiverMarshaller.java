@@ -31,24 +31,25 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
 import java.util.AbstractQueue;
 import java.util.AbstractSequentialList;
 import java.util.AbstractSet;
-import java.util.Vector;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Stack;
+import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+
 import org.jboss.marshalling.AbstractMarshaller;
 import org.jboss.marshalling.ByteOutput;
 import org.jboss.marshalling.ClassExternalizerFactory;
@@ -58,8 +59,8 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.Pair;
-import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling._private.GetDeclaredFieldAction;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
@@ -206,699 +207,17 @@ public class RiverMarshaller extends AbstractMarshaller {
                 instanceCache.put(obj, instanceSeq++);
                 return;
             }
-            // Now replaceable classes
-            switch (id) {
-                case ID_BYTE_CLASS: {
-                    write(ID_BYTE_OBJECT);
-                    writeByte(((Byte) obj).byteValue());
-                    return;
-                }
-                case ID_BOOLEAN_CLASS: {
-                    write(((Boolean) obj).booleanValue() ? ID_BOOLEAN_OBJECT_TRUE : ID_BOOLEAN_OBJECT_FALSE);
-                    return;
-                }
-                case ID_CHARACTER_CLASS: {
-                    write(ID_CHARACTER_OBJECT);
-                    writeChar(((Character) obj).charValue());
-                    return;
-                }
-                case ID_DOUBLE_CLASS: {
-                    write(ID_DOUBLE_OBJECT);
-                    writeDouble(((Double) obj).doubleValue());
-                    return;
-                }
-                case ID_FLOAT_CLASS: {
-                    write(ID_FLOAT_OBJECT);
-                    writeFloat(((Float) obj).floatValue());
-                    return;
-                }
-                case ID_INTEGER_CLASS: {
-                    write(ID_INTEGER_OBJECT);
-                    writeInt(((Integer) obj).intValue());
-                    return;
-                }
-                case ID_LONG_CLASS: {
-                    write(ID_LONG_OBJECT);
-                    writeLong(((Long) obj).longValue());
-                    return;
-                }
-                case ID_SHORT_CLASS: {
-                    write(ID_SHORT_OBJECT);
-                    writeShort(((Short) obj).shortValue());
-                    return;
-                }
-                case ID_STRING_CLASS: {
-                    final String string = (String) obj;
-                    final int len = string.length();
-                    if (len == 0) {
-                        write(ID_STRING_EMPTY);
-                        // don't cache empty strings
-                        return;
-                    } else if (len <= 0x100) {
-                        write(ID_STRING_SMALL);
-                        write(len);
-                    } else if (len <= 0x10000) {
-                        write(ID_STRING_MEDIUM);
-                        writeShort(len);
-                    } else {
-                        write(ID_STRING_LARGE);
-                        writeInt(len);
-                    }
-                    shallowFlush();
-                    UTFUtils.writeUTFBytes(byteOutput, string);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                        instanceSeq++;
-                    } else {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    return;
-                }
-                case ID_BYTE_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final byte[] bytes = (byte[]) obj;
-                    final int len = bytes.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_BYTE);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_BYTE);
-                        write(bytes, 0, len);
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_BYTE);
-                        write(bytes, 0, len);
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_BYTE);
-                        write(bytes, 0, len);
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_BOOLEAN_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final boolean[] booleans = (boolean[]) obj;
-                    final int len = booleans.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_BOOLEAN);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_BOOLEAN);
-                        writeBooleanArray(booleans);
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_BOOLEAN);
-                        writeBooleanArray(booleans);
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_BOOLEAN);
-                        writeBooleanArray(booleans);
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_CHAR_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final char[] chars = (char[]) obj;
-                    final int len = chars.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_CHAR);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_CHAR);
-                        for (int i = 0; i < len; i ++) {
-                            writeChar(chars[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_CHAR);
-                        for (int i = 0; i < len; i ++) {
-                            writeChar(chars[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_CHAR);
-                        for (int i = 0; i < len; i ++) {
-                            writeChar(chars[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_SHORT_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final short[] shorts = (short[]) obj;
-                    final int len = shorts.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_SHORT);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_SHORT);
-                        for (int i = 0; i < len; i ++) {
-                            writeShort(shorts[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_SHORT);
-                        for (int i = 0; i < len; i ++) {
-                            writeShort(shorts[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_SHORT);
-                        for (int i = 0; i < len; i ++) {
-                            writeShort(shorts[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_INT_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final int[] ints = (int[]) obj;
-                    final int len = ints.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_INT);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_INT);
-                        for (int i = 0; i < len; i ++) {
-                            writeInt(ints[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_INT);
-                        for (int i = 0; i < len; i ++) {
-                            writeInt(ints[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_INT);
-                        for (int i = 0; i < len; i ++) {
-                            writeInt(ints[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_LONG_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final long[] longs = (long[]) obj;
-                    final int len = longs.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_LONG);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_LONG);
-                        for (int i = 0; i < len; i ++) {
-                            writeLong(longs[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_LONG);
-                        for (int i = 0; i < len; i ++) {
-                            writeLong(longs[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_LONG);
-                        for (int i = 0; i < len; i ++) {
-                            writeLong(longs[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_FLOAT_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final float[] floats = (float[]) obj;
-                    final int len = floats.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_FLOAT);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_FLOAT);
-                        for (int i = 0; i < len; i ++) {
-                            writeFloat(floats[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_FLOAT);
-                        for (int i = 0; i < len; i ++) {
-                            writeFloat(floats[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_FLOAT);
-                        for (int i = 0; i < len; i ++) {
-                            writeFloat(floats[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_DOUBLE_ARRAY_CLASS: {
-                    if (! unshared) {
-                        instanceCache.put(obj, instanceSeq++);
-                    }
-                    final double[] doubles = (double[]) obj;
-                    final int len = doubles.length;
-                    if (len == 0) {
-                        write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                        write(ID_PRIM_DOUBLE);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                        write(len);
-                        write(ID_PRIM_DOUBLE);
-                        for (int i = 0; i < len; i ++) {
-                            writeDouble(doubles[i]);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                        writeShort(len);
-                        write(ID_PRIM_DOUBLE);
-                        for (int i = 0; i < len; i ++) {
-                            writeDouble(doubles[i]);
-                        }
-                    } else {
-                        write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                        writeInt(len);
-                        write(ID_PRIM_DOUBLE);
-                        for (int i = 0; i < len; i ++) {
-                            writeDouble(doubles[i]);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_CC_ARRAY_LIST:
-                case ID_CC_LINKED_LIST:
-                case ID_CC_ARRAY_DEQUE: {
-                    instanceCache.put(obj, instanceSeq++);
-                    final Collection<?> collection = (Collection<?>) obj;
-                    final int len = collection.size();
-                    if (len == 0) {
-                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
-                        write(id);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
-                        write(len);
-                        write(id);
-                        for (Object o : collection) {
-                            doWriteObject(o, false);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
-                        writeShort(len);
-                        write(id);
-                        for (Object o : collection) {
-                            doWriteObject(o, false);
-                        }
-                    } else {
-                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
-                        writeInt(len);
-                        write(id);
-                        for (Object o : collection) {
-                            doWriteObject(o, false);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_CC_VECTOR:
-                case ID_CC_STACK: {
-                    instanceCache.put(obj, instanceSeq++);
-                    final Collection<?> collection = (Collection<?>) obj;
-                    synchronized (collection) {
-                        final int len = collection.size();
-                        if (len == 0) {
-                            write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
-                            write(id);
-                        } else if (len <= 256) {
-                            write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
-                            write(len);
-                            write(id);
-                            for (Object o : collection) {
-                                doWriteObject(o, false);
-                            }
-                        } else if (len <= 65536) {
-                            write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
-                            writeShort(len);
-                            write(id);
-                            for (Object o : collection) {
-                                doWriteObject(o, false);
-                            }
-                        } else {
-                            write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
-                            writeInt(len);
-                            write(id);
-                            for (Object o : collection) {
-                                doWriteObject(o, false);
-                            }
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_CC_ENUM_SET_PROXY: {
-                    final Enum[] elements = getEnumSetElements(obj);
-                    final int len = elements.length;
-                    if (len == 0) {
-                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
-                        write(id);
-                        writeClass(getEnumSetElementType(obj));
-                        instanceCache.put(obj, instanceSeq++);
-                    } else if (len <= 256) {
-                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
-                        write(len);
-                        write(id);
-                        writeClass(getEnumSetElementType(obj));
-                        instanceCache.put(obj, instanceSeq++);
-                        for (Object o : elements) {
-                            doWriteObject(o, false);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
-                        writeShort(len);
-                        write(id);
-                        writeClass(getEnumSetElementType(obj));
-                        instanceCache.put(obj, instanceSeq++);
-                        for (Object o : elements) {
-                            doWriteObject(o, false);
-                        }
-                    } else {
-                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
-                        writeInt(len);
-                        write(id);
-                        writeClass(getEnumSetElementType(obj));
-                        instanceCache.put(obj, instanceSeq++);
-                        for (Object o : elements) {
-                            doWriteObject(o, false);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_CC_IDENTITY_HASH_MAP:
-                case ID_CC_ENUM_MAP: {
-                    instanceCache.put(obj, instanceSeq++);
-                    final Map<?, ?> map = (Map<?, ?>) obj;
-                    final int len = map.size();
-                    if (len == 0) {
-                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
-                        write(id);
-                        switch (id) {
-                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
-                        }
-                    } else if (len <= 256) {
-                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
-                        write(len);
-                        write(id);
-                        switch (id) {
-                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
-                        }
-                        for (Map.Entry<?, ?> entry : map.entrySet()) {
-                            doWriteObject(entry.getKey(), false);
-                            doWriteObject(entry.getValue(), false);
-                        }
-                    } else if (len <= 65536) {
-                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
-                        writeShort(len);
-                        write(id);
-                        switch (id) {
-                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
-                        }
-                        for (Map.Entry<?, ?> entry : map.entrySet()) {
-                            doWriteObject(entry.getKey(), false);
-                            doWriteObject(entry.getValue(), false);
-                        }
-                    } else {
-                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
-                        writeInt(len);
-                        write(id);
-                        switch (id) {
-                            case ID_CC_ENUM_MAP: writeClass(getEnumMapKeyType(obj)); break;
-                        }
-                        for (Map.Entry<?, ?> entry : map.entrySet()) {
-                            doWriteObject(entry.getKey(), false);
-                            doWriteObject(entry.getValue(), false);
-                        }
-                    }
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-
-                case ID_EMPTY_MAP_OBJECT:
-                case ID_EMPTY_SET_OBJECT:
-                case ID_EMPTY_LIST_OBJECT:
-                case ID_REVERSE_ORDER_OBJECT: {
-                    write(id);
-                    return;
-                }
-                case ID_SINGLETON_MAP_OBJECT: {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    final Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();
-                    doWriteObject(entry.getKey(), false);
-                    doWriteObject(entry.getValue(), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_SINGLETON_LIST_OBJECT:
-                case ID_SINGLETON_SET_OBJECT: {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(((Collection)obj).iterator().next(), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_REVERSE_ORDER2_OBJECT: {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(reverseOrder2Field, obj), false);
-                    return;
-                }
-                case ID_CC_COPY_ON_WRITE_ARRAY_LIST:
-                case ID_CC_COPY_ON_WRITE_ARRAY_SET: {
+            if (id != -1) {
+                if (id == ID_CC_COPY_ON_WRITE_ARRAY_LIST ||
+                        id == ID_CC_COPY_ON_WRITE_ARRAY_SET) {
                     info = registry.lookup(objClass);
-                    break;
-                }
-                case ID_PAIR: {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    Pair<?, ?> pair = (Pair<?, ?>) obj;
-                    doWriteObject(pair.getA(), unshared);
-                    doWriteObject(pair.getB(), unshared);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
+                } else {
+                    writeKnownObject(unshared, obj, objClass, id);
                     return;
                 }
-                case ID_CC_NCOPIES: {
-                    List<?> list = (List<?>) obj;
-                    int size = list.size();
-                    if (size == 0) {
-                        write(ID_EMPTY_LIST_OBJECT);
-                        return;
-                    }
-                    instanceCache.put(obj, instanceSeq++);
-                    if (size <= 256) {
-                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
-                        write(size);
-                    } else if (size <= 65536) {
-                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
-                        writeShort(size);
-                    } else {
-                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
-                        writeInt(size);
-                    }
-                    write(id);
-                    doWriteObject(list.iterator().next(), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_COLLECTION:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableCollectionField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_SET:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableSetField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_LIST:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(objClass == unmodifiableRandomAccessListClass ? unmodifiableRandomAccessListField : unmodifiableListField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_MAP:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableMapField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_SORTED_MAP:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableSortedMapField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-
-                case ID_UNMODIFIABLE_SORTED_SET:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableSortedSetField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case ID_UNMODIFIABLE_MAP_ENTRY_SET:
-                {
-                    instanceCache.put(obj, instanceSeq++);
-                    write(id);
-                    doWriteObject(Protocol.readField(unmodifiableMapEntrySetField, obj), false);
-                    if (unshared) {
-                        instanceCache.put(obj, -1);
-                    }
-                    return;
-                }
-                case -1: break;
-                default: throw new NotSerializableException(objClass.getName());
             }
             if (isArray) {
-                final Object[] objects = (Object[]) obj;
-                final int len = objects.length;
-                if (len == 0) {
-                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
-                    writeClass(objClass.getComponentType());
-                    instanceCache.put(obj, instanceSeq++);
-                } else if (len <= 256) {
-                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
-                    write(len);
-                    writeClass(objClass.getComponentType());
-                    instanceCache.put(obj, instanceSeq++);
-                    for (int i = 0; i < len; i++) {
-                        doWriteObject(objects[i], unshared);
-                    }
-                } else if (len <= 65536) {
-                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
-                    writeShort(len);
-                    writeClass(objClass.getComponentType());
-                    instanceCache.put(obj, instanceSeq++);
-                    for (int i = 0; i < len; i++) {
-                        doWriteObject(objects[i], unshared);
-                    }
-                } else {
-                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
-                    writeInt(len);
-                    writeClass(objClass.getComponentType());
-                    instanceCache.put(obj, instanceSeq++);
-                    for (int i = 0; i < len; i++) {
-                        doWriteObject(objects[i], unshared);
-                    }
-                }
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
+                writeArrayObject(unshared, obj, objClass);
                 return;
             }
             // serialize proxies efficiently
@@ -936,16 +255,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             }
             // user type #2: externalizable
             if (obj instanceof Externalizable) {
-                write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                final Externalizable ext = (Externalizable) obj;
-                final ObjectOutput objectOutput = getObjectOutput();
-                writeExternalizableClass(objClass);
-                instanceCache.put(obj, instanceSeq++);
-                ext.writeExternal(objectOutput);
-                writeEndBlock();
-                if (unshared) {
-                    instanceCache.put(obj, -1);
-                }
+                writeExternalizable(unshared, obj, objClass);
                 return;
             }
             // user type #3: serializable
@@ -967,6 +277,715 @@ public class RiverMarshaller extends AbstractMarshaller {
                     instanceCache.put(original, replId);
                 }
             }
+        }
+    }
+
+    private void writeExternalizable(boolean unshared, Object obj, Class<?> objClass) throws IOException {
+        write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
+        final Externalizable ext = (Externalizable) obj;
+        final ObjectOutput objectOutput = getObjectOutput();
+        writeExternalizableClass(objClass);
+        instanceCache.put(obj, instanceSeq++);
+        ext.writeExternal(objectOutput);
+        writeEndBlock();
+        if (unshared) {
+            instanceCache.put(obj, -1);
+        }
+        return;
+    }
+
+    private void writeArrayObject(boolean unshared, Object obj, Class<?> objClass) throws IOException {
+        final Object[] objects = (Object[]) obj;
+        final int len = objects.length;
+        if (len == 0) {
+            write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+            writeClass(objClass.getComponentType());
+            instanceCache.put(obj, instanceSeq++);
+        } else if (len <= 256) {
+            write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+            write(len);
+            writeClass(objClass.getComponentType());
+            instanceCache.put(obj, instanceSeq++);
+            for (int i = 0; i < len; i++) {
+                doWriteObject(objects[i], unshared);
+            }
+        } else if (len <= 65536) {
+            write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+            writeShort(len);
+            writeClass(objClass.getComponentType());
+            instanceCache.put(obj, instanceSeq++);
+            for (int i = 0; i < len; i++) {
+                doWriteObject(objects[i], unshared);
+            }
+        } else {
+            write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+            writeInt(len);
+            writeClass(objClass.getComponentType());
+            instanceCache.put(obj, instanceSeq++);
+            for (int i = 0; i < len; i++) {
+                doWriteObject(objects[i], unshared);
+            }
+        }
+        if (unshared) {
+            instanceCache.put(obj, -1);
+        }
+        return;
+    }
+
+    private void writeKnownObject(boolean unshared, Object obj, Class<?> objClass, int id) throws IOException {
+        // Now replaceable classes
+        switch (id) {
+            case ID_BYTE_CLASS: {
+                write(ID_BYTE_OBJECT);
+                writeByte(((Byte) obj).byteValue());
+                return;
+            }
+            case ID_BOOLEAN_CLASS: {
+                write(((Boolean) obj).booleanValue() ? ID_BOOLEAN_OBJECT_TRUE : ID_BOOLEAN_OBJECT_FALSE);
+                return;
+            }
+            case ID_CHARACTER_CLASS: {
+                write(ID_CHARACTER_OBJECT);
+                writeChar(((Character) obj).charValue());
+                return;
+            }
+            case ID_DOUBLE_CLASS: {
+                write(ID_DOUBLE_OBJECT);
+                writeDouble(((Double) obj).doubleValue());
+                return;
+            }
+            case ID_FLOAT_CLASS: {
+                write(ID_FLOAT_OBJECT);
+                writeFloat(((Float) obj).floatValue());
+                return;
+            }
+            case ID_INTEGER_CLASS: {
+                write(ID_INTEGER_OBJECT);
+                writeInt(((Integer) obj).intValue());
+                return;
+            }
+            case ID_LONG_CLASS: {
+                write(ID_LONG_OBJECT);
+                writeLong(((Long) obj).longValue());
+                return;
+            }
+            case ID_SHORT_CLASS: {
+                write(ID_SHORT_OBJECT);
+                writeShort(((Short) obj).shortValue());
+                return;
+            }
+            case ID_STRING_CLASS: {
+                final String string = (String) obj;
+                final int len = string.length();
+                if (len == 0) {
+                    write(ID_STRING_EMPTY);
+                    // don't cache empty strings
+                    return;
+                } else if (len <= 0x100) {
+                    write(ID_STRING_SMALL);
+                    write(len);
+                } else if (len <= 0x10000) {
+                    write(ID_STRING_MEDIUM);
+                    writeShort(len);
+                } else {
+                    write(ID_STRING_LARGE);
+                    writeInt(len);
+                }
+                shallowFlush();
+                UTFUtils.writeUTFBytes(byteOutput, string);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                    instanceSeq++;
+                } else {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                return;
+            }
+            case ID_BYTE_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final byte[] bytes = (byte[]) obj;
+                final int len = bytes.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_BYTE);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_BYTE);
+                    write(bytes, 0, len);
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_BYTE);
+                    write(bytes, 0, len);
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_BYTE);
+                    write(bytes, 0, len);
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_BOOLEAN_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final boolean[] booleans = (boolean[]) obj;
+                final int len = booleans.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_BOOLEAN);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_BOOLEAN);
+                    writeBooleanArray(booleans);
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_BOOLEAN);
+                    writeBooleanArray(booleans);
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_BOOLEAN);
+                    writeBooleanArray(booleans);
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CHAR_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final char[] chars = (char[]) obj;
+                final int len = chars.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_CHAR);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_CHAR);
+                    for (int i = 0; i < len; i++) {
+                        writeChar(chars[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_CHAR);
+                    for (int i = 0; i < len; i++) {
+                        writeChar(chars[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_CHAR);
+                    for (int i = 0; i < len; i++) {
+                        writeChar(chars[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_SHORT_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final short[] shorts = (short[]) obj;
+                final int len = shorts.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_SHORT);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_SHORT);
+                    for (int i = 0; i < len; i++) {
+                        writeShort(shorts[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_SHORT);
+                    for (int i = 0; i < len; i++) {
+                        writeShort(shorts[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_SHORT);
+                    for (int i = 0; i < len; i++) {
+                        writeShort(shorts[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_INT_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final int[] ints = (int[]) obj;
+                final int len = ints.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_INT);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_INT);
+                    for (int i = 0; i < len; i++) {
+                        writeInt(ints[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_INT);
+                    for (int i = 0; i < len; i++) {
+                        writeInt(ints[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_INT);
+                    for (int i = 0; i < len; i++) {
+                        writeInt(ints[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_LONG_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final long[] longs = (long[]) obj;
+                final int len = longs.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_LONG);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_LONG);
+                    for (int i = 0; i < len; i++) {
+                        writeLong(longs[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_LONG);
+                    for (int i = 0; i < len; i++) {
+                        writeLong(longs[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_LONG);
+                    for (int i = 0; i < len; i++) {
+                        writeLong(longs[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_FLOAT_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final float[] floats = (float[]) obj;
+                final int len = floats.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_FLOAT);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_FLOAT);
+                    for (int i = 0; i < len; i++) {
+                        writeFloat(floats[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_FLOAT);
+                    for (int i = 0; i < len; i++) {
+                        writeFloat(floats[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_FLOAT);
+                    for (int i = 0; i < len; i++) {
+                        writeFloat(floats[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_DOUBLE_ARRAY_CLASS: {
+                if (!unshared) {
+                    instanceCache.put(obj, instanceSeq++);
+                }
+                final double[] doubles = (double[]) obj;
+                final int len = doubles.length;
+                if (len == 0) {
+                    write(unshared ? ID_ARRAY_EMPTY_UNSHARED : ID_ARRAY_EMPTY);
+                    write(ID_PRIM_DOUBLE);
+                } else if (len <= 256) {
+                    write(unshared ? ID_ARRAY_SMALL_UNSHARED : ID_ARRAY_SMALL);
+                    write(len);
+                    write(ID_PRIM_DOUBLE);
+                    for (int i = 0; i < len; i++) {
+                        writeDouble(doubles[i]);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_ARRAY_MEDIUM_UNSHARED : ID_ARRAY_MEDIUM);
+                    writeShort(len);
+                    write(ID_PRIM_DOUBLE);
+                    for (int i = 0; i < len; i++) {
+                        writeDouble(doubles[i]);
+                    }
+                } else {
+                    write(unshared ? ID_ARRAY_LARGE_UNSHARED : ID_ARRAY_LARGE);
+                    writeInt(len);
+                    write(ID_PRIM_DOUBLE);
+                    for (int i = 0; i < len; i++) {
+                        writeDouble(doubles[i]);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CC_ARRAY_LIST:
+            case ID_CC_LINKED_LIST:
+            case ID_CC_ARRAY_DEQUE: {
+                instanceCache.put(obj, instanceSeq++);
+                final Collection<?> collection = (Collection<?>) obj;
+                final int len = collection.size();
+                if (len == 0) {
+                    write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                    write(id);
+                } else if (len <= 256) {
+                    write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                    write(len);
+                    write(id);
+                    for (Object o : collection) {
+                        doWriteObject(o, false);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                    writeShort(len);
+                    write(id);
+                    for (Object o : collection) {
+                        doWriteObject(o, false);
+                    }
+                } else {
+                    write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                    writeInt(len);
+                    write(id);
+                    for (Object o : collection) {
+                        doWriteObject(o, false);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CC_VECTOR:
+            case ID_CC_STACK: {
+                instanceCache.put(obj, instanceSeq++);
+                final Collection<?> collection = (Collection<?>) obj;
+                synchronized (collection) {
+                    final int len = collection.size();
+                    if (len == 0) {
+                        write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                        write(id);
+                    } else if (len <= 256) {
+                        write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                        write(len);
+                        write(id);
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    } else if (len <= 65536) {
+                        write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                        writeShort(len);
+                        write(id);
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    } else {
+                        write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                        writeInt(len);
+                        write(id);
+                        for (Object o : collection) {
+                            doWriteObject(o, false);
+                        }
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CC_ENUM_SET_PROXY: {
+                final Enum[] elements = getEnumSetElements(obj);
+                final int len = elements.length;
+                if (len == 0) {
+                    write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                    write(id);
+                    writeClass(getEnumSetElementType(obj));
+                    instanceCache.put(obj, instanceSeq++);
+                } else if (len <= 256) {
+                    write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                    write(len);
+                    write(id);
+                    writeClass(getEnumSetElementType(obj));
+                    instanceCache.put(obj, instanceSeq++);
+                    for (Object o : elements) {
+                        doWriteObject(o, false);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                    writeShort(len);
+                    write(id);
+                    writeClass(getEnumSetElementType(obj));
+                    instanceCache.put(obj, instanceSeq++);
+                    for (Object o : elements) {
+                        doWriteObject(o, false);
+                    }
+                } else {
+                    write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                    writeInt(len);
+                    write(id);
+                    writeClass(getEnumSetElementType(obj));
+                    instanceCache.put(obj, instanceSeq++);
+                    for (Object o : elements) {
+                        doWriteObject(o, false);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CC_IDENTITY_HASH_MAP:
+            case ID_CC_ENUM_MAP: {
+                instanceCache.put(obj, instanceSeq++);
+                final Map<?, ?> map = (Map<?, ?>) obj;
+                final int len = map.size();
+                if (len == 0) {
+                    write(unshared ? ID_COLLECTION_EMPTY_UNSHARED : ID_COLLECTION_EMPTY);
+                    write(id);
+                    switch (id) {
+                        case ID_CC_ENUM_MAP:
+                            writeClass(getEnumMapKeyType(obj));
+                            break;
+                    }
+                } else if (len <= 256) {
+                    write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                    write(len);
+                    write(id);
+                    switch (id) {
+                        case ID_CC_ENUM_MAP:
+                            writeClass(getEnumMapKeyType(obj));
+                            break;
+                    }
+                    for (Map.Entry<?, ?> entry : map.entrySet()) {
+                        doWriteObject(entry.getKey(), false);
+                        doWriteObject(entry.getValue(), false);
+                    }
+                } else if (len <= 65536) {
+                    write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                    writeShort(len);
+                    write(id);
+                    switch (id) {
+                        case ID_CC_ENUM_MAP:
+                            writeClass(getEnumMapKeyType(obj));
+                            break;
+                    }
+                    for (Map.Entry<?, ?> entry : map.entrySet()) {
+                        doWriteObject(entry.getKey(), false);
+                        doWriteObject(entry.getValue(), false);
+                    }
+                } else {
+                    write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                    writeInt(len);
+                    write(id);
+                    switch (id) {
+                        case ID_CC_ENUM_MAP:
+                            writeClass(getEnumMapKeyType(obj));
+                            break;
+                    }
+                    for (Map.Entry<?, ?> entry : map.entrySet()) {
+                        doWriteObject(entry.getKey(), false);
+                        doWriteObject(entry.getValue(), false);
+                    }
+                }
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+
+            case ID_EMPTY_MAP_OBJECT:
+            case ID_EMPTY_SET_OBJECT:
+            case ID_EMPTY_LIST_OBJECT:
+            case ID_REVERSE_ORDER_OBJECT: {
+                write(id);
+                return;
+            }
+            case ID_SINGLETON_MAP_OBJECT: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                final Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();
+                doWriteObject(entry.getKey(), false);
+                doWriteObject(entry.getValue(), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_SINGLETON_LIST_OBJECT:
+            case ID_SINGLETON_SET_OBJECT: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(((Collection) obj).iterator().next(), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_REVERSE_ORDER2_OBJECT: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(reverseOrder2Field, obj), false);
+                return;
+            }
+            case ID_PAIR: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                Pair<?, ?> pair = (Pair<?, ?>) obj;
+                doWriteObject(pair.getA(), unshared);
+                doWriteObject(pair.getB(), unshared);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_CC_NCOPIES: {
+                List<?> list = (List<?>) obj;
+                int size = list.size();
+                if (size == 0) {
+                    write(ID_EMPTY_LIST_OBJECT);
+                    return;
+                }
+                instanceCache.put(obj, instanceSeq++);
+                if (size <= 256) {
+                    write(unshared ? ID_COLLECTION_SMALL_UNSHARED : ID_COLLECTION_SMALL);
+                    write(size);
+                } else if (size <= 65536) {
+                    write(unshared ? ID_COLLECTION_MEDIUM_UNSHARED : ID_COLLECTION_MEDIUM);
+                    writeShort(size);
+                } else {
+                    write(unshared ? ID_COLLECTION_LARGE_UNSHARED : ID_COLLECTION_LARGE);
+                    writeInt(size);
+                }
+                write(id);
+                doWriteObject(list.iterator().next(), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_COLLECTION: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableCollectionField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_SET: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableSetField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_LIST: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(objClass == unmodifiableRandomAccessListClass ? unmodifiableRandomAccessListField : unmodifiableListField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_MAP: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableMapField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_SORTED_MAP: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableSortedMapField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+
+            case ID_UNMODIFIABLE_SORTED_SET: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableSortedSetField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            case ID_UNMODIFIABLE_MAP_ENTRY_SET: {
+                instanceCache.put(obj, instanceSeq++);
+                write(id);
+                doWriteObject(Protocol.readField(unmodifiableMapEntrySetField, obj), false);
+                if (unshared) {
+                    instanceCache.put(obj, -1);
+                }
+                return;
+            }
+            default:
+                throw new NotSerializableException(objClass.getName());
         }
     }
 

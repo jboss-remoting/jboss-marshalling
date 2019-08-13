@@ -18,12 +18,15 @@
 
 package org.jboss.marshalling.serial;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static org.jboss.marshalling.Marshalling.createOptionalDataException;
+
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.AbstractUnmarshaller;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.ByteInput;
-import static org.jboss.marshalling.Marshalling.createOptionalDataException;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -44,7 +47,6 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.lang.reflect.Array;
 import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 
 /**
@@ -631,10 +633,14 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
     };
 
     private SerialObjectInputStream createObjectInputStream() throws IOException {
-        try {
-            return AccessController.doPrivileged(createObjectOutputStreamAction);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getCause();
+        if (getSecurityManager() == null) {
+            return new SerialObjectInputStream(SerialUnmarshaller.this);
+        } else {
+            try {
+                return doPrivileged(createObjectOutputStreamAction);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getCause();
+            }
         }
     }
 

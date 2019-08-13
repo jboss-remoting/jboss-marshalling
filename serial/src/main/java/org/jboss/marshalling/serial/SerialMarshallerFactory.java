@@ -18,6 +18,9 @@
 
 package org.jboss.marshalling.serial;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.marshalling.AbstractMarshallerFactory;
 import org.jboss.marshalling.Unmarshaller;
@@ -27,7 +30,6 @@ import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -44,11 +46,15 @@ public final class SerialMarshallerFactory extends AbstractMarshallerFactory imp
      * Construct a new instance of a River marshaller factory.
      */
     public SerialMarshallerFactory() {
-        registry = AccessController.doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
-            public SerializableClassRegistry run() {
-                return SerializableClassRegistry.getInstance();
-            }
-        });
+        if (getSecurityManager() == null) {
+            registry = SerializableClassRegistry.getInstance();
+        } else {
+            registry = doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
+                public SerializableClassRegistry run() {
+                    return SerializableClassRegistry.getInstance();
+                }
+            });
+        }
     }
 
     protected StreamHeader getDefaultStreamHeader() {

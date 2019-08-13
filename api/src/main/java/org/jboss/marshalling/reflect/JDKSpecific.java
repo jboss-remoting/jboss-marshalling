@@ -18,6 +18,10 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static sun.reflect.ReflectionFactory.getReflectionFactory;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
@@ -27,7 +31,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 
 import org.jboss.marshalling._private.GetReflectionFactoryAction;
 import org.jboss.marshalling._private.SetAccessibleAction;
@@ -43,13 +46,17 @@ final class JDKSpecific {
 
     static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
 
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(GetReflectionFactoryAction.INSTANCE);
+    private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(GetReflectionFactoryAction.INSTANCE);
 
     static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
         final Constructor<?> serCtor = reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
         if (! serCtor.isAccessible()) {
             // older JDK 8...
-            AccessController.doPrivileged(new SetAccessibleAction(serCtor));
+            if (getSecurityManager() == null) {
+                serCtor.setAccessible(true);
+            } else {
+                doPrivileged(new SetAccessibleAction(serCtor));
+            }
         }
         return serCtor;
     }

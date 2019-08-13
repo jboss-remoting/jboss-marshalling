@@ -18,10 +18,12 @@
 
 package org.jboss.marshalling;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import org.jboss.modules.Module;
@@ -42,10 +44,10 @@ public final class ModularClassResolver implements ClassResolver {
     private static final ClassLoader MODULE_CLASS_LOADER;
 
     static {
-        if (System.getSecurityManager() == null) {
+        if (getSecurityManager() == null) {
             MODULE_CLASS_LOADER = Module.class.getClassLoader();
         } else {
-            MODULE_CLASS_LOADER = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            MODULE_CLASS_LOADER = doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override
                 public ClassLoader run() {
                     return Module.class.getClassLoader();
@@ -118,10 +120,10 @@ public final class ModularClassResolver implements ClassResolver {
         try {
             final ClassLoader classLoader;
             final Module module = moduleLoader.loadModule(identifier);
-            if (System.getSecurityManager() == null) {
+            if (getSecurityManager() == null) {
                 classLoader = module.getClassLoader();
             } else {
-                classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                classLoader = doPrivileged(new PrivilegedAction<ClassLoader>() {
                     @Override
                     public ClassLoader run() {
                         return module.getClassLoader();

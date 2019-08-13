@@ -18,6 +18,7 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import sun.misc.Unsafe;
  * Reflection information about a field on a serializable class.
  */
 public final class SerializableField {
-    static final Unsafe unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
+    static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
 
     // the type of the field itself
     private final Class<?> type;

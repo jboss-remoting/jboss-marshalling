@@ -18,12 +18,14 @@
 
 package org.jboss.marshalling.cloner;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.IdentityHashMap;
 
@@ -43,7 +45,10 @@ class CloneableCloner implements ObjectCloner {
         this.cloneTable = cloneTable == null ? CloneTable.NULL : cloneTable;
     }
 
-    private static final Method CLONE = AccessController.doPrivileged(new PrivilegedAction<Method>() {
+    private static final class GetCloneMethodAction implements PrivilegedAction<Method> {
+
+        private static final PrivilegedAction<Method> INSTANCE = new GetCloneMethodAction();
+
         public Method run() {
             final Method method;
             try {
@@ -54,7 +59,8 @@ class CloneableCloner implements ObjectCloner {
             method.setAccessible(true);
             return method;
         }
-    });
+    }
+    private static final Method CLONE = getSecurityManager() == null ? GetCloneMethodAction.INSTANCE.run() : doPrivileged(GetCloneMethodAction.INSTANCE);
 
     /** {@inheritDoc} */
     public void reset() {

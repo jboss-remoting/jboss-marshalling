@@ -18,6 +18,10 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static sun.reflect.ReflectionFactory.getReflectionFactory;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
@@ -26,7 +30,6 @@ import java.io.ObjectStreamException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.reflect.ReflectionFactory;
 
@@ -37,7 +40,7 @@ import sun.reflect.ReflectionFactory;
  */
 final class JDKSpecific {
 
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
+    private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
         public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
     });
 

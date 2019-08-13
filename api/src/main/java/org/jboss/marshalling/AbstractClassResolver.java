@@ -18,10 +18,12 @@
 
 package org.jboss.marshalling;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.HashMap;
@@ -41,11 +43,15 @@ public abstract class AbstractClassResolver implements ClassResolver {
     private static final SerializableClassRegistry registry;
 
     static {
-        registry = AccessController.doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
-            public SerializableClassRegistry run() {
-                return SerializableClassRegistry.getInstance();
-            }
-        });
+        if (getSecurityManager() == null) {
+            registry = SerializableClassRegistry.getInstance();
+        } else {
+            registry = doPrivileged(new PrivilegedAction<SerializableClassRegistry>() {
+                public SerializableClassRegistry run() {
+                    return SerializableClassRegistry.getInstance();
+                }
+            });
+        }
     }
 
     /**

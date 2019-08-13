@@ -18,8 +18,11 @@
 
 package org.jboss.marshalling;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static sun.reflect.ReflectionFactory.getReflectionFactory;
+
 import java.io.OptionalDataException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.function.Function;
@@ -32,7 +35,7 @@ import sun.reflect.ReflectionFactory;
 final class JDKSpecific {
     private JDKSpecific() {}
 
-    private static final ReflectionFactory reflectionFactory = AccessController.doPrivileged(new PrivilegedAction<ReflectionFactory>() {
+    private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
         public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
     });
 
@@ -46,11 +49,13 @@ final class JDKSpecific {
         return reflectionFactory.newOptionalDataExceptionForSerialization(eof);
     }
 
-    private static final StackWalker stackWalker = AccessController.doPrivileged(new PrivilegedAction<StackWalker>() {
-        public StackWalker run() {
-            return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        }
-    });
+    private static final StackWalker stackWalker = getSecurityManager() == null
+	? StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+	: doPrivileged(new PrivilegedAction<StackWalker>() {
+            public StackWalker run() {
+                return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            }
+        });
 
     private static final Function<Stream<StackWalker.StackFrame>, Class<?>> callerFinder = new Function<Stream<StackWalker.StackFrame>, Class<?>>() {
         public Class<?> apply(final Stream<StackWalker.StackFrame> stream) {

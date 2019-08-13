@@ -18,6 +18,10 @@
 
 package org.jboss.marshalling.river;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+import static org.jboss.marshalling.river.Protocol.*;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -25,7 +29,6 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutput;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -63,8 +66,6 @@ import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.IdentityIntMap;
 import org.jboss.marshalling.util.Kind;
-
-import static org.jboss.marshalling.river.Protocol.*;
 
 /**
  *
@@ -1041,10 +1042,14 @@ public class RiverMarshaller extends AbstractMarshaller {
     };
 
     private RiverObjectOutputStream createObjectOutputStream() throws IOException {
-        try {
-            return AccessController.doPrivileged(createObjectOutputStreamAction);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getCause();
+        if (getSecurityManager() == null) {
+            return new RiverObjectOutputStream(getBlockMarshaller(), RiverMarshaller.this);
+        } else {
+            try {
+                return doPrivileged(createObjectOutputStreamAction);
+            } catch (PrivilegedActionException e) {
+                throw (IOException) e.getCause();
+            }
         }
     }
 
@@ -1339,21 +1344,34 @@ public class RiverMarshaller extends AbstractMarshaller {
 
         BASIC_CLASSES_V4 = map;
 
+        final SecurityManager sm = getSecurityManager();
         // this solution will work for any JDK which conforms to the serialization spec of Enum; unless they
         // do something tricky involving ObjectStreamField anyway...
         try {
-            ENUM_SET_VALUES_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elements"));
-        } catch (NoSuchFieldError e) {
+            if (sm == null) {
+                ENUM_SET_VALUES_FIELD = enumSetProxyClass.getDeclaredField("elements");
+            } else {
+                ENUM_SET_VALUES_FIELD = doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elements"));
+            }
+        } catch (NoSuchFieldError | NoSuchFieldException e) {
             throw new RuntimeException("Cannot locate the elements field on EnumSet's serialization proxy!");
         }
         try {
-            ENUM_SET_ELEMENT_TYPE_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elementType"));
-        } catch (NoSuchFieldError e) {
+            if (sm == null) {
+                ENUM_SET_ELEMENT_TYPE_FIELD = enumSetProxyClass.getDeclaredField("elementType");
+            } else {
+                ENUM_SET_ELEMENT_TYPE_FIELD = doPrivileged(new GetDeclaredFieldAction(enumSetProxyClass, "elementType"));
+            }
+        } catch (NoSuchFieldError | NoSuchFieldException e) {
             throw new RuntimeException("Cannot locate the elementType field on EnumSet's serialization proxy!");
         }
         try {
-            ENUM_MAP_KEY_TYPE_FIELD = AccessController.doPrivileged(new GetDeclaredFieldAction(EnumMap.class, "keyType"));
-        } catch (NoSuchFieldError e) {
+            if (sm == null) {
+                ENUM_MAP_KEY_TYPE_FIELD = EnumMap.class.getDeclaredField("keyType");
+            } else {
+                ENUM_MAP_KEY_TYPE_FIELD = doPrivileged(new GetDeclaredFieldAction(EnumMap.class, "keyType"));
+            }
+        } catch (NoSuchFieldError | NoSuchFieldException e) {
             throw new RuntimeException("Cannot locate the keyType field on EnumMap!");
         }
     }

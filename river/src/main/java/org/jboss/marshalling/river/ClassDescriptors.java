@@ -18,8 +18,10 @@
 
 package org.jboss.marshalling.river;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.Externalizable;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
@@ -145,18 +147,30 @@ final class ClassDescriptors {
     }
 
     private static SerializableClassDescriptor getSerializableClassDescriptor(final Class<?> subject, final ClassDescriptor superDescriptor) {
-        return AccessController.doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {
-            public SerializableClassDescriptor run() {
-                final SerializableClassRegistry reg = SerializableClassRegistry.getInstance();
-                final SerializableClass serializableClass = reg.lookup(subject);
-                final SerializableField[] fields = serializableClass.getFields();
-                final boolean hasWriteObject = serializableClass.hasWriteObject();
-                try {
-                    return new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : hasWriteObject ? Protocol.ID_WRITE_OBJECT_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
-                } catch (ClassNotFoundException e) {
-                    throw new NoClassDefFoundError(e.getMessage());
-                }
+        if (getSecurityManager() == null) {
+            final SerializableClassRegistry reg = SerializableClassRegistry.getInstance();
+            final SerializableClass serializableClass = reg.lookup(subject);
+            final SerializableField[] fields = serializableClass.getFields();
+            final boolean hasWriteObject = serializableClass.hasWriteObject();
+            try {
+                return new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : hasWriteObject ? Protocol.ID_WRITE_OBJECT_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
+            } catch (ClassNotFoundException e) {
+                throw new NoClassDefFoundError(e.getMessage());
             }
-        });
+        } else {
+            return doPrivileged(new PrivilegedAction<SerializableClassDescriptor>() {
+                public SerializableClassDescriptor run() {
+                    final SerializableClassRegistry reg = SerializableClassRegistry.getInstance();
+                    final SerializableClass serializableClass = reg.lookup(subject);
+                    final SerializableField[] fields = serializableClass.getFields();
+                    final boolean hasWriteObject = serializableClass.hasWriteObject();
+                    try {
+                        return new BasicSerializableClassDescriptor(serializableClass, superDescriptor, fields, Externalizable.class.isAssignableFrom(subject) ? Protocol.ID_EXTERNALIZABLE_CLASS : hasWriteObject ? Protocol.ID_WRITE_OBJECT_CLASS : Protocol.ID_SERIALIZABLE_CLASS);
+                    } catch (ClassNotFoundException e) {
+                        throw new NoClassDefFoundError(e.getMessage());
+                    }
+                }
+            });
+        }
     }
 }

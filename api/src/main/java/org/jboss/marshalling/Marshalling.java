@@ -18,6 +18,7 @@
 
 package org.jboss.marshalling;
 
+import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.IOException;
@@ -56,11 +57,15 @@ public final class Marshalling {
      */
     @Deprecated
     public static MarshallerFactory getMarshallerFactory(final String name) {
-        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
-            public ServiceLoader<ProviderDescriptor> run() {
-                return ServiceLoader.load(ProviderDescriptor.class);
-            }
-        }), name);
+        if (getSecurityManager() == null) {
+            return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class), name);
+        } else {
+            return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+                public ServiceLoader<ProviderDescriptor> run() {
+                    return ServiceLoader.load(ProviderDescriptor.class);
+                }
+            }), name);
+        }
     }
 
     /**
@@ -74,11 +79,15 @@ public final class Marshalling {
      * @see ServiceLoader
      */
     public static MarshallerFactory getMarshallerFactory(final String name, final ClassLoader classLoader) {
-        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
-            public ServiceLoader<ProviderDescriptor> run() {
-                return ServiceLoader.load(ProviderDescriptor.class, classLoader);
-            }
-        }), name);
+        if (getSecurityManager() == null) {
+            return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, classLoader), name);
+        } else {
+            return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+                public ServiceLoader<ProviderDescriptor> run() {
+                    return ServiceLoader.load(ProviderDescriptor.class, classLoader);
+                }
+            }), name);
+        }
     }
 
     /**
@@ -88,11 +97,15 @@ public final class Marshalling {
      * @return the marshaller factory, or {@code null} if no matching factory was found
      */
     public static MarshallerFactory getProvidedMarshallerFactory(final String name) {
-        return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
-            public ServiceLoader<ProviderDescriptor> run() {
-                return ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader());
-            }
-        }), name);
+        if (getSecurityManager() == null) {
+            return loadMarshallerFactory(ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader()), name);
+        } else {
+            return loadMarshallerFactory(doPrivileged(new PrivilegedAction<ServiceLoader<ProviderDescriptor>>() {
+                public ServiceLoader<ProviderDescriptor> run() {
+                    return ServiceLoader.load(ProviderDescriptor.class, Marshalling.class.getClassLoader());
+                }
+            }), name);
+        }
     }
 
     private static MarshallerFactory loadMarshallerFactory(ServiceLoader<ProviderDescriptor> loader, String name) {

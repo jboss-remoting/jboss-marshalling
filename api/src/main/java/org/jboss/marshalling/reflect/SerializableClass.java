@@ -18,6 +18,9 @@
 
 package org.jboss.marshalling.reflect;
 
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.ObjectInput;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -30,7 +33,6 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectStreamClass;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -48,7 +50,7 @@ import sun.misc.Unsafe;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SerializableClass {
-    private static final Unsafe unsafe = AccessController.doPrivileged(GetUnsafeAction.INSTANCE);
+    private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;

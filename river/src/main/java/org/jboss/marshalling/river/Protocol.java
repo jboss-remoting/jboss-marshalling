@@ -24,6 +24,7 @@ import static sun.reflect.ReflectionFactory.getReflectionFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -311,18 +312,25 @@ final class Protocol {
         unmodifiableSortedMapField = findUnmodifiableField(unmodifiableSortedMapClass);
 
         unmodifiableMapEntrySetField = findUnmodifiableField(unmodifiableMapEntrySetClass);
-        final ReflectionFactory reflectionFactory = sm == null ? getReflectionFactory() : doPrivileged(GetReflectionFactoryAction.INSTANCE);
-        final Constructor<?> ctor = sm == null ? GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class).run() :
-                doPrivileged(GetDeclaredConstructorAction.create(unmodifiableMapEntrySetClass, Set.class));
-        unmodifiableMapEntrySetCtor = reflectionFactory.newConstructorForSerialization(unmodifiableMapEntrySetClass, ctor);
-        if (! unmodifiableMapEntrySetCtor.isAccessible()) {
-            // Java 8 doesn't do this, sometimes :(
-            if (sm == null) {
-                unmodifiableMapEntrySetCtor.setAccessible(true);
-            } else {
-                doPrivileged(new SetAccessibleAction(unmodifiableMapEntrySetCtor));
+        unmodifiableMapEntrySetCtor = sm == null ? getConstructorForSetWihtUnmodifiableMapEntry() : doPrivileged(new PrivilegedAction<Constructor>() {
+            public Constructor run() {
+                return getConstructorForSetWihtUnmodifiableMapEntry();
             }
+        });
+    }
+
+    private static Constructor getConstructorForSetWihtUnmodifiableMapEntry() {
+        final ReflectionFactory reflectionFactory = getReflectionFactory();
+        final Constructor<?> ctor = GetDeclaredConstructorAction
+                .create(unmodifiableMapEntrySetClass, Set.class).run();
+        Constructor constructor = reflectionFactory
+                .newConstructorForSerialization(
+                        unmodifiableMapEntrySetClass, ctor);
+        if (!constructor.isAccessible()) {
+            // Java 8 doesn't do this, sometimes :(
+            constructor.setAccessible(true);
         }
+        return constructor;
     }
 
     private Protocol() {

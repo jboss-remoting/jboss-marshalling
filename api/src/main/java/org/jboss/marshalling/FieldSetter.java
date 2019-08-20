@@ -32,7 +32,7 @@ import sun.misc.Unsafe;
  * with {@code readObject()} methods, even in the presence of {@code final} fields.
  */
 public final class FieldSetter {
-    static final Unsafe unsafe = getSecurityManager() != null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
+    static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
 
     private final Class<?> clazz;
     private final Class<?> fieldType;

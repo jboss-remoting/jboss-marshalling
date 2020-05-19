@@ -19,6 +19,7 @@
 package org.jboss.marshalling;
 
 import java.io.IOException;
+import java.io.InvalidClassException;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -44,6 +45,8 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
     protected final ExceptionListener exceptionListener;
     /** The configured serializability checker. */
     protected final SerializabilityChecker serializabilityChecker;
+    /** The configured unmarshalling filter */
+    protected final UnmarshallingFilter unmarshallingFilter;
     /** The configured version. */
     protected final int configuredVersion;
 
@@ -73,6 +76,8 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
         final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
         this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
+        final UnmarshallingFilter unmarshallingFilter = configuration.getUnmarshallingFilter();
+        this.unmarshallingFilter = unmarshallingFilter == null ? UnmarshallingFilter.ACCEPTING : unmarshallingFilter;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
     }
@@ -90,5 +95,81 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         position = 0;
         byteInput = null;
         clearClassCache();
+    }
+
+    protected final void filterCheck(final Class<?> unmarshallClass, final long arrayLength, final long depth,
+                                final long references, final long streamBytes) throws InvalidClassException {
+        if (unmarshallingFilter != UnmarshallingFilter.ACCEPTING) {
+            UnmarshallingFilter.FilterInput input = new FilterInputImpl(unmarshallClass, arrayLength, depth, references, streamBytes);
+            UnmarshallingFilter.FilterResponse response;
+            try {
+                response = unmarshallingFilter.checkInput(input);
+            } catch (RuntimeException re) {
+                InvalidClassException ice = new InvalidClassException(String.format("Filtering failed for %s", input));
+                ice.initCause(re);
+                throw ice;
+            }
+
+            if (response == UnmarshallingFilter.FilterResponse.REJECT) {
+                throw new InvalidClassException(String.format("Filtering rejected %s", input));
+            }
+        }
+    }
+
+    private static class FilterInputImpl implements UnmarshallingFilter.FilterInput {
+
+        private final Class<?> unmarshallClass;
+        private final long arrayLength;
+        private final long depth;
+        private final long references;
+        private final long streamBytes;
+
+        private FilterInputImpl(final Class<?> unmarshallClass, final long arrayLength, final long depth,
+                                final long references, final long streamBytes) {
+            this.unmarshallClass = unmarshallClass;
+            this.arrayLength = arrayLength;
+            this.depth = depth;
+            this.references = references;
+            this.streamBytes = streamBytes;
+        }
+
+        @Override
+        public Class<?> getUnmarshalledClass() {
+            return unmarshallClass;
+        }
+
+        @Override
+        public long getArrayLength() {
+            return arrayLength;
+        }
+
+        @Override
+        public long getDepth() {
+            return depth;
+        }
+
+        @Override
+        public long getReferences() {
+            return references;
+        }
+
+        @Override
+        public long getStreamBytes() {
+            return streamBytes;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder builder = new StringBuilder();
+            builder.append(super.toString()).append(": ");
+            if (unmarshallClass != null) {
+                builder.append("unmarshallClass=<").append(unmarshallClass.toString()).append("> ");
+            }
+            builder.append("arrayLength=<").append(arrayLength).append("> ");
+            builder.append("depth=<").append(depth).append("> ");
+            builder.append("references=<").append(references).append("> ");
+            builder.append("streamBytes=<").append(streamBytes).append("> ");
+            return builder.toString();
+        }
     }
 }

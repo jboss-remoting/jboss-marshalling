@@ -32,6 +32,8 @@ public final class MarshallingConfiguration implements Cloneable {
     private ObjectTable objectTable;
     private ExceptionListener exceptionListener;
     private SerializabilityChecker serializabilityChecker;
+    private UnmarshallingFilter unmarshallingFilter;
+
     private int instanceCount = 256;
     private int classCount = 64;
     private int bufferSize = 512;
@@ -284,6 +286,24 @@ public final class MarshallingConfiguration implements Cloneable {
     }
 
     /**
+     * Get the unmarshalling filter.
+     *
+     * @return the unmarshalling filter
+     */
+    public UnmarshallingFilter getUnmarshallingFilter() {
+        return unmarshallingFilter;
+    }
+
+    /**
+     * Set the unmarshalling filter.
+     *
+     * @param unmarshallingFilter the new unmarshalling filter
+     */
+    public void setUnmarshallingFilter(UnmarshallingFilter unmarshallingFilter) {
+        this.unmarshallingFilter = unmarshallingFilter;
+    }
+
+    /**
      * Create a shallow clone.
      *
      * @return a clone
@@ -319,7 +339,13 @@ public final class MarshallingConfiguration implements Cloneable {
             builder.append("objectTable=<").append(objectTable).append("> ");
         }
         if (exceptionListener != null) {
-            builder.append("exceptionListener=<").append(objectTable).append("> ");
+            builder.append("exceptionListener=<").append(exceptionListener).append("> ");
+        }
+        if (serializabilityChecker != null) {
+            builder.append("serializabilityChecker=<").append(serializabilityChecker).append("> ");
+        }
+        if (unmarshallingFilter != null) {
+            builder.append("unmarshallingFilter=<").append(unmarshallingFilter).append("> ");
         }
         builder.append("instanceCount=").append(instanceCount);
         builder.append(" classCount=").append(classCount);

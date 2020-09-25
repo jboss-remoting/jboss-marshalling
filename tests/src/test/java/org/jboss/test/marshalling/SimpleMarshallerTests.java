@@ -39,19 +39,20 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.marshalling.AbstractClassResolver;
 import org.jboss.marshalling.AnnotationClassExternalizerFactory;
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.ByteOutput;
@@ -92,8 +93,8 @@ public final class SimpleMarshallerTests extends TestBase {
      * Simple constructor for running one test at a time from an IDE.
      */
     public SimpleMarshallerTests() {
-        super(new MarshallerFactoryTestMarshallerProvider(new RiverMarshallerFactory(), 3),
-              new MarshallerFactoryTestUnmarshallerProvider(new RiverMarshallerFactory(), 3),
+        super(new MarshallerFactoryTestMarshallerProvider(new RiverMarshallerFactory(), 4),
+              new MarshallerFactoryTestUnmarshallerProvider(new RiverMarshallerFactory(), 4),
               getOneTestMarshallingConfiguration());
     }
 
@@ -3657,6 +3658,37 @@ public final class SimpleMarshallerTests extends TestBase {
             public void runRead(Unmarshaller unmarshaller) throws Throwable {
                 final MySerializable result = unmarshaller.readObject(MySerializable.class);
                 assertTrue("JBMAR-221: NonSerializableParent constructor was not executed", result.is_mutable_one());
+            }
+        });
+    }
+
+    static class Wrapper implements Serializable {
+        private static final long serialVersionUID = 1L;
+        Map<String, String> map = Collections.unmodifiableMap(new TreeMap<>());
+        Wrapped to;
+    }
+
+    static class Wrapped implements Serializable {
+        private static final long serialVersionUID = 3L;
+        Date mop;
+        SortedMap<String, String> map = Collections.emptySortedMap();
+        int mip;
+    }
+
+    @Test(description = "JBMAR-233")
+    public void testWeirdSortingRelatedIssue() throws Throwable {
+        runReadWriteTest(new ReadWriteTest() {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                Wrapper smi = new Wrapper();
+                smi.to = new Wrapped();
+                marshaller.writeObject(smi);
+            }
+
+            public void runRead(final Unmarshaller unmarshaller) throws Throwable {
+                Wrapper smi = unmarshaller.readObject(Wrapper.class);
+                assertNotNull(smi);
+                assertNotNull(smi.to);
+                assertEquals(Collections.emptySortedMap(), smi.to.map);
             }
         });
     }

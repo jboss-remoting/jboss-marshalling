@@ -4,3 +4,4 @@ dependency-reduced-pom.xml
 *.ipr
 *.iml
 /.idea
+pom.xml.versionsBackup

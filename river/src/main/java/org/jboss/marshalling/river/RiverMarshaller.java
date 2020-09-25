@@ -74,6 +74,7 @@ import org.jboss.marshalling.util.Kind;
 public class RiverMarshaller extends AbstractMarshaller {
     private final IdentityIntMap<Object> instanceCache;
     private final IdentityIntMap<Class<?>> classCache;
+    private final IdentityIntMap<Class<?>> serialClassCache;
     private final IdentityHashMap<Class<?>, Externalizer> externalizers;
     private int instanceSeq;
     private int classSeq;
@@ -92,6 +93,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         final float loadFactor = 0x0.5p0f;
         instanceCache = new IdentityIntMap<Object>((int) ((double)configuration.getInstanceCount() / (double)loadFactor), loadFactor);
         classCache = new IdentityIntMap<Class<?>>((int) ((double)configuration.getClassCount() / (double)loadFactor), loadFactor);
+        serialClassCache = new IdentityIntMap<Class<?>>((int) ((double)configuration.getClassCount() / (double)loadFactor), loadFactor);
         externalizers = new IdentityHashMap<Class<?>, Externalizer>(configuration.getClassCount());
     }
 
@@ -261,7 +263,7 @@ public class RiverMarshaller extends AbstractMarshaller {
             // user type #3: serializable
             if (serializabilityChecker.isSerializable(objClass)) {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
-                writeSerializableClass(objClass);
+                writeSerializableClass(objClass, false);
                 instanceCache.put(obj, instanceSeq++);
                 doWriteSerializableObject(info, obj, objClass);
                 if (unshared) {
@@ -1200,7 +1202,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void writeProxyClass(final Class<?> objClass) throws IOException {
-        if (! writeKnownClass(objClass)) {
+        if (! writeKnownClass(objClass, false)) {
             writeNewProxyClass(objClass);
         }
     }
@@ -1230,7 +1232,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void writeEnumClass(final Class<? extends Enum> objClass) throws IOException {
-        if (! writeKnownClass(objClass)) {
+        if (! writeKnownClass(objClass, false)) {
             writeNewEnumClass(objClass);
         }
     }
@@ -1262,8 +1264,14 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void writeClass(final Class<?> objClass) throws IOException {
-        if (! writeKnownClass(objClass)) {
+        if (! writeKnownClass(objClass, false)) {
             writeNewClass(objClass);
+        }
+    }
+
+    protected void writeSerialSuperClass(final Class<?> objClass) throws IOException {
+        if (! writeKnownClass(objClass, true)) {
+            writeNewSerialSuperClass(objClass);
         }
     }
 
@@ -1423,6 +1431,24 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
+    protected void writeNewSerialSuperClass(final Class<?> objClass) throws IOException {
+        if (! objClass.isInterface() && serializabilityChecker.isSerializable(objClass)) {
+            writeNewSerializableClass(objClass);
+        } else {
+            ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
+            if (classTableWriter != null) {
+                write(ID_PREDEFINED_PLAIN_CLASS);
+                classCache.put(objClass, classSeq++);
+                writeClassTableData(objClass, classTableWriter);
+            } else {
+                write(ID_PLAIN_CLASS);
+                writeString(classResolver.getClassName(objClass));
+                classResolver.annotateClass(this, objClass);
+                classCache.put(objClass, classSeq++);
+            }
+        }
+    }
+
     private void writeClassTableData(final Class<?> objClass, final ClassTable.Writer classTableWriter) throws IOException {
         if (configuredVersion == 1) {
             classTableWriter.writeClass(getBlockMarshaller(), objClass);
@@ -1432,14 +1458,29 @@ public class RiverMarshaller extends AbstractMarshaller {
         }
     }
 
-    protected boolean writeKnownClass(final Class<?> objClass) throws IOException {
+    protected boolean writeKnownClass(final Class<?> objClass, final boolean isSuper) throws IOException {
         final int configuredVersion = this.configuredVersion;
-        int i = getBasicClasses(configuredVersion).get(objClass, -1);
-        if (i != -1) {
-            write(i);
-            return true;
+        int i;
+        if (isSuper) {
+            // serialized superclasses may only be of certain types
+            i = getBasicClasses(configuredVersion).get(objClass, -1);
+            if (i == ID_OBJECT_CLASS) {
+                write(i);
+                return true;
+            }
+            // otherwise, we see if it's a known serialized class, ignoring other classes
+            i = serialClassCache.get(objClass, -1);
+        } else {
+            i = getBasicClasses(configuredVersion).get(objClass, -1);
+            if (i != -1) {
+                write(i);
+                return true;
+            }
+            i = classCache.get(objClass, -1);
+            if (i == -1) {
+                i = serialClassCache.get(objClass, -1);
+            }
         }
-        i = classCache.get(objClass, -1);
         if (i != -1) {
             final int diff = i - classSeq;
             if (diff >= -256) {
@@ -1457,8 +1498,8 @@ public class RiverMarshaller extends AbstractMarshaller {
         return false;
     }
 
-    protected void writeSerializableClass(final Class<?> objClass) throws IOException {
-        if (! writeKnownClass(objClass)) {
+    protected void writeSerializableClass(final Class<?> objClass, final boolean isSuper) throws IOException {
+        if (! writeKnownClass(objClass, isSuper)) {
             writeNewSerializableClass(objClass);
         }
     }
@@ -1467,7 +1508,7 @@ public class RiverMarshaller extends AbstractMarshaller {
         ClassTable.Writer classTableWriter = classTable.getClassWriter(objClass);
         if (classTableWriter != null) {
             write(ID_PREDEFINED_SERIALIZABLE_CLASS);
-            classCache.put(objClass, classSeq++);
+            serialClassCache.put(objClass, classSeq++);
             writeClassTableData(objClass, classTableWriter);
         } else {
             final SerializableClass info = registry.lookup(objClass);
@@ -1483,7 +1524,7 @@ public class RiverMarshaller extends AbstractMarshaller {
                 writeString(className);
             }
             writeLong(info.getEffectiveSerialVersionUID());
-            classCache.put(objClass, classSeq++);
+            serialClassCache.put(objClass, classSeq++);
             classResolver.annotateClass(this, objClass);
             final SerializableField[] fields = info.getFields();
             final int cnt = fields.length;
@@ -1508,11 +1549,11 @@ public class RiverMarshaller extends AbstractMarshaller {
             write(ID_OBJECT_CLASS);
             return;
         }
-        writeClass(sc);
+        writeSerialSuperClass(sc);
     }
 
     protected void writeExternalizableClass(final Class<?> objClass) throws IOException {
-        if (! writeKnownClass(objClass)) {
+        if (! writeKnownClass(objClass, false)) {
             writeNewExternalizableClass(objClass);
         }
     }
@@ -1533,7 +1574,7 @@ public class RiverMarshaller extends AbstractMarshaller {
     }
 
     protected void writeExternalizerClass(final Class<?> objClass, final Externalizer externalizer) throws IOException {
-        if (! writeKnownClass(objClass)) {
+        if (! writeKnownClass(objClass, false)) {
             writeNewExternalizerClass(objClass, externalizer);
         }
     }
@@ -1563,6 +1604,7 @@ public class RiverMarshaller extends AbstractMarshaller {
 
     public void clearClassCache() throws IOException {
         classCache.clear();
+        serialClassCache.clear();
         externalizers.clear();
         classSeq = 0;
         instanceCache.clear();

@@ -18,25 +18,19 @@
 
 package org.jboss.marshalling.reflect;
 
-import static java.lang.System.getSecurityManager;
-import static java.security.AccessController.doPrivileged;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.jboss.marshalling._private.GetUnsafeAction;
+import org.jboss.marshalling._private.Unsafe;
 import org.jboss.marshalling.util.Kind;
-import sun.misc.Unsafe;
 
 /**
  * Reflection information about a field on a serializable class.
  */
 public final class SerializableField {
-    static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
-
     // the type of the field itself
     private final Class<?> type;
     private final Field field;
@@ -55,7 +49,7 @@ public final class SerializableField {
         this.name = name;
         this.unshared = unshared;
         this.field = field;
-        fieldOffset = field == null ? -1 : unsafe.objectFieldOffset(field);
+        fieldOffset = field == null ? -1 : Unsafe.INSTANCE.objectFieldOffset(field);
         if (field != null) {
             // verify field information
             if (field.getType() != type) {
@@ -162,7 +156,7 @@ public final class SerializableField {
         if (field.getType() != boolean.class) {
             throw new ClassCastException();
         }
-        unsafe.putBoolean(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putBoolean(instance, fieldOffset, value);
     }
 
     /**
@@ -184,7 +178,7 @@ public final class SerializableField {
         if (field.getType() != char.class) {
             throw new ClassCastException();
         }
-        unsafe.putChar(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putChar(instance, fieldOffset, value);
     }
 
     /**
@@ -206,7 +200,7 @@ public final class SerializableField {
         if (field.getType() != byte.class) {
             throw new ClassCastException();
         }
-        unsafe.putByte(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putByte(instance, fieldOffset, value);
     }
 
     /**
@@ -228,7 +222,7 @@ public final class SerializableField {
         if (field.getType() != short.class) {
             throw new ClassCastException();
         }
-        unsafe.putShort(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putShort(instance, fieldOffset, value);
     }
 
     /**
@@ -250,7 +244,7 @@ public final class SerializableField {
         if (field.getType() != int.class) {
             throw new ClassCastException();
         }
-        unsafe.putInt(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putInt(instance, fieldOffset, value);
     }
 
     /**
@@ -272,7 +266,7 @@ public final class SerializableField {
         if (field.getType() != long.class) {
             throw new ClassCastException();
         }
-        unsafe.putLong(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putLong(instance, fieldOffset, value);
     }
 
     /**
@@ -294,7 +288,7 @@ public final class SerializableField {
         if (field.getType() != float.class) {
             throw new ClassCastException();
         }
-        unsafe.putFloat(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putFloat(instance, fieldOffset, value);
     }
 
     /**
@@ -316,7 +310,7 @@ public final class SerializableField {
         if (field.getType() != double.class) {
             throw new ClassCastException();
         }
-        unsafe.putDouble(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putDouble(instance, fieldOffset, value);
     }
 
     /**
@@ -340,7 +334,7 @@ public final class SerializableField {
             throw new ClassCastException();
         }
         fieldType.cast(value);
-        unsafe.putObject(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putObject(instance, fieldOffset, value);
     }
 
     /**
@@ -362,7 +356,7 @@ public final class SerializableField {
         if (field.getType() != boolean.class) {
             throw new ClassCastException();
         }
-        return unsafe.getBoolean(instance, fieldOffset);
+        return Unsafe.INSTANCE.getBoolean(instance, fieldOffset);
     }
 
     /**
@@ -384,7 +378,7 @@ public final class SerializableField {
         if (field.getType() != char.class) {
             throw new ClassCastException();
         }
-        return unsafe.getChar(instance, fieldOffset);
+        return Unsafe.INSTANCE.getChar(instance, fieldOffset);
     }
 
     /**
@@ -406,7 +400,7 @@ public final class SerializableField {
         if (field.getType() != byte.class) {
             throw new ClassCastException();
         }
-        return unsafe.getByte(instance, fieldOffset);
+        return Unsafe.INSTANCE.getByte(instance, fieldOffset);
     }
 
     /**
@@ -428,7 +422,7 @@ public final class SerializableField {
         if (field.getType() != short.class) {
             throw new ClassCastException();
         }
-        return unsafe.getShort(instance, fieldOffset);
+        return Unsafe.INSTANCE.getShort(instance, fieldOffset);
     }
 
     /**
@@ -450,7 +444,7 @@ public final class SerializableField {
         if (field.getType() != int.class) {
             throw new ClassCastException();
         }
-        return unsafe.getInt(instance, fieldOffset);
+        return Unsafe.INSTANCE.getInt(instance, fieldOffset);
     }
 
     /**
@@ -472,7 +466,7 @@ public final class SerializableField {
         if (field.getType() != long.class) {
             throw new ClassCastException();
         }
-        return unsafe.getLong(instance, fieldOffset);
+        return Unsafe.INSTANCE.getLong(instance, fieldOffset);
     }
 
     /**
@@ -494,7 +488,7 @@ public final class SerializableField {
         if (field.getType() != float.class) {
             throw new ClassCastException();
         }
-        return unsafe.getFloat(instance, fieldOffset);
+        return Unsafe.INSTANCE.getFloat(instance, fieldOffset);
     }
 
     /**
@@ -516,7 +510,7 @@ public final class SerializableField {
         if (field.getType() != double.class) {
             throw new ClassCastException();
         }
-        return unsafe.getDouble(instance, fieldOffset);
+        return Unsafe.INSTANCE.getDouble(instance, fieldOffset);
     }
 
     /**
@@ -538,7 +532,7 @@ public final class SerializableField {
         if (field.getType().isPrimitive()) {
             throw new ClassCastException();
         }
-        return unsafe.getObject(instance, fieldOffset);
+        return Unsafe.INSTANCE.getObject(instance, fieldOffset);
     }
 
     /**

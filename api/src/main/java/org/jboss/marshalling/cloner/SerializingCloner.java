@@ -64,7 +64,7 @@ import org.jboss.marshalling.ObjectResolver;
 import org.jboss.marshalling.SerializabilityChecker;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling._private.GetDeclaredFieldAction;
-import org.jboss.marshalling._private.GetUnsafeAction;
+import org.jboss.marshalling._private.Unsafe;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
@@ -80,7 +80,6 @@ import org.jboss.marshalling.util.LongReadField;
 import org.jboss.marshalling.util.ObjectReadField;
 import org.jboss.marshalling.util.ReadField;
 import org.jboss.marshalling.util.ShortReadField;
-import sun.misc.Unsafe;
 
 /**
  * An object cloner which uses serialization methods to clone objects.
@@ -456,7 +455,7 @@ class SerializingCloner implements ObjectCloner {
     }
 
     private static InvocationHandler getInvocationHandler(final Object orig) {
-        return (InvocationHandler) unsafe.getObjectVolatile(orig, proxyInvocationHandlerOffset);
+        return (InvocationHandler) Unsafe.INSTANCE.getObjectVolatile(orig, proxyInvocationHandlerOffset);
     }
 
     private abstract static class Step {
@@ -465,8 +464,6 @@ class SerializingCloner implements ObjectCloner {
 
     private static final Set<Class<?>> UNCLONED;
     private static final IdentityIntMap<Class<?>> PRIMITIVE_ARRAYS;
-
-    private static final Unsafe unsafe;
 
     private static final Field proxyInvocationHandler;
     private static final long proxyInvocationHandlerOffset;
@@ -508,9 +505,8 @@ class SerializingCloner implements ObjectCloner {
         final Field field;
         final SecurityManager sm = getSecurityManager();
         field = sm == null ? new GetDeclaredFieldAction(Proxy.class, "h").run() : doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
-        unsafe = sm == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
         proxyInvocationHandler = field;
-        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
+        proxyInvocationHandlerOffset = Unsafe.INSTANCE.objectFieldOffset(proxyInvocationHandler);
     }
 
     class StepObjectOutput extends AbstractObjectOutput implements Marshaller {

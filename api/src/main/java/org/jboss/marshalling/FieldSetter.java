@@ -18,22 +18,16 @@
 
 package org.jboss.marshalling;
 
-import static java.lang.System.getSecurityManager;
-import static java.security.AccessController.doPrivileged;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.jboss.marshalling._private.GetUnsafeAction;
-import sun.misc.Unsafe;
+import org.jboss.marshalling._private.Unsafe;
 
 /**
  * A setter for a (possibly final) field, which allows for correct object initialization of {@link java.io.Serializable} objects
  * with {@code readObject()} methods, even in the presence of {@code final} fields.
  */
 public final class FieldSetter {
-    static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
-
     private final Class<?> clazz;
     private final Class<?> fieldType;
     private final long fieldOffset;
@@ -41,7 +35,7 @@ public final class FieldSetter {
     private FieldSetter(final Field field) {
         this.clazz = field.getDeclaringClass();
         this.fieldType = field.getType();
-        fieldOffset = unsafe.objectFieldOffset(field);
+        fieldOffset = Unsafe.INSTANCE.objectFieldOffset(field);
     }
 
     /**
@@ -58,7 +52,7 @@ public final class FieldSetter {
         if (! fieldType.isInstance(value)) {
             throw incorrectValueType();
         }
-        unsafe.putObject(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putObject(instance, fieldOffset, value);
     }
 
     /**
@@ -75,7 +69,7 @@ public final class FieldSetter {
         if (fieldType != boolean.class) {
             throw incorrectValueType();
         }
-        unsafe.putBoolean(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putBoolean(instance, fieldOffset, value);
     }
 
     /**
@@ -92,7 +86,7 @@ public final class FieldSetter {
         if (fieldType != byte.class) {
             throw incorrectValueType();
         }
-        unsafe.putByte(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putByte(instance, fieldOffset, value);
     }
 
     /**
@@ -109,7 +103,7 @@ public final class FieldSetter {
         if (fieldType != char.class) {
             throw incorrectValueType();
         }
-        unsafe.putChar(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putChar(instance, fieldOffset, value);
     }
 
     /**
@@ -126,7 +120,7 @@ public final class FieldSetter {
         if (fieldType != double.class) {
             throw incorrectValueType();
         }
-        unsafe.putDouble(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putDouble(instance, fieldOffset, value);
     }
 
     /**
@@ -143,7 +137,7 @@ public final class FieldSetter {
         if (fieldType != float.class) {
             throw incorrectValueType();
         }
-        unsafe.putFloat(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putFloat(instance, fieldOffset, value);
     }
 
     /**
@@ -160,7 +154,7 @@ public final class FieldSetter {
         if (fieldType != int.class) {
             throw incorrectValueType();
         }
-        unsafe.putInt(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putInt(instance, fieldOffset, value);
     }
 
     /**
@@ -177,7 +171,7 @@ public final class FieldSetter {
         if (fieldType != long.class) {
             throw incorrectValueType();
         }
-        unsafe.putLong(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putLong(instance, fieldOffset, value);
     }
 
     /**
@@ -194,7 +188,7 @@ public final class FieldSetter {
         if (fieldType != short.class) {
             throw incorrectValueType();
         }
-        unsafe.putShort(instance, fieldOffset, value);
+        Unsafe.INSTANCE.putShort(instance, fieldOffset, value);
     }
 
     private static IllegalArgumentException incorrectType() {

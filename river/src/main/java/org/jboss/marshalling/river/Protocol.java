@@ -37,10 +37,7 @@ import java.util.TreeSet;
 
 import org.jboss.marshalling._private.GetDeclaredConstructorAction;
 import org.jboss.marshalling._private.GetDeclaredFieldsAction;
-import org.jboss.marshalling._private.GetReflectionFactoryAction;
-import org.jboss.marshalling._private.GetUnsafeAction;
-import org.jboss.marshalling._private.SetAccessibleAction;
-import sun.misc.Unsafe;
+import org.jboss.marshalling._private.Unsafe;
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -217,8 +214,6 @@ final class Protocol {
 
     public static final int ID_UNMODIFIABLE_MAP_ENTRY_SET = 0x82;
 
-    private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
-
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
     static final Class<?> singletonMapClass = Collections.singletonMap(null, null).getClass();
@@ -257,7 +252,7 @@ final class Protocol {
     static final Constructor<?> unmodifiableMapEntrySetCtor;
 
     static Object readField(Field field, final Object obj) {
-        return unsafe.getObject(obj, unsafe.objectFieldOffset(field));
+        return Unsafe.INSTANCE.getObject(obj, Unsafe.INSTANCE.objectFieldOffset(field));
     }
 
     static Field findUnmodifiableField(final Class<?> search) {

@@ -74,13 +74,12 @@ import org.jboss.marshalling.Pair;
 import org.jboss.marshalling.UTFUtils;
 import org.jboss.marshalling.TraceInformation;
 import org.jboss.marshalling._private.GetDeclaredFieldAction;
-import org.jboss.marshalling._private.GetUnsafeAction;
+import org.jboss.marshalling._private.Unsafe;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.FlatNavigableMap;
 import org.jboss.marshalling.util.FlatNavigableSet;
-import sun.misc.Unsafe;
 
 /**
  *
@@ -97,20 +96,17 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private SortedSet<Validator> validators;
     private int validatorSeq;
 
-    private static final Unsafe unsafe;
     private static final Object UNRESOLVED = new Object();
     private static final Field proxyInvocationHandler;
     private static final long proxyInvocationHandlerOffset;
 
     static {
         if (getSecurityManager() == null) {
-            unsafe = GetUnsafeAction.INSTANCE.run();
             proxyInvocationHandler = new GetDeclaredFieldAction(Proxy.class, "h").run();
         } else {
-            unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
             proxyInvocationHandler = doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
         }
-        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
+        proxyInvocationHandlerOffset = Unsafe.INSTANCE.objectFieldOffset(proxyInvocationHandler);
     }
 
     protected RiverUnmarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {
@@ -1380,7 +1376,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     // force a cast for safety
-                    unsafe.putObject(obj, proxyInvocationHandlerOffset, InvocationHandler.class.cast(doReadNestedObject(unshared, "[proxy invocation handler]")));
+                    Unsafe.INSTANCE.putObject(obj, proxyInvocationHandlerOffset, InvocationHandler.class.cast(doReadNestedObject(unshared, "[proxy invocation handler]")));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
                         instanceCache.set(idx, UNRESOLVED);

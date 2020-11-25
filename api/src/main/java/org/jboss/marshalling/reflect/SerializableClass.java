@@ -18,9 +18,6 @@
 
 package org.jboss.marshalling.reflect;
 
-import static java.lang.System.getSecurityManager;
-import static java.security.AccessController.doPrivileged;
-
 import java.io.ObjectInput;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -41,8 +38,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import org.jboss.marshalling._private.GetUnsafeAction;
-import sun.misc.Unsafe;
+import org.jboss.marshalling._private.Unsafe;
 
 /**
  * Reflection information about a serializable class.  Intended for use by implementations of the Marshalling API.
@@ -50,7 +46,6 @@ import sun.misc.Unsafe;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SerializableClass {
-    private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
@@ -140,7 +135,7 @@ public final class SerializableClass {
             return null;
         }
         try {
-            return (ObjectStreamField[]) unsafe.getObject(unsafe.staticFieldBase(field), unsafe.staticFieldOffset(field));
+            return (ObjectStreamField[]) Unsafe.INSTANCE.getObject(Unsafe.INSTANCE.staticFieldBase(field), Unsafe.INSTANCE.staticFieldOffset(field));
         } catch (ClassCastException e) {
             return null;
         }

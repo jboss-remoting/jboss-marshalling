@@ -18,15 +18,26 @@
 
 package org.jboss.marshalling.util;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 
 /**
  * An efficient identity object set.
  */
 public final class IdentityIntSet<T> implements Cloneable {
+
+    private static final int DEFAULT_REINITIALIZE_CAPACITY_THRESHOLD = 1 << 16; // 65536
+    private static final int REINITIALIZE_CAPACITY_THRESHOLD = AccessController.doPrivileged((PrivilegedAction<Integer>) () -> {
+        return Integer.getInteger("jboss.marshalling.identityint.reinitialize.capacity.threshold", DEFAULT_REINITIALIZE_CAPACITY_THRESHOLD);
+    });
+
     private Object[] keys;
     private int count;
     private int resizeCount;
+
+    private final int initialCapacity;
+    private final float loadFactor;
 
     /**
      * Construct a new instance with the given initial capacity and load factor.
@@ -48,6 +59,12 @@ public final class IdentityIntSet<T> implements Cloneable {
             final int c = Integer.highestOneBit(initialCapacity) - 1;
             initialCapacity = Integer.highestOneBit(initialCapacity + c);
         }
+        this.initialCapacity = initialCapacity;
+        this.loadFactor = loadFactor;
+        init();
+    }
+
+    private void init() {
         keys = new Object[initialCapacity];
         resizeCount = (int) ((double) initialCapacity * (double) loadFactor);
     }
@@ -174,7 +191,12 @@ public final class IdentityIntSet<T> implements Cloneable {
     }
 
     public void clear() {
-        Arrays.fill(keys, null);
+        if (keys.length > REINITIALIZE_CAPACITY_THRESHOLD) {
+            // Reinitialize arrays if keys.length exceeds threshold
+            init();
+        } else {
+            Arrays.fill(keys, null);
+        }
         count = 0;
     }
 

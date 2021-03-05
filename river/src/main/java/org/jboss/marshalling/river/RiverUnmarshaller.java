@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
@@ -97,20 +98,34 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private SortedSet<Validator> validators;
     private int validatorSeq;
 
-    private static final Unsafe unsafe;
     private static final Object UNRESOLVED = new Object();
     private static final Field proxyInvocationHandler;
     private static final long proxyInvocationHandlerOffset;
 
+    private static class UnsafeHolder {
+        // WFLY-14077 Never ever refactor out unsafe field from this wrapper class
+        private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
+    }
+
     static {
+        doPrivileged(new PrivilegedAction<Void>() {
+            // WFLY-14077 Never ever remove this doPrivileged() call
+            @Override
+            public Void run() {
+                try {
+                    Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+                } catch (Exception ignored) {
+                    // do nothing
+                }
+                return null;
+            }
+        });
         if (getSecurityManager() == null) {
-            unsafe = GetUnsafeAction.INSTANCE.run();
             proxyInvocationHandler = new GetDeclaredFieldAction(Proxy.class, "h").run();
         } else {
-            unsafe = doPrivileged(GetUnsafeAction.INSTANCE);
             proxyInvocationHandler = doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
         }
-        proxyInvocationHandlerOffset = unsafe.objectFieldOffset(proxyInvocationHandler);
+        proxyInvocationHandlerOffset = UnsafeHolder.unsafe.objectFieldOffset(proxyInvocationHandler);
     }
 
     protected RiverUnmarshaller(final RiverMarshallerFactory marshallerFactory, final SerializableClassRegistry registry, final MarshallingConfiguration configuration) {
@@ -1380,7 +1395,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
                     // force a cast for safety
-                    unsafe.putObject(obj, proxyInvocationHandlerOffset, InvocationHandler.class.cast(doReadNestedObject(unshared, "[proxy invocation handler]")));
+                    UnsafeHolder.unsafe.putObject(obj, proxyInvocationHandlerOffset, InvocationHandler.class.cast(doReadNestedObject(unshared, "[proxy invocation handler]")));
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
                         instanceCache.set(idx, UNRESOLVED);

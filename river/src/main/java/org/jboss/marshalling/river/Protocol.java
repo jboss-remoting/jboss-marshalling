@@ -217,7 +217,10 @@ final class Protocol {
 
     public static final int ID_UNMODIFIABLE_MAP_ENTRY_SET = 0x82;
 
-    private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
+    private static class UnsafeHolder {
+        // WFLY-14077 Never ever refactor out unsafe field from this wrapper class
+        private static final Unsafe unsafe = getSecurityManager() == null ? GetUnsafeAction.INSTANCE.run() : doPrivileged(GetUnsafeAction.INSTANCE);
+    }
 
     static final Class<?> singletonListClass = Collections.singletonList(null).getClass();
     static final Class<?> singletonSetClass = Collections.singleton(null).getClass();
@@ -257,7 +260,7 @@ final class Protocol {
     static final Constructor<?> unmodifiableMapEntrySetCtor;
 
     static Object readField(Field field, final Object obj) {
-        return unsafe.getObject(obj, unsafe.objectFieldOffset(field));
+        return UnsafeHolder.unsafe.getObject(obj, UnsafeHolder.unsafe.objectFieldOffset(field));
     }
 
     static Field findUnmodifiableField(final Class<?> search) {
@@ -286,6 +289,18 @@ final class Protocol {
     }
 
     static {
+        doPrivileged(new PrivilegedAction<Void>() {
+            // WFLY-14077 Never ever remove this doPrivileged() call
+            @Override
+            public Void run() {
+                try {
+                    Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+                } catch (Exception ignored) {
+                    // do nothing
+                }
+                return null;
+            }
+        });
         try {
             enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
         } catch (ClassNotFoundException e) {

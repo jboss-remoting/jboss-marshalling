@@ -108,21 +108,30 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     static {
-        doPrivileged(new PrivilegedAction<Void>() {
-            // WFLY-14077 Never ever remove this doPrivileged() call
-            @Override
-            public Void run() {
-                try {
-                    Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
-                } catch (Exception ignored) {
-                    // do nothing
-                }
-                return null;
-            }
-        });
         if (getSecurityManager() == null) {
+            // sun.misc.Unsafe
+            // WFLY-14077 Never ever remove this Class.forName() call
+            try {
+                Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+            } catch (ClassNotFoundException cnfe) {
+                throw new IllegalStateException("Couldn't find sun.misc.Unsafe!");
+            }
+            // java.lang.reflect.Proxy
             proxyInvocationHandler = new GetDeclaredFieldAction(Proxy.class, "h").run();
         } else {
+            // sun.misc.Unsafe
+            try {
+                doPrivileged(new PrivilegedExceptionAction<Class<?>>() {
+                    // WFLY-14077 Never ever remove this doPrivileged() call
+                    @Override
+                    public Class<?> run() throws ClassNotFoundException {
+                        return Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw new IllegalStateException("Couldn't find sun.misc.Unsafe!");
+            }
+            // java.lang.reflect.Proxy
             proxyInvocationHandler = doPrivileged(new GetDeclaredFieldAction(Proxy.class, "h"));
         }
         proxyInvocationHandlerOffset = UnsafeHolder.unsafe.objectFieldOffset(proxyInvocationHandler);

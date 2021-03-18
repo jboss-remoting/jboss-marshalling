@@ -25,6 +25,8 @@ import static sun.reflect.ReflectionFactory.getReflectionFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,9 +39,7 @@ import java.util.TreeSet;
 
 import org.jboss.marshalling._private.GetDeclaredConstructorAction;
 import org.jboss.marshalling._private.GetDeclaredFieldsAction;
-import org.jboss.marshalling._private.GetReflectionFactoryAction;
 import org.jboss.marshalling._private.GetUnsafeAction;
-import org.jboss.marshalling._private.SetAccessibleAction;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
@@ -289,25 +289,47 @@ final class Protocol {
     }
 
     static {
-        doPrivileged(new PrivilegedAction<Void>() {
-            // WFLY-14077 Never ever remove this doPrivileged() call
-            @Override
-            public Void run() {
-                try {
-                    Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
-                } catch (Exception ignored) {
-                    // do nothing
-                }
-                return null;
+        final SecurityManager sm = getSecurityManager();
+        if (sm == null) {
+            // sun.misc.Unsafe
+            // WFLY-14077 Never ever remove this Class.forName() call
+            try {
+                Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+            } catch (ClassNotFoundException cnfe) {
+                throw new IllegalStateException("Couldn't find sun.misc.Unsafe!");
             }
-        });
-        try {
-            enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("No standard serialization proxy found for enum set!");
+            // java.util.EnumSet$SerializationProxy
+            try {
+                enumSetProxyClass = Class.forName("java.util.EnumSet$SerializationProxy");
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("No standard serialization proxy found for enum set!");
+            }
+        } else {
+            // sun.misc.Unsafe
+            try {
+                doPrivileged(new PrivilegedExceptionAction<Class<?>>() {
+                    // WFLY-14077 Never ever remove this doPrivileged() call
+                    @Override
+                    public Class<?> run() throws ClassNotFoundException {
+                        return Class.forName("sun.misc.Unsafe", true, UnsafeHolder.class.getClassLoader());
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw new IllegalStateException("Couldn't find sun.misc.Unsafe!");
+            }
+            // java.util.EnumSet$SerializationProxy
+            try {
+                enumSetProxyClass = doPrivileged(new PrivilegedExceptionAction<Class<?>>() {
+                    @Override
+                    public Class<?> run() throws ClassNotFoundException {
+                         return Class.forName("java.util.EnumSet$SerializationProxy");
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw new IllegalStateException("No standard serialization proxy found for enum set!");
+            }
         }
         Field field = null;
-        final SecurityManager sm = getSecurityManager();
         for (Field declared : sm == null ? reverseOrder2Class.getDeclaredFields() : doPrivileged(new GetDeclaredFieldsAction(reverseOrder2Class))) {
             if (declared.getName().equals("cmp") || declared.getName().equals("comparator")) {
                 field = declared;

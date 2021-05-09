@@ -84,11 +84,17 @@ public final class SerializableClass {
         serMethods = new JDKSpecific.SerMethods(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
-        final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
-        for (SerializableField serializableField : fields = getSerializableFields(subject)) {
-            fieldsByName.put(serializableField.getName(), serializableField);
+        if (subject.getSimpleName().indexOf('/') != -1) {
+            // it's a hidden class
+            fields = NOFIELDS;
+            this.fieldsByName = Collections.emptyMap();
+        } else {
+            final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
+            for (SerializableField serializableField : fields = getSerializableFields(subject)) {
+                fieldsByName.put(serializableField.getName(), serializableField);
+            }
+            this.fieldsByName = fieldsByName;
         }
-        this.fieldsByName = fieldsByName;
     }
 
     private static SerializableField[] getSerializableFields(Class<?> clazz) {

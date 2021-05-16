@@ -18,6 +18,7 @@
 
 package org.jboss.test.marshalling;
 
+import java.io.NotSerializableException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -66,6 +67,16 @@ public final class SingleObjectMarshallerTests extends TestBase {
                 if (subject instanceof TestArrayList && marshaller instanceof RiverMarshaller && configuration.getVersion() == -1) {
                     throw new SkipException("TODO Known Issue - JBMAR-61");
                 }
+
+                if (subject instanceof SerializableClass) {
+                    try {
+                        marshaller.writeObject(subject);
+                        throw new RuntimeException("SerializableClass should fail with NotSerializableException");
+                    } catch (NotSerializableException e) {
+                        // expected
+                        return;
+                    }
+                }
                 marshaller.writeObject(subject);
                 marshaller.writeObject(subject);
                 marshaller.writeObject("Test follower");
@@ -98,6 +109,10 @@ public final class SingleObjectMarshallerTests extends TestBase {
                     e2.setStackTrace(e.getStackTrace());
                     throw e2;
                 } catch (Throwable t) {
+                    if (subject instanceof SerializableClass) {
+                        // expected and ignore exception as there is NotSerializableException in write
+                        return;
+                    }
                     throw new RuntimeException(String.format("Throwable occurred.\n\t-- Subject is %s\n\t-- Read Subject is %s\n\t-- Second object is %s\n\t-- Unmarshaller is %s\n\t-- Config is %s",
                             stringOf(subject),
                             stringOf(readSubject),

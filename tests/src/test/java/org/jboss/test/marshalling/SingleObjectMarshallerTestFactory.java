@@ -159,6 +159,7 @@ public final class SingleObjectMarshallerTestFactory {
         list.add("This is a string");
         list.add(new TestComplexObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))));
         list.add(new TestComplexExternalizableObject(true, (byte)5, 'c', (short)8192, 294902, 319203219042L, 21.125f, 42.625, "TestString", new HashSet<Object>(Arrays.asList("Hello", Boolean.TRUE, Integer.valueOf(12345)))));
+        list.add(new SerializableClass("test"));
         list.add(Collections.unmodifiableMap(new HashMap<Object, Object>()));
         list.add(Collections.unmodifiableMap(Collections.singletonMap("hi", "there")).entrySet());
         list.add(Collections.unmodifiableSet(new HashSet<Object>()));

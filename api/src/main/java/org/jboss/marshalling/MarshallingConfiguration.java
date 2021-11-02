@@ -26,6 +26,7 @@ public final class MarshallingConfiguration implements Cloneable {
 
     private ClassExternalizerFactory classExternalizerFactory;
     private StreamHeader streamHeader;
+    private ClassNameTransformer classNameTransformer;
     private ClassResolver classResolver;
     private ObjectResolver objectResolver;
     private ClassTable classTable;
@@ -114,6 +115,24 @@ public final class MarshallingConfiguration implements Cloneable {
      */
     public void setObjectResolver(final ObjectResolver objectResolver) {
         this.objectResolver = objectResolver;
+    }
+
+    /**
+     * Get the class name transformer, or {@code null} if none is specified.
+     *
+     * @return the class name transformer
+     */
+    public ClassNameTransformer getClassNameTransformer() {
+        return classNameTransformer;
+    }
+
+    /**
+     * Set the class name transformer, or {@code null} to use none.
+     *
+     * @param classNameTransformer class name transformer
+     */
+    public void setClassNameTransformer(final ClassNameTransformer classNameTransformer) {
+        this.classNameTransformer = classNameTransformer;
     }
 
     /**

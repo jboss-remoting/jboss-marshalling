@@ -60,7 +60,12 @@ public abstract class AbstractMarshaller extends AbstractObjectOutput implements
         final StreamHeader streamHeader = configuration.getStreamHeader();
         this.streamHeader = streamHeader == null ? marshallerFactory.getDefaultStreamHeader() : streamHeader;
         final ClassResolver classResolver = configuration.getClassResolver();
-        this.classResolver = classResolver == null ? marshallerFactory.getDefaultClassResolver() : classResolver;
+        final ClassNameTransformer classNameTransformer = configuration.getClassNameTransformer();
+        if (classNameTransformer != null) {
+            this.classResolver = new TransformingClassResolver(classResolver == null ? marshallerFactory.getDefaultClassResolver() : classResolver, classNameTransformer, false);
+        } else {
+            this.classResolver = classResolver == null ? marshallerFactory.getDefaultClassResolver() : classResolver;
+        }
         final ObjectResolver objectResolver = configuration.getObjectResolver();
         this.objectResolver = objectResolver == null ? marshallerFactory.getDefaultObjectResolver() : objectResolver;
         final ObjectResolver objectPreResolver = configuration.getObjectPreResolver();

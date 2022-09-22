@@ -34,7 +34,7 @@
     </parent>
 
     <properties>
-        <jdk.min.version>9</jdk.min.version>
+        <jdk.min.version>16</jdk.min.version>
     </properties>
 
     <dependencies>
@@ -126,6 +126,22 @@
                             <buildDirectory>${project.build.directory}</buildDirectory>
                             <compileSourceRoots>${project.basedir}/src/main/java9</compileSourceRoots>
                             <outputDirectory>${project.build.directory}/classes/META-INF/versions/9</outputDirectory>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${project.build.outputDirectory}</additionalClasspathElement>
+                            </additionalClasspathElements>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-java16</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <release>16</release>
+                            <buildDirectory>${project.build.directory}</buildDirectory>
+                            <compileSourceRoots>${project.basedir}/src/main/java16</compileSourceRoots>
+                            <outputDirectory>${project.build.directory}/classes/META-INF/versions/16</outputDirectory>
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${project.build.outputDirectory}</additionalClasspathElement>
                             </additionalClasspathElements>

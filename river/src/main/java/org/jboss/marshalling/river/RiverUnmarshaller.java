@@ -1409,7 +1409,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final SerializableClassDescriptor serializableClassDescriptor = (SerializableClassDescriptor) descriptor;
                     final SerializableClass serializableClass = serializableClassDescriptor.getSerializableClass();
                     final Object obj;
-                    if(serializableClass == null) {
+                    if(serializableClass == null || serializableClass.isRecord()) {
                         obj = null;
                     } else if (!serializableClass.hasNoInitConstructor(serializableClassDescriptor.getNonSerializableSuperclass(serializabilityChecker))) {
                         throw new NotSerializableException(serializableClass.getSubjectClass().getName());
@@ -1418,14 +1418,14 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     final int idx = instanceCache.size();
                     instanceCache.add(obj);
-                    doInitSerializable(obj, serializableClassDescriptor, discardMissing);
-                    final Object resolvedObject = obj == null ? null : objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(obj) : obj);
+                    Object finalObject = doInitSerializable(obj, serializableClassDescriptor, discardMissing);
+                    finalObject = finalObject == null ? null : objectResolver.readResolve(serializableClass.hasReadResolve() ? serializableClass.callReadResolve(finalObject) : finalObject);
                     if (unshared) {
                         instanceCache.set(idx, UNRESOLVED);
-                    } else if (obj != resolvedObject) {
-                        instanceCache.set(idx, resolvedObject);
+                    } else if (obj != finalObject) {
+                        instanceCache.set(idx, finalObject);
                     }
-                    return resolvedObject;
+                    return finalObject;
                 }
                 case ID_EXTERNALIZABLE_CLASS: {
                     final Class<?> type = descriptor.getType();
@@ -1728,12 +1728,48 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         }
     }
 
+    private Object doReadRecord(SerializableClass info, boolean discardMissing) throws IOException, ClassNotFoundException {
+        final Object[] values = new Object[info.getFields().length];
+        for (SerializableField serializableField : info.getFields()) {
+            switch (serializableField.getKind()) {
+                case BOOLEAN:
+                    values[serializableField.getRecordComponentIndex()] = readBoolean();
+                    break;
+                case BYTE:
+                    values[serializableField.getRecordComponentIndex()] = readByte();
+                    break;
+                case CHAR:
+                    values[serializableField.getRecordComponentIndex()] = readChar();
+                    break;
+                case DOUBLE:
+                    values[serializableField.getRecordComponentIndex()] = readDouble();
+                    break;
+                case FLOAT:
+                    values[serializableField.getRecordComponentIndex()] = readFloat();
+                    break;
+                case INT:
+                    values[serializableField.getRecordComponentIndex()] = readInt();
+                    break;
+                case LONG:
+                    values[serializableField.getRecordComponentIndex()] = readLong();
+                    break;
+                case SHORT:
+                    values[serializableField.getRecordComponentIndex()] = readShort();
+                    break;
+                case OBJECT:
+                    values[serializableField.getRecordComponentIndex()] = doReadObject(serializableField.isUnshared(), true);
+                    break;
+            }
+        }
+        return info.invokeRecordCanonicalConstructor(values);
+    }
+
     @SuppressWarnings({"unchecked"})
     private static Enum resolveEnumConstant(final ClassDescriptor descriptor, final String name) {
         return Enum.valueOf((Class<? extends Enum>)descriptor.getType(), name);
     }
 
-    private void doInitSerializable(final Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {
+    private Object doInitSerializable(Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {
         final Class<?> type = descriptor.getType();
         final ClassDescriptor superDescriptor = descriptor.getSuperClassDescriptor();
         if (superDescriptor instanceof SerializableClassDescriptor) {
@@ -1745,7 +1781,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         if (type == null) {
             if (descriptor instanceof SerializableGapClassDescriptor) {
                 // skip
-                return;
+                return obj;
             }
             // consume this class' data silently
             discardFields(descriptor);
@@ -1753,7 +1789,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 blockUnmarshaller.readToEndBlockData();
                 blockUnmarshaller.unblock();
             }
-            return;
+            return obj;
         }
         final SerializableClass info = registry.lookup(type);
         if (descriptor instanceof SerializableGapClassDescriptor) {
@@ -1789,7 +1825,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 }
             }
         } else {
-            if (obj != null) {
+            if (info.isRecord()) {
+                obj = doReadRecord(info, discardMissing);
+            } else if (obj != null) {
                 readFields(obj, descriptor, discardMissing);
             } else {
                 discardFields(descriptor);
@@ -1800,6 +1838,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 blockUnmarshaller.unblock();
             }
         }
+        return obj;
     }
 
     protected void readFields(final Object obj, final SerializableClassDescriptor descriptor, final boolean discardMissing) throws IOException, ClassNotFoundException {

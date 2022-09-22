@@ -44,18 +44,19 @@ public final class SerializableField {
     private final boolean unshared;
     private final Kind kind;
     private final long fieldOffset;
+    private final int recordComponentIndex;
 
     public SerializableField(Class<?> type, String name, boolean unshared) {
-        this(type, name, unshared, null);
+        this(type, name, unshared, null, null);
     }
 
-    SerializableField(Class<?> type, String name, boolean unshared, final Field field) {
+    SerializableField(Class<?> type, String name, boolean unshared, final Field field, RecordComponent recordComponent) {
         assert field == null || (field.getModifiers() & Modifier.STATIC) == 0 && ! field.getDeclaringClass().isArray();
         this.type = type;
         this.name = name;
         this.unshared = unshared;
         this.field = field;
-        fieldOffset = field == null ? -1 : unsafe.objectFieldOffset(field);
+        fieldOffset = field == null || recordComponent != null? -1 : unsafe.objectFieldOffset(field);
         if (field != null) {
             // verify field information
             if (field.getType() != type) {
@@ -64,6 +65,20 @@ public final class SerializableField {
             if (! field.getName().equals(name)) {
                 throw new IllegalStateException("Constructed a serializable field with the wrong name (field name is " + field.getName() + ", our name is " + name + ")");
             }
+        }
+        if (recordComponent != null) {
+            if (field == null) {
+                throw new IllegalStateException("Record component field not passed for name " + recordComponent.getName());
+            }
+            if (recordComponent.getType() != type) {
+                throw new IllegalStateException("Record component field with the wrong type (field type is " + recordComponent.getType() + ", our type is " + type + ")");
+            }
+            if (! recordComponent.getName().equals(name)) {
+                throw new IllegalStateException("Record component field with the wrong name (field name is " + recordComponent.getName() + ", our name is " + name + ")");
+            }
+            this.recordComponentIndex = recordComponent.getIndex();
+        } else {
+            this.recordComponentIndex = -1;
         }
         // todo - see if a small Map is faster
         if (type == boolean.class) {
@@ -614,6 +629,54 @@ public final class SerializableField {
                 break;
             default:
                 throw new IllegalStateException();
+        }
+    }
+
+    /**
+     * Getter for the record component value.
+     * @param obj The object to obtain the record component value
+     * @return The record component value for this obj
+     */
+    public Object getRecordComponentValue(Object obj) {
+        if (recordComponentIndex == -1) {
+            return null;
+        }
+        return JDKSpecific.getRecordComponentValue(obj, name, type);
+    }
+
+    /**
+     * Getter for the record component index.
+     * @return The record component index or -1
+     */
+    public int getRecordComponentIndex() {
+        return recordComponentIndex;
+    }
+
+    /**
+     * A record component, which has a name, type and index.
+     */
+    static final class RecordComponent {
+
+        private final String name;
+        private final Class<?> type;
+        private final int index;
+
+        RecordComponent(String name, Class<?> type, int index) {
+            this.name = name;
+            this.type = type;
+            this.index = index;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        public int getIndex() {
+            return index;
         }
     }
 }

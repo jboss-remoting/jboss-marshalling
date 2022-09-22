@@ -45,7 +45,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jdk.min.version>9</jdk.min.version>
+        <jdk.min.version>1.8</jdk.min.version>
     </properties>
 
     <modules>

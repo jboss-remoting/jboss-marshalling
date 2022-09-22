@@ -265,7 +265,11 @@ public class RiverMarshaller extends AbstractMarshaller {
                 write(unshared ? ID_NEW_OBJECT_UNSHARED : ID_NEW_OBJECT);
                 writeSerializableClass(objClass, false);
                 instanceCache.put(obj, instanceSeq++);
-                doWriteSerializableObject(info, obj, objClass);
+                if (info != null && info.isRecord()) {
+                    doWriteRecord(obj, info);
+                } else {
+                    doWriteSerializableObject(info, obj, objClass);
+                }
                 if (unshared) {
                     instanceCache.put(obj, -1);
                 }
@@ -332,6 +336,41 @@ public class RiverMarshaller extends AbstractMarshaller {
             instanceCache.put(obj, -1);
         }
         return;
+    }
+
+    private void doWriteRecord(Object object, SerializableClass info) throws IOException {
+        final SerializableField[] serializableFields = info.getFields();
+        for (SerializableField serializableField : serializableFields) {
+            switch (serializableField.getKind()) {
+                case BOOLEAN:
+                    writeBoolean((boolean) serializableField.getRecordComponentValue(object));
+                    break;
+                case BYTE:
+                    writeByte((byte) serializableField.getRecordComponentValue(object));
+                    break;
+                case SHORT:
+                    writeShort((short) serializableField.getRecordComponentValue(object));
+                    break;
+                case INT:
+                    writeInt((int) serializableField.getRecordComponentValue(object));
+                    break;
+                case CHAR:
+                    writeChar((char) serializableField.getRecordComponentValue(object));
+                    break;
+                case LONG:
+                    writeLong((long) serializableField.getRecordComponentValue(object));
+                    break;
+                case DOUBLE:
+                    writeDouble((double) serializableField.getRecordComponentValue(object));
+                    break;
+                case FLOAT:
+                    writeFloat((float) serializableField.getRecordComponentValue(object));
+                    break;
+                case OBJECT:
+                    doWriteObject(serializableField.getRecordComponentValue(object), serializableField.isUnshared());
+                    break;
+            }
+        }
     }
 
     private void writeKnownObject(boolean unshared, Object obj, Class<?> objClass, int id) throws IOException {

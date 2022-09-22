@@ -298,6 +298,8 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
                 oos.restoreState(oldState);
             }
             doEndBlock();
+        } else if (sc.isRecord()) {
+            doWriteRecord(sc, obj);
         } else {
             doWriteFields(sc, obj);
         }
@@ -326,6 +328,42 @@ public final class SerialMarshaller extends AbstractMarshaller implements Marsha
             oos = createObjectOutputStream();
         }
         return oos;
+    }
+
+    private void doWriteRecord(final SerializableClass info, final Object obj) throws IOException {
+        for (SerializableField serializableField : info.getFields()) {
+            switch (serializableField.getKind()) {
+                case BOOLEAN:
+                    writeBoolean((boolean) serializableField.getRecordComponentValue(obj));
+                    break;
+                case BYTE:
+                    writeByte((byte) serializableField.getRecordComponentValue(obj));
+                    break;
+                case SHORT:
+                    writeShort((short) serializableField.getRecordComponentValue(obj));
+                    break;
+                case INT:
+                    writeInt((int) serializableField.getRecordComponentValue(obj));
+                    break;
+                case CHAR:
+                    writeChar((char) serializableField.getRecordComponentValue(obj));
+                    break;
+                case LONG:
+                    writeLong((long) serializableField.getRecordComponentValue(obj));
+                    break;
+                case DOUBLE:
+                    writeDouble((double) serializableField.getRecordComponentValue(obj));
+                    break;
+                case FLOAT:
+                    writeFloat((float) serializableField.getRecordComponentValue(obj));
+                    break;
+            }
+        }
+        for (SerializableField serializableField : info.getFields()) {
+            if (serializableField.getKind() == Kind.OBJECT) {
+                doWriteObject(serializableField.getRecordComponentValue(obj), serializableField.isUnshared());
+            }
+        }
     }
 
     protected void doWriteFields(final SerializableClass info, final Object obj) throws IOException {

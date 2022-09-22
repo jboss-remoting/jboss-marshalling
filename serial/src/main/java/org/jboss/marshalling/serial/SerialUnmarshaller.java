@@ -30,6 +30,7 @@ import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
+import org.jboss.marshalling.util.Kind;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.io.ObjectStreamClass;
@@ -276,6 +277,11 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
                         } else {
                             throw new InvalidObjectException("Created object should be Externalizable but it is not");
                         }
+                    } else if (sc.isRecord()) {
+                        idx = instanceCache.size();
+                        instanceCache.add(UNRESOLVED);
+                        obj = doReadRecord(sc);
+                        instanceCache.set(idx, unshared ? UNSHARED : obj);
                     } else {
                         Class<?> nonSerializable;
                         for (nonSerializable = objClass.getSuperclass(); serializabilityChecker.isSerializable(nonSerializable); nonSerializable = nonSerializable.getSuperclass()) {
@@ -340,6 +346,44 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
         } finally {
             depth --;
         }
+    }
+
+    private Object doReadRecord(final SerializableClass sc) throws ClassNotFoundException, IOException {
+        final Object[] values = new Object[sc.getFields().length];
+        for (SerializableField serializableField : sc.getFields()) {
+            switch (serializableField.getKind()) {
+                case BOOLEAN:
+                    values[serializableField.getRecordComponentIndex()] = this.readBoolean();
+                    break;
+                case BYTE:
+                    values[serializableField.getRecordComponentIndex()] = this.readByte();
+                    break;
+                case CHAR:
+                    values[serializableField.getRecordComponentIndex()] = this.readChar();
+                    break;
+                case DOUBLE:
+                    values[serializableField.getRecordComponentIndex()] = this.readDouble();
+                    break;
+                case FLOAT:
+                    values[serializableField.getRecordComponentIndex()] = this.readFloat();
+                    break;
+                case INT:
+                    values[serializableField.getRecordComponentIndex()] = this.readInt();
+                    break;
+                case LONG:
+                    values[serializableField.getRecordComponentIndex()] = this.readLong();
+                    break;
+                case SHORT:
+                    values[serializableField.getRecordComponentIndex()] = this.readShort();
+                    break;
+            }
+        }
+        for (SerializableField field : sc.getFields()) {
+            if (field.getKind() == Kind.OBJECT) {
+                values[field.getRecordComponentIndex()] = this.doReadObject(field.isUnshared());
+            }
+        }
+        return sc.invokeRecordCanonicalConstructor(values);
     }
 
     private void doReadSerialObject(final Descriptor descriptor, final Object obj) throws ClassNotFoundException, IOException {

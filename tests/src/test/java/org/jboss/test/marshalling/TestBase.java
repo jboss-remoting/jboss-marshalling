@@ -92,7 +92,7 @@ public abstract class TestBase {
         this.configuration = configuration;
     }
 
-    public void runReadWriteTest(ReadWriteTest readWriteTest) throws Throwable {
+    public byte[] runWriteOnly(ReadWriteTest readWriteTest) throws Throwable {
         final MarshallingConfiguration readConfiguration = configuration.clone();
         readWriteTest.configureRead(readConfiguration);
 
@@ -104,8 +104,10 @@ public abstract class TestBase {
         System.out.println("Marshaller = " + marshaller + " (version set to " + readConfiguration.getVersion() + ")");
         readWriteTest.runWrite(marshaller);
         marshaller.finish();
-        final byte[] bytes = baos.toByteArray();
+        return baos.toByteArray();
+    }
 
+    public void runReadOnly(ReadWriteTest readWriteTest, byte[] bytes) throws Throwable {
         final MarshallingConfiguration writeConfiguration = configuration.clone();
         readWriteTest.configureWrite(writeConfiguration);
 
@@ -115,5 +117,10 @@ public abstract class TestBase {
         System.out.println("Unmarshaller = " + unmarshaller + " (version set to " + writeConfiguration.getVersion() + ")");
         readWriteTest.runRead(unmarshaller);
         unmarshaller.finish();
+    }
+
+    public void runReadWriteTest(ReadWriteTest readWriteTest) throws Throwable {
+        byte[] bytes = runWriteOnly(readWriteTest);
+        runReadOnly(readWriteTest, bytes);
     }
 }

@@ -58,6 +58,7 @@ public final class SerializableClass {
     private final SerializableField[] fields;
     private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
+    private final boolean isRecord;
 
     private static final Comparator<? super SerializableField> NAME_COMPARATOR = new Comparator<SerializableField>() {
         public int compare(final SerializableField o1, final SerializableField o2) {
@@ -80,6 +81,7 @@ public final class SerializableClass {
             }
         }
         nonInitConstructors = constructorMap;
+        isRecord = JDKSpecific.isRecord(subject);
         // private methods
         serMethods = new JDKSpecific.SerMethods(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
@@ -90,18 +92,32 @@ public final class SerializableClass {
             this.fieldsByName = Collections.emptyMap();
         } else {
             final HashMap<String, SerializableField> fieldsByName = new HashMap<String, SerializableField>();
-            for (SerializableField serializableField : fields = getSerializableFields(subject)) {
+            for (SerializableField serializableField : fields = getSerializableFields(subject, isRecord)) {
                 fieldsByName.put(serializableField.getName(), serializableField);
             }
             this.fieldsByName = fieldsByName;
         }
     }
 
-    private static SerializableField[] getSerializableFields(Class<?> clazz) {
+    private static SerializableField[] getSerializableFields(Class<?> clazz, boolean isRecord) {
         final Field[] declaredFields = clazz.getDeclaredFields();
+        if (isRecord) {
+            final Map<String, Field> map = new HashMap<>();
+            for (Field field : declaredFields) {
+                map.put(field.getName(), field);
+            }
+            SerializableField.RecordComponent[] recordComponents = JDKSpecific.getRecordComponents(clazz);
+            SerializableField[] fields = new SerializableField[recordComponents.length];
+            for (int i = 0; i < recordComponents.length; i++) {
+                Field field = map.get(recordComponents[i].getName());
+                fields[i] = new SerializableField(field.getType(), field.getName(), false, field, recordComponents[i]);
+            }
+            Arrays.sort(fields, NAME_COMPARATOR);
+            return fields;
+        }
         final ObjectStreamField[] objectStreamFields = getDeclaredSerialPersistentFields(clazz);
         if (objectStreamFields != null) {
-            final Map<String, Field> map = new HashMap<String, Field>();
+            final Map<String, Field> map = new HashMap<>();
             for (Field field : declaredFields) {
                 map.put(field.getName(), field);
             }
@@ -112,23 +128,23 @@ public final class SerializableClass {
                 final Field realField = map.get(name);
                 if (realField != null && realField.getType() == field.getType()) {
                     // allow direct updating of the field data since the types match
-                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), realField);
+                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), realField, null);
                 } else {
                     // no direct update possible
-                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), null);
+                    fields[i] = new SerializableField(field.getType(), name, field.isUnshared(), null, null);
                 }
             }
             Arrays.sort(fields, NAME_COMPARATOR);
             return fields;
         }
-        final ArrayList<SerializableField> fields = new ArrayList<SerializableField>(declaredFields.length);
+        final ArrayList<SerializableField> fields = new ArrayList<>(declaredFields.length);
         for (Field field : declaredFields) {
             if ((field.getModifiers() & (Modifier.TRANSIENT | Modifier.STATIC)) == 0) {
-                fields.add(new SerializableField(field.getType(), field.getName(), false, field));
+                fields.add(new SerializableField(field.getType(), field.getName(), false, field, null));
             }
         }
         Collections.sort(fields, NAME_COMPARATOR);
-        return fields.toArray(new SerializableField[fields.size()]);
+        return fields.toArray(new SerializableField[0]);
     }
 
     private static ObjectStreamField[] getDeclaredSerialPersistentFields(Class<?> clazz) {
@@ -176,7 +192,7 @@ public final class SerializableClass {
         if (serializableField != null) {
             return serializableField;
         }
-        return new SerializableField(fieldType, name, unshared, null);
+        return new SerializableField(fieldType, name, unshared, null, null);
     }
 
     /**
@@ -424,5 +440,24 @@ public final class SerializableClass {
 
     JDKSpecific.SerMethods getSerMethods() {
         return serMethods;
+    }
+
+    /**
+     * Determine if this class is a record.
+     *
+     * @return The record components or null
+     */
+    public boolean isRecord() {
+        return isRecord;
+    }
+
+    /**
+     * Invokes the record constructor for this class. If the class is not a record
+     * or the values are incorrect a IllegalStateException is thrown.
+     * @param args The record arguments for the constructor
+     * @return The new record created
+     */
+    public Object invokeRecordCanonicalConstructor(Object[] args) {
+        return JDKSpecific.invokeRecordCanonicalConstructor(subject, fields, args);
     }
 }

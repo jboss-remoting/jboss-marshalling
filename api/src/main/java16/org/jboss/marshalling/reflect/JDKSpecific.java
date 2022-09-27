@@ -28,25 +28,26 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
 import sun.reflect.ReflectionFactory;
 
 /**
- * JDK-specific classes which are replaced for different JDK major versions.  This one is for Java 9 only.
+ * JDK-specific classes which are replaced for different JDK major versions.  This one is for Java 16 only.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class JDKSpecific {
 
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
     private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
         public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
     });
-
-    static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
-        return reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
-    }
 
     /**
      * Return if this class is a record type.
@@ -54,8 +55,7 @@ final class JDKSpecific {
      * @return true if the class is a record, false otherwise
      */
     static boolean isRecord(Class<?> type) {
-        // in java previous 16 is false
-        return false;
+        return type.isRecord();
     }
 
     /**
@@ -65,7 +65,12 @@ final class JDKSpecific {
      * @return The record components array for this class
      */
     static SerializableField.RecordComponent[] getRecordComponents(Class<?> type) {
-        throw new UnsupportedOperationException("Records not supported in this version of java");
+        RecordComponent[] recordComponents = type.getRecordComponents();
+        SerializableField.RecordComponent[] result = new SerializableField.RecordComponent[recordComponents.length];
+        for (int i = 0; i < recordComponents.length; i++) {
+            result[i] = new SerializableField.RecordComponent(recordComponents[i].getName(), recordComponents[i].getType(), i);
+        }
+        return result;
     }
 
     /**
@@ -74,10 +79,15 @@ final class JDKSpecific {
      * @param name The record component name
      * @param type The record component class type
      * @return The record component for this record object
-     * @throws java.io.IOException Some error
      */
     static Object getRecordComponentValue(Object recordObject, String name, Class<?> type) {
-        throw new UnsupportedOperationException("Records not supported in this version of java");
+        try {
+            MethodHandle methodHandle = LOOKUP.findVirtual(
+                    recordObject.getClass(), name, MethodType.methodType(type));
+            return (Object) methodHandle.invoke(recordObject);
+        } catch (Throwable e) {
+            throw new IllegalStateException("Cannot invoke record getter " + name + " in object " + recordObject, e);
+        }
     }
 
     /**
@@ -87,10 +97,23 @@ final class JDKSpecific {
      * @param fields The fields of the record class
      * @param args The arguments for the constructor
      * @return The instantiated object
-     * @throws java.io.IOException
      */
     static Object invokeRecordCanonicalConstructor(Class<?> recordType, SerializableField[] fields, Object[] args) {
-        throw new UnsupportedOperationException("Records not supported in this version of java");
+        try {
+            Class<?>[] paramTypes = new Class<?>[fields.length];
+            for (SerializableField field : fields) {
+                paramTypes[field.getRecordComponentIndex()] = field.getType();
+            }
+            MethodHandle constructorHandle = LOOKUP.findConstructor(recordType, MethodType.methodType(void.class, paramTypes))
+                    .asType(MethodType.methodType(Object.class, paramTypes));
+            return constructorHandle.invokeWithArguments(args);
+        } catch (Throwable e) {
+            throw new IllegalStateException("Error calling onstructor on record class " + recordType, e);
+        }
+    }
+
+    static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
+        return reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
     }
 
     static final class SerMethods {

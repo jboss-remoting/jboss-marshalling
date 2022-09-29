@@ -54,44 +54,6 @@
 
     <profiles>
         <profile>
-            <id>jdk-less-than-16</id>
-            <activation>
-                <jdk>[1.8,16)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.7.0-jboss-1</version>
-                        <configuration>
-                            <testExcludes>
-                                <exclude>**/org/jboss/test/marshalling/RecordTests.java</exclude>
-                                <exclude>**/org/jboss/test/marshalling/RecordTestFactory.java</exclude>
-                            </testExcludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>jdk-greater-than-16</id>
-            <activation>
-                <jdk>[16,</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.7.0-jboss-1</version>
-                        <configuration>
-                            <testSource>16</testSource>
-                            <testTarget>16</testTarget>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>java8-test-profile</id>
             <activation>
                 <property>
@@ -111,6 +73,9 @@
                                 </goals>
                                 <configuration>
                                     <jvm>${java8.home}/bin/java</jvm>
+                                    <excludes>
+                                        <exclude>**/*RecordTest*.java</exclude>
+                                    </excludes>
                                 </configuration>
                             </execution>
                         </executions>
@@ -122,6 +87,40 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0-jboss-1</version>
+                <configuration>
+                    <testSource>8</testSource>
+                    <testTarget>8</testTarget>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <testExcludes>
+                                <exclude>**/org/jboss/test/marshalling/RecordTests.java</exclude>
+                                <exclude>**/org/jboss/test/marshalling/RecordTestFactory.java</exclude>
+                            </testExcludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-java16-specific-tests</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <testSource>16</testSource>
+                            <testTarget>16</testTarget>
+                            <testIncludes>
+                                <include>**/org/jboss/test/marshalling/RecordTests.java</include>
+                                <include>**/org/jboss/test/marshalling/RecordTestFactory.java</include>
+                            </testIncludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>

@@ -14,6 +14,10 @@ To build with your own Maven installation:
 
     mvn install
 
+## Documentation
+
+All documentation lives at https://jbossmarshalling.jboss.org/
+
 ## Issue tracker
 
 All issues can be reported at https://github.com/jboss-remoting/jboss-marshalling/issues

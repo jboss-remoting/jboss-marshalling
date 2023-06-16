@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.io.ObjectInput;
@@ -38,11 +39,13 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -72,6 +75,7 @@ import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
 
+import org.jboss.marshalling.UnmarshallingFilter;
 import org.jboss.marshalling.river.RiverMarshaller;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
@@ -3689,6 +3693,93 @@ public final class SimpleMarshallerTests extends TestBase {
                 assertNotNull(smi);
                 assertNotNull(smi.to);
                 assertEquals(Collections.emptySortedMap(), smi.to.map);
+            }
+        });
+    }
+
+    private static class UnmarshallingFilterFailReadWriteTest extends ReadWriteTest {
+        private final String filterSpec;
+        UnmarshallingFilterFailReadWriteTest(final String filterSpec) {
+            super();
+            this.filterSpec = filterSpec;
+        }
+        @Override
+        public void configureRead(MarshallingConfiguration configuration) throws Throwable {
+            configuration.setUnmarshallingFilter(UnmarshallingFilter.Factory.createFilter(filterSpec));
+        }
+
+        @Override
+        public void runRead(Unmarshaller unmarshaller) throws Throwable {
+            if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+                System.err.println("is you passed ? ?????????????? ");
+                throw new SkipException("Test not relevant for " + unmarshaller);
+            }
+            try {
+                unmarshaller.readObject();
+                fail("Should fail with InvalidClassException " + unmarshaller.getClass().getSimpleName() + ", filterSpec: " + filterSpec);
+            } catch (InvalidClassException e) {
+                fail("Which passes: let me see see: " + filterSpec);
+                //ok
+            }
+        }
+    }
+
+    @Test(description = "JBMAR-193 - maxarray")
+    public void testUnmarshallingFilterMaxArray() throws Throwable {
+        final Map<Integer, Integer> map = new HashMap<>();
+        final long real = 200, max = 100;
+        for (int i = 0; i < real; i++) {
+            map.put(i, i);
+        }
+        runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxarray=" + max) {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(map);
+            }
+        });
+    }
+
+    @Test(description = "JBMAR-193 - maxbytes")
+    public void testUnmarshallingFilterMaxBytes() throws Throwable {
+        final StringBuilder sb = new StringBuilder();
+        final long real = 200, max = 100;
+        for (int i = 0; i < real; i++) {
+            sb.append("a");
+        }
+        MySerializable serializable = new MySerializable(sb.toString());
+        runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxbytes=" + max) {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(serializable);
+            }
+        });
+    }
+
+    @Test(description = "JBMAR-193 - maxdepth")
+    public void testUnmarshallingFilterMaxDepth() throws Throwable {
+        final int max = 2;
+        final TestA testa = new TestA();
+        final TestB testb = new TestB();
+        final TestA testac = new TestA();
+        final TestB testcb = new TestB();
+        testa.testb = testb;
+        testb.testa = testac;
+        testac.testb = testcb;
+        runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxdepth=" + max) {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(testa);
+            }
+        });
+    }
+
+    @Test(description = "JBMAR-193 - maxrefs")
+    public void testUnmarshallingFilterMaxRefs() throws Throwable {
+        final int max = 2;
+        Parent[] parents = new Parent[3];
+        parents[0] = new Parent("1", new Child1(1, "1.1"));
+        parents[1] = new Parent("2", new Child1(2, "2.2"));
+        parents[2] = new Parent("3", new Child1(3, "3.3"));
+        runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxrefs=" + max) {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(parents);
             }
         });
     }

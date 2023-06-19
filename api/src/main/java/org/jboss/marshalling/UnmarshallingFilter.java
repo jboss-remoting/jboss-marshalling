@@ -30,6 +30,8 @@ public interface UnmarshallingFilter {
 
     final class Factory {
 
+        private Factory() {}
+
         public static UnmarshallingFilter createFilter(String filterSpec) {
             return createFilter(filterSpec, false);
         }

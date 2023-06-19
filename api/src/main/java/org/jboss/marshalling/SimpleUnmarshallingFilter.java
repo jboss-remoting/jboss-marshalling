@@ -247,7 +247,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
 
         @Override
         public FilterResponse apply(FilterInput input) {
-            return matches.contains(classNameFor(input)) ? matchResult : null;
+            return matches.contains(classNameFor(input)) ? matchResult : FilterResponse.UNDECIDED;
         }
     }
 }

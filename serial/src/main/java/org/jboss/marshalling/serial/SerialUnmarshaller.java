@@ -32,6 +32,7 @@ import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
 import org.jboss.marshalling.util.Kind;
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.StreamCorruptedException;
 import java.io.ObjectStreamClass;
 import java.io.InvalidClassException;
@@ -677,13 +678,29 @@ public final class SerialUnmarshaller extends AbstractUnmarshaller implements Un
 
     private final PrivilegedExceptionAction<SerialObjectInputStream> createObjectOutputStreamAction = new PrivilegedExceptionAction<SerialObjectInputStream>() {
         public SerialObjectInputStream run() throws IOException {
-            return new SerialObjectInputStream(SerialUnmarshaller.this);
+            SerialObjectInputStream ois = new SerialObjectInputStream(SerialUnmarshaller.this);
+            if (unmarshallingFilter != null) {
+                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+                // possible to implement filtering purely on the JBoss Marshalling side.
+                ois.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
+            }
+            return ois;
         }
     };
 
     private SerialObjectInputStream createObjectInputStream() throws IOException {
         if (getSecurityManager() == null) {
-            return new SerialObjectInputStream(SerialUnmarshaller.this);
+            SerialObjectInputStream ois = new SerialObjectInputStream(SerialUnmarshaller.this);
+            if (unmarshallingFilter != null) {
+                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+                // possible to implement filtering purely on the JBoss Marshalling side.
+                ois.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
+            }
+            return ois;
         } else {
             try {
                 return doPrivileged(createObjectOutputStreamAction);

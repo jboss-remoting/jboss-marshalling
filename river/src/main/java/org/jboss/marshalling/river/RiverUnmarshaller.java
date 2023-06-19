@@ -22,13 +22,7 @@ import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.marshalling.river.Protocol.*;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.InvalidClassException;
-import java.io.InvalidObjectException;
-import java.io.NotSerializableException;
-import java.io.ObjectInputValidation;
-import java.io.StreamCorruptedException;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -162,7 +156,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private final PrivilegedExceptionAction<RiverObjectInputStream> createObjectInputStreamAction = new PrivilegedExceptionAction<RiverObjectInputStream>() {
         public RiverObjectInputStream run() throws IOException {
-            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            if (unmarshallingFilter != null) {
+                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+                // possible to implement filtering purely on the JBoss Marshalling side.
+                riverObjectInputStream.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
+            }
+            return riverObjectInputStream;
         }
     };
 
@@ -173,7 +175,15 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         if (getSecurityManager() == null) {
-            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            if (unmarshallingFilter != null) {
+                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+                // possible to implement filtering purely on the JBoss Marshalling side.
+                riverObjectInputStream.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
+            }
+            return riverObjectInputStream;
         } else {
             try {
                 return doPrivileged(createObjectInputStreamAction);
@@ -748,21 +758,27 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             throw new IllegalStateException();
                         }
                     }
+//                    filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
+                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayList(len), discardMissing));
                         }
                         case ID_CC_HASH_SET: {
+                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readCollectionData(unshared, -1, len, new HashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_SET: {
+                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_LIST: {
+                            // no filter check?
                             return replace(readCollectionData(unshared, -1, len, new LinkedList(), discardMissing));
                         }
                         case ID_CC_TREE_SET: {
+                            // no filter check?
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
@@ -774,28 +790,36 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType), discardMissing));
                         }
                         case ID_CC_VECTOR: {
+                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Vector(len), discardMissing));
                         }
                         case ID_CC_STACK: {
+                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Stack(), discardMissing));
                         }
                         case ID_CC_ARRAY_DEQUE: {
+                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len), discardMissing));
                         }
 
                         case ID_CC_HASH_MAP: {
+                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new HashMap(len), discardMissing));
                         }
                         case ID_CC_HASHTABLE: {
+                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new Hashtable(len), discardMissing));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
+                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                             return replace(readMapData(unshared, -1, len, new IdentityHashMap(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
+                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new LinkedHashMap(len), discardMissing));
                         }
                         case ID_CC_TREE_MAP: {
+                            // no filter check?
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");

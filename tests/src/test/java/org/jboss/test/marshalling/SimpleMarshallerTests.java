@@ -3704,22 +3704,22 @@ public final class SimpleMarshallerTests extends TestBase {
             this.filterSpec = filterSpec;
         }
         @Override
-        public void configureRead(MarshallingConfiguration configuration) throws Throwable {
+        public void configure(MarshallingConfiguration configuration) throws Throwable {
             configuration.setUnmarshallingFilter(UnmarshallingFilter.Factory.createFilter(filterSpec));
         }
 
         @Override
         public void runRead(Unmarshaller unmarshaller) throws Throwable {
-            if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
+            /*if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
                 System.err.println("is you passed ? ?????????????? ");
                 throw new SkipException("Test not relevant for " + unmarshaller);
-            }
+            }*/
             try {
                 unmarshaller.readObject();
                 fail("Should fail with InvalidClassException " + unmarshaller.getClass().getSimpleName() + ", filterSpec: " + filterSpec);
             } catch (InvalidClassException e) {
-                fail("Which passes: let me see see: " + filterSpec);
-                //ok
+//                fail("Which passes: let me see see: " + filterSpec);
+                // expected
             }
         }
     }
@@ -3734,6 +3734,21 @@ public final class SimpleMarshallerTests extends TestBase {
         runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxarray=" + max) {
             public void runWrite(final Marshaller marshaller) throws Throwable {
                 marshaller.writeObject(map);
+            }
+        });
+    }
+
+
+    @Test(description = "JBMAR-193 - maxarray")
+    public void testUnmarshallingFilterMaxArray2() throws Throwable {
+        final ArrayList<Integer> list = new ArrayList<>();
+        final long real = 200, max = 100;
+        for (int i = 0; i < real; i++) {
+            list.add(i);
+        }
+        runReadWriteTest(new UnmarshallingFilterFailReadWriteTest("maxarray=" + max) {
+            public void runWrite(final Marshaller marshaller) throws Throwable {
+                marshaller.writeObject(list);
             }
         });
     }

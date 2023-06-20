@@ -132,6 +132,10 @@ public final class SimpleMarshallerTestFactory {
 
     @Factory(dataProvider = "baseProvider")
     public Object[] getTests(TestMarshallerProvider testMarshallerProvider, TestUnmarshallerProvider testUnmarshallerProvider, MarshallingConfiguration configuration) {
-        return new Object[] { new SimpleMarshallerTests(testMarshallerProvider, testUnmarshallerProvider, configuration), new OtherMarshallerTests(testMarshallerProvider, testUnmarshallerProvider, configuration) };
+        return new Object[] {
+                new SimpleMarshallerTests(testMarshallerProvider, testUnmarshallerProvider, configuration),
+                new OtherMarshallerTests(testMarshallerProvider, testUnmarshallerProvider, configuration),
+                new SerialFilterMarshallerTests(testMarshallerProvider, testUnmarshallerProvider, configuration)
+        };
     }
 }

@@ -49,4 +49,9 @@ public class MarshallerFactoryTestMarshallerProvider implements TestMarshallerPr
         marshaller.start(target);
         return marshaller;
     }
+
+    @Override
+    public String toString() {
+        return marshallerFactory.getClass().getSimpleName() + " version " + version;
+    }
 }

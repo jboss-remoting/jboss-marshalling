@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -100,6 +99,9 @@ public final class SimpleMarshallerTests extends TestBase {
         super(new MarshallerFactoryTestMarshallerProvider(new RiverMarshallerFactory(), 4),
               new MarshallerFactoryTestUnmarshallerProvider(new RiverMarshallerFactory(), 4),
               getOneTestMarshallingConfiguration());
+        /*super(new MarshallerFactoryTestMarshallerProvider(new SerialMarshallerFactory(), 5),
+                new MarshallerFactoryTestUnmarshallerProvider(new SerialMarshallerFactory(), 5),
+                getOneTestMarshallingConfiguration());*/
     }
 
     private static MarshallingConfiguration getOneTestMarshallingConfiguration() {
@@ -3697,7 +3699,7 @@ public final class SimpleMarshallerTests extends TestBase {
         });
     }
 
-    private static class UnmarshallingFilterFailReadWriteTest extends ReadWriteTest {
+    private class UnmarshallingFilterFailReadWriteTest extends ReadWriteTest {
         private final String filterSpec;
         UnmarshallingFilterFailReadWriteTest(final String filterSpec) {
             super();
@@ -3710,15 +3712,14 @@ public final class SimpleMarshallerTests extends TestBase {
 
         @Override
         public void runRead(Unmarshaller unmarshaller) throws Throwable {
-            /*if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
-                System.err.println("is you passed ? ?????????????? ");
+            if (unmarshaller instanceof ObjectInputStreamUnmarshaller) {
                 throw new SkipException("Test not relevant for " + unmarshaller);
-            }*/
+            }
             try {
                 unmarshaller.readObject();
-                fail("Should fail with InvalidClassException " + unmarshaller.getClass().getSimpleName() + ", filterSpec: " + filterSpec);
+                fail(String.format("Payload should have been rejected by filter spec %s. [%s, %s, %s]",
+                        filterSpec, testMarshallerProvider, testUnmarshallerProvider, configuration));
             } catch (InvalidClassException e) {
-//                fail("Which passes: let me see see: " + filterSpec);
                 // expected
             }
         }

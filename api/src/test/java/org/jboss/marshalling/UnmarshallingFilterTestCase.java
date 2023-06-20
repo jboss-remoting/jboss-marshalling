@@ -3,11 +3,13 @@ package org.jboss.marshalling;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.io.ObjectInputFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 
+/**
+ * Tests UnmarshallingFilter API.
+ */
 public class UnmarshallingFilterTestCase {
 
     private static final String SERIAL_FILTER_PROP = "jdk.serialFilter";
@@ -28,12 +30,12 @@ public class UnmarshallingFilterTestCase {
      * TODO: This only compiles on JDK 9+.
      * TODO: Process-wide filter can only be set once.
      */
-    @Test
-    public void testDefaultFilterAPI() {
+    //@Test
+    /*public void testDefaultFilterAPI() {
         ObjectInputFilter.Config.setSerialFilter(ObjectInputFilter.Config.createFilter(SERIAL_FILTER_PATTERN));
         UnmarshallingFilter defaultFilter = UnmarshallingFilter.Factory.createJEPS290DefaultFilter(false);
         assertions(defaultFilter);
-    }
+    }*/
 
     private void assertions(UnmarshallingFilter filter) {
         // class matching

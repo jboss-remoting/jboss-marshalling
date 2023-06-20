@@ -49,4 +49,9 @@ public final class MarshallerFactoryTestUnmarshallerProvider implements TestUnma
         unmarshaller.start(source);
         return unmarshaller;
     }
+
+    @Override
+    public String toString() {
+        return marshallerFactory.getClass().getSimpleName() + " version " + version;
+    }
 }

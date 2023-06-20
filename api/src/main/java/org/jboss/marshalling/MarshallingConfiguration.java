@@ -338,7 +338,7 @@ public final class MarshallingConfiguration implements Cloneable {
 
     public String toString() {
         final StringBuilder builder = new StringBuilder();
-        builder.append(super.toString()).append(": ");
+        builder.append(getClass().getSimpleName()).append(": ");
         if (classExternalizerFactory != null) {
             builder.append("classExternalizerFactory=<").append(classExternalizerFactory.toString()).append("> ");
         }

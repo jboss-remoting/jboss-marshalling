@@ -157,13 +157,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final PrivilegedExceptionAction<RiverObjectInputStream> createObjectInputStreamAction = new PrivilegedExceptionAction<RiverObjectInputStream>() {
         public RiverObjectInputStream run() throws IOException {
             RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
-            if (unmarshallingFilter != null) {
-                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
-                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
-                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
-                // possible to implement filtering purely on the JBoss Marshalling side.
-                riverObjectInputStream.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
-            }
+            // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+            // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+            // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+            // possible to implement filtering purely on the JBoss Marshalling side.
+            setObjectInputStreamFilter(riverObjectInputStream, unmarshallingFilter);
             return riverObjectInputStream;
         }
     };
@@ -176,13 +174,11 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         if (getSecurityManager() == null) {
             RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
-            if (unmarshallingFilter != null) {
-                // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
-                // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
-                // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
-                // possible to implement filtering purely on the JBoss Marshalling side.
-                riverObjectInputStream.setObjectInputFilter(ObjectInputFilter.Config.createFilter("maxarray=20;maxdepth=20")); // TODO: hardcoded example
-            }
+            // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+            // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+            // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+            // possible to implement filtering purely on the JBoss Marshalling side.
+            setObjectInputStreamFilter(riverObjectInputStream, unmarshallingFilter);
             return riverObjectInputStream;
         } else {
             try {
@@ -344,7 +340,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     final ArrayList<Object> instanceCache = this.instanceCache;
                     final int idx = instanceCache.size();
-                    final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte(), true).getType(), 0);
+                    Class<?> componentType = doReadClassDescriptor(readUnsignedByte(), true).getType();
+                    filterCheck(componentType, 0, depth, totalRefs, totalBytesRead);
+                    final Object obj = Array.newInstance(componentType, 0);
                     instanceCache.add(obj);
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
@@ -388,30 +386,39 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return objectTable.readObject(this);
                 }
                 case ID_BOOLEAN_OBJECT_TRUE: {
+                    filterCheck(Boolean.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Boolean.TRUE));
                 }
                 case ID_BOOLEAN_OBJECT_FALSE: {
+                    filterCheck(Boolean.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Boolean.FALSE));
                 }
                 case ID_BYTE_OBJECT: {
+                    filterCheck(Byte.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Byte.valueOf(readByte())));
                 }
                 case ID_SHORT_OBJECT: {
+                    filterCheck(Short.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Short.valueOf(readShort())));
                 }
                 case ID_INTEGER_OBJECT: {
+                    filterCheck(Integer.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Integer.valueOf(readInt())));
                 }
                 case ID_LONG_OBJECT: {
+                    filterCheck(Long.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Long.valueOf(readLong())));
                 }
                 case ID_FLOAT_OBJECT: {
+                    filterCheck(Float.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Float.valueOf(readFloat())));
                 }
                 case ID_DOUBLE_OBJECT: {
+                    filterCheck(Double.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Double.valueOf(readDouble())));
                 }
                 case ID_CHARACTER_OBJECT: {
+                    filterCheck(Character.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Character.valueOf(readChar())));
                 }
                 case ID_PRIM_BYTE: {
@@ -758,27 +765,29 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             throw new IllegalStateException();
                         }
                     }
-//                    filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
-                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
+                            filterCheck(ArrayList.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayList(len), discardMissing));
                         }
                         case ID_CC_HASH_SET: {
-                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
+                            filterCheck(HashSet.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: length should be the nearest higher factor of 2, see HashMap#tableSizeFor()
                             return replace(readCollectionData(unshared, -1, len, new HashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_SET: {
-                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
+                            filterCheck(LinkedHashSet.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: length should be the nearest higher factor of 2, see HashMap#tableSizeFor()
                             return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_LIST: {
-                            // no filter check?
+                            filterCheck(LinkedList.class, -1, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new LinkedList(), discardMissing));
                         }
                         case ID_CC_TREE_SET: {
-                            // no filter check?
+                            filterCheck(TreeSet.class, -1, depth, totalRefs, totalBytesRead);
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
@@ -790,36 +799,43 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType), discardMissing));
                         }
                         case ID_CC_VECTOR: {
-                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
+                            filterCheck(Vector.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Vector(len), discardMissing));
                         }
                         case ID_CC_STACK: {
-                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
+                            filterCheck(Stack.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Stack(), discardMissing));
                         }
                         case ID_CC_ARRAY_DEQUE: {
-                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
+                            filterCheck(ArrayDeque.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len), discardMissing));
                         }
 
                         case ID_CC_HASH_MAP: {
-                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
+                            filterCheck(HashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new HashMap(len), discardMissing));
                         }
                         case ID_CC_HASHTABLE: {
-                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
+                            filterCheck(Hashtable.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new Hashtable(len), discardMissing));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
-                            filterCheck(Object[].class, len, depth, totalRefs, totalBytesRead);
+                            filterCheck(IdentityHashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readMapData(unshared, -1, len, new IdentityHashMap(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
-                            filterCheck(Map.Entry[].class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
+                            filterCheck(LinkedHashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new LinkedHashMap(len), discardMissing));
                         }
                         case ID_CC_TREE_MAP: {
-                            // no filter check?
+                            filterCheck(TreeMap.class, -1, depth, totalRefs, totalBytesRead);
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
@@ -830,6 +846,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             instanceCache.add(UNRESOLVED);
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
+                            filterCheck(EnumMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, elementType.getEnumConstants().length, depth, totalRefs, totalBytesRead);
                             return replace(readMapData(unshared, idx, len, new EnumMap(elementType), discardMissing));
                         }
                         case ID_CC_NCOPIES: {
@@ -1600,6 +1618,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadDoubleArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(double.class, cnt, depth, totalRefs, totalBytesRead);
         final double[] array = new double[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readDouble();
@@ -1610,6 +1629,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadFloatArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(float.class, cnt, depth, totalRefs, totalBytesRead);
         final float[] array = new float[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readFloat();
@@ -1620,6 +1640,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadCharArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(char.class, cnt, depth, totalRefs, totalBytesRead);
         final char[] array = new char[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readChar();
@@ -1630,6 +1651,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadLongArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(long.class, cnt, depth, totalRefs, totalBytesRead);
         final long[] array = new long[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readLong();
@@ -1640,6 +1662,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadIntArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(int.class, cnt, depth, totalRefs, totalBytesRead);
         final int[] array = new int[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readInt();
@@ -1650,6 +1673,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadShortArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(short.class, cnt, depth, totalRefs, totalBytesRead);
         final short[] array = new short[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readShort();
@@ -1660,6 +1684,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadByteArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(byte.class, cnt, depth, totalRefs, totalBytesRead);
         final byte[] array = new byte[cnt];
         readFully(array, 0, array.length);
         final Object resolvedObject = objectResolver.readResolve(array);
@@ -1668,6 +1693,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadBooleanArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(boolean.class, cnt, depth, totalRefs, totalBytesRead);
         final boolean[] array = new boolean[cnt];
         int v;
         int bc = cnt & ~7;

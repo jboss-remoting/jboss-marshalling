@@ -22,6 +22,8 @@ import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 import static sun.reflect.ReflectionFactory.getReflectionFactory;
 
+import java.io.ObjectInputFilter;
+import java.io.ObjectInputStream;
 import java.io.OptionalDataException;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
@@ -82,5 +84,65 @@ final class JDKSpecific {
 
     static Class<?> getMyCaller() {
         return stackWalker.walk(callerFinder);
+    }
+
+    static class ObjectInputFilterAdapter implements ObjectInputFilter {
+
+        private final UnmarshallingFilter unmarshallingFilter;
+
+        public ObjectInputFilterAdapter(UnmarshallingFilter unmarshallingFilter) {
+            this.unmarshallingFilter = unmarshallingFilter;
+        }
+
+        @Override
+        public Status checkInput(final FilterInfo filterInfo) {
+            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new UnmarshallingFilter.FilterInput() {
+                @Override
+                public Class<?> getUnmarshalledClass() {
+                    return filterInfo.serialClass();
+                }
+
+                @Override
+                public long getArrayLength() {
+                    return filterInfo.arrayLength();
+                }
+
+                @Override
+                public long getDepth() {
+                    return filterInfo.depth();
+                }
+
+                @Override
+                public long getReferences() {
+                    return filterInfo.references();
+                }
+
+                @Override
+                public long getStreamBytes() {
+                    return filterInfo.streamBytes();
+                }
+            });
+            return toObjectInputFilterStatus(response);
+        }
+
+        private ObjectInputFilter.Status toObjectInputFilterStatus(UnmarshallingFilter.FilterResponse response) {
+            ObjectInputFilter.Status status = null;
+            switch (response) {
+                case ACCEPT:
+                    status = ObjectInputFilter.Status.ALLOWED;
+                    break;
+                case REJECT:
+                    status = ObjectInputFilter.Status.REJECTED;
+                    break;
+                case UNDECIDED:
+                    status = ObjectInputFilter.Status.UNDECIDED;
+                    break;
+            }
+            return status;
+        }
+    }
+
+    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+        ois.setObjectInputFilter(new JDKSpecific.ObjectInputFilterAdapter(filter));
     }
 }

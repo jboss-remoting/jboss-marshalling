@@ -20,6 +20,7 @@ package org.jboss.marshalling;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -114,6 +115,10 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
                 throw new InvalidClassException(String.format("Filtering rejected %s", input));
             }
         }
+    }
+
+    protected static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+        JDKSpecific.setObjectInputStreamFilter(ois, filter);
     }
 
     private static class FilterInputImpl implements UnmarshallingFilter.FilterInput {

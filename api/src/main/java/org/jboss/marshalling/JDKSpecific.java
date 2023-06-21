@@ -21,6 +21,7 @@ package org.jboss.marshalling;
 import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 
+import java.io.ObjectInputStream;
 import java.io.OptionalDataException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -121,5 +122,53 @@ final class JDKSpecific {
                 return super.getClassContext();
             }
         }
+    }
+
+    /*static class ObjectInputFilterAdapter implements ObjectInputFilter {
+
+        private UnmarshallingFilter unmarshallingFilter;
+
+        public ObjectInputFilterAdapter(UnmarshallingFilter unmarshallingFilter) {
+            this.unmarshallingFilter = unmarshallingFilter;
+        }
+
+        @Override
+        public Status checkInput(final ObjectInputFilter.FilterInfo filterInfo) {
+            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new UnmarshallingFilter.FilterInput() {
+                @Override
+                public Class<?> getUnmarshalledClass() {
+                    return filterInfo.serialClass();
+                }
+
+                @Override
+                public long getArrayLength() {
+                    return filterInfo.arrayLength();
+                }
+
+                @Override
+                public long getDepth() {
+                    return filterInfo.depth();
+                }
+
+                @Override
+                public long getReferences() {
+                    return filterInfo.references();
+                }
+
+                @Override
+                public long getStreamBytes() {
+                    return filterInfo.streamBytes();
+                }
+            });
+            return toObjectInputFilterStatus(response);
+        }
+
+    }*/
+
+    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+        throw new UnsupportedOperationException();
+        /*if (filter != null) {
+            ObjectInputFilter.Config.setObjectInputFilter(ois, new JDKSpecific.ObjectInputFilterAdapter(filter));
+        }*/
     }
 }

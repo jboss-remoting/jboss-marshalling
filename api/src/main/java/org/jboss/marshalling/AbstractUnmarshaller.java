@@ -122,6 +122,15 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         }
     }
 
+    /**
+     * Creates an ObjectInputFilter adapter to given UnmarshallingFilter, and sets the filter to given
+     * ObjectInputStream.
+     * <p>
+     * This essentially delegates the filtering functionality to underlying ObjectInputStream.
+     *
+     * @param ois ObjectInputStream instance to set the filter to.
+     * @param filter UnmarshallingFilter instance to delegate filtering decisions to.
+     */
     protected static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
         ois.setObjectInputFilter(new ObjectInputFilterAdapter(filter));
     }

@@ -24,12 +24,24 @@ import static java.security.AccessController.doPrivileged;
 import java.io.ObjectInputStream;
 import java.io.OptionalDataException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  */
+@SuppressWarnings("rawtypes")
 final class JDKSpecific {
+
+    private static final Logger LOG = Logger.getLogger(JDKSpecific.class.getName());
 
     private JDKSpecific() {}
 
@@ -124,51 +136,103 @@ final class JDKSpecific {
         }
     }
 
-    /*static class ObjectInputFilterAdapter implements ObjectInputFilter {
+    /**
+     * Creates an ObjectInputFilter adapter to given UnmarshallingFilter, and sets the filter to given
+     * ObjectInputStream.
+     * <p>
+     * This essentially delegates the filtering functionality to underlying ObjectInputStream.
+     *
+     * @param ois ObjectInputStream instance to set the filter to.
+     * @param delegate UnmarshallingFilter instance to delegate filtering decisions to.
+     */
+    static void setObjectInputStreamFilter(final ObjectInputStream ois, final UnmarshallingFilter delegate) {
+        try {
+            // These classes are only available in JDK 8, should be available via the boostrap class loader.
+            Class<?> _ObjectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
+            Class<?> _FilterInfo = Class.forName("sun.misc.ObjectInputFilter$FilterInfo");
+            @SuppressWarnings("unchecked")
+            Class<Enum> _Status = (Class<Enum>) Class.forName("sun.misc.ObjectInputFilter$Status");
+            Class<?> _Config = Class.forName("sun.misc.ObjectInputFilter$Config");
 
-        private UnmarshallingFilter unmarshallingFilter;
-
-        public ObjectInputFilterAdapter(UnmarshallingFilter unmarshallingFilter) {
-            this.unmarshallingFilter = unmarshallingFilter;
-        }
-
-        @Override
-        public Status checkInput(final ObjectInputFilter.FilterInfo filterInfo) {
-            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new UnmarshallingFilter.FilterInput() {
+            // Create an ObjectInputFilter instance proxy
+            Object objectInputFilterProxy = Proxy.newProxyInstance(null, new Class[]{_ObjectInputFilter}, new InvocationHandler() {
                 @Override
-                public Class<?> getUnmarshalledClass() {
-                    return filterInfo.serialClass();
-                }
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    // This handles invocation of the ObjectInputFilter.checkInput(FilterInfo) method
 
-                @Override
-                public long getArrayLength() {
-                    return filterInfo.arrayLength();
-                }
+                    assert "checkInput".equals(method.getName());
+                    assert args.length == 1 && args[0] != null;
+                    assert "sun.misc.ObjectInputFilter$FilterInfo".equals(args[0].getClass().getName());
+                    Object filterInfo = args[0];
 
-                @Override
-                public long getDepth() {
-                    return filterInfo.depth();
-                }
+                    // Getters of the FilterInfo class
+                    Method _serialClass = _FilterInfo.getMethod("serialClass");
+                    Method _arrayLength = _FilterInfo.getMethod("arrayLength");
+                    Method _depth = _FilterInfo.getMethod("depth");
+                    Method _references = _FilterInfo.getMethod("references");
+                    Method _streamBytes = _FilterInfo.getMethod("streamBytes");
 
-                @Override
-                public long getReferences() {
-                    return filterInfo.references();
-                }
+                    // Obtain the values from the FilterInfo instance
+                    final Class<?> serialClass = (Class<?>) _serialClass.invoke(filterInfo);
+                    final long arrayLength = (long) _arrayLength.invoke(filterInfo);
+                    final long depth = (long) _depth.invoke(filterInfo);
+                    final long references = (long) _references.invoke(filterInfo);
+                    final long streamBytes = (long) _streamBytes.invoke(filterInfo);
 
-                @Override
-                public long getStreamBytes() {
-                    return filterInfo.streamBytes();
+                    // Call the delegate UnmarshallingFilter to make a filtering decision
+                    UnmarshallingFilter.FilterResponse response = delegate.checkInput(new UnmarshallingFilter.FilterInput() {
+                        @Override
+                        public Class<?> getUnmarshalledClass() {
+                            return serialClass;
+                        }
+
+                        @Override
+                        public long getArrayLength() {
+                            return arrayLength;
+                        }
+
+                        @Override
+                        public long getDepth() {
+                            return depth;
+                        }
+
+                        @Override
+                        public long getReferences() {
+                            return references;
+                        }
+
+                        @Override
+                        public long getStreamBytes() {
+                            return streamBytes;
+                        }
+                    });
+
+                    // Convert result UnmarshallingFilter.FilterResponse to ObjectInputFilter.Status and return it
+                    Map<String, Enum> statusMap = Arrays.stream((_Status.getEnumConstants()))
+                            .collect(Collectors.toMap(Enum::name, c -> c));
+                    Function<String, Enum> absentExceptionSupplier = name -> {
+                        throw new IllegalStateException(String.format("Failed to map FilterResponse %s to ObjectInputFilter.Status", name));
+                    };
+                    switch (response) {
+                        case ACCEPT:
+                            return statusMap.computeIfAbsent("ALLOWED", absentExceptionSupplier);
+                        case REJECT:
+                            return statusMap.computeIfAbsent("REJECTED", absentExceptionSupplier);
+                        case UNDECIDED:
+                            return statusMap.computeIfAbsent("UNDECIDED", absentExceptionSupplier);
+                        default:
+                            throw new IllegalStateException("Unexpected unmarshalling filter result: " + response);
+                    }
                 }
             });
-            return toObjectInputFilterStatus(response);
+
+            // Call ObjectInputFilter.Config.setObjectInputFilter(ois, objectInputFilterProxy)
+            if (delegate != null) {
+                Method _setObjectInputFilter = _Config.getMethod("setObjectInputFilter", ObjectInputStream.class, _ObjectInputFilter);
+                _setObjectInputFilter.invoke(null, ois, objectInputFilterProxy);
+            }
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, e, () -> "Unmarshaller failed to set ObjectInputFilter to underlying ObjectInputStream.");
         }
-
-    }*/
-
-    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
-        throw new UnsupportedOperationException();
-        /*if (filter != null) {
-            ObjectInputFilter.Config.setObjectInputFilter(ois, new JDKSpecific.ObjectInputFilterAdapter(filter));
-        }*/
     }
 }

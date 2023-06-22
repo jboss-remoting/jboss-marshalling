@@ -28,6 +28,7 @@ import java.io.OptionalDataException;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import sun.reflect.ReflectionFactory;
@@ -35,6 +36,9 @@ import sun.reflect.ReflectionFactory;
 /**
  */
 final class JDKSpecific {
+
+    private static final Logger LOG = Logger.getLogger(JDKSpecific.class.getName());
+
     private JDKSpecific() {}
 
     private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
@@ -86,7 +90,10 @@ final class JDKSpecific {
         return stackWalker.walk(callerFinder);
     }
 
-    static class ObjectInputFilterAdapter implements ObjectInputFilter {
+    /**
+     * An adapter that allows to use an UnmarshallingFilter in place of an ObjectInputFilter.
+     */
+    private static class ObjectInputFilterAdapter implements ObjectInputFilter {
 
         private final UnmarshallingFilter unmarshallingFilter;
 
@@ -125,6 +132,9 @@ final class JDKSpecific {
             return toObjectInputFilterStatus(response);
         }
 
+        /**
+         * Converts an UnmarshallingFilter.FilterResponse instance into an ObjectInputFilter.Status instance.
+         */
         private ObjectInputFilter.Status toObjectInputFilterStatus(UnmarshallingFilter.FilterResponse response) {
             ObjectInputFilter.Status status = null;
             switch (response) {
@@ -142,7 +152,17 @@ final class JDKSpecific {
         }
     }
 
+    /**
+     * Creates an ObjectInputFilter adapter to given UnmarshallingFilter, and sets the filter to given
+     * ObjectInputStream.
+     * <p>
+     * This essentially delegates the filtering functionality to underlying ObjectInputStream.
+     *
+     * @param ois ObjectInputStream instance to set the filter to.
+     * @param filter UnmarshallingFilter instance to delegate filtering decisions to.
+     */
     static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+        LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
         ois.setObjectInputFilter(new JDKSpecific.ObjectInputFilterAdapter(filter));
     }
 }

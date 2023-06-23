@@ -237,9 +237,9 @@ final class JDKSpecific {
     }
 
     /**
-     * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
+     * Returns an adapter instance for the static JVM-wide deserialization filter (set via `-DserialFilter=...`) or null.
      */
-    static UnmarshallingFilter getStaticJvmWideSerialFilter() {
+    static UnmarshallingFilter getJEPS290ProcessWideFilter() {
         try {
             Class<?> _ObjectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
             Class<?> _Config = Class.forName("sun.misc.ObjectInputFilter$Config");
@@ -262,7 +262,7 @@ final class JDKSpecific {
                     Object filterInfo = Proxy.newProxyInstance(null, new Class[]{_FilterInfo}, new InvocationHandler() {
                         @Override
                         public Object invoke(Object proxy, Method method, Object[] args) {
-                            assert args.length == 0;
+                            assert args == null || args.length == 0;
 
                             switch (method.getName()) {
                                 case "serialClass":

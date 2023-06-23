@@ -208,7 +208,7 @@ final class JDKSpecific {
     /**
      * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
      */
-    static UnmarshallingFilter getStaticJvmWideSerialFilter() {
+    static UnmarshallingFilter getJEPS290ProcessWideFilter() {
         ObjectInputFilter serialFilter = ObjectInputFilter.Config.getSerialFilter();
         if (serialFilter != null) {
             return new UnmarshallingFilterAdapter(serialFilter);

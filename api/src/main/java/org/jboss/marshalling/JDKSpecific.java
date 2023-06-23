@@ -235,4 +235,72 @@ final class JDKSpecific {
             LOG.log(Level.WARNING, e, () -> "Unmarshaller failed to set ObjectInputFilter to underlying ObjectInputStream.");
         }
     }
+
+    /**
+     * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
+     */
+    static UnmarshallingFilter getStaticJvmWideSerialFilter() {
+        try {
+            Class<?> _ObjectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
+            Class<?> _Config = Class.forName("sun.misc.ObjectInputFilter$Config");
+            Class<?> _FilterInfo = Class.forName("sun.misc.ObjectInputFilter$FilterInfo");
+
+            Method _getSerialFilter = _Config.getMethod("getSerialFilter");
+            Method _checkInput = _ObjectInputFilter.getMethod("checkInput", _FilterInfo);
+
+            // Call sun.misc.ObjectInputFilter.Config.getSerialFilter() to obtain a JVM-wide serial filter
+            Object serialFilter = _getSerialFilter.invoke(null);
+            // If serial filter is null, return null
+            if (serialFilter == null) {
+                return null;
+            }
+            // Return an UnmarshallingFilter instance that delegate decisions to retrieved JVM-wise serial filter
+            return new UnmarshallingFilter() {
+                @Override
+                public FilterResponse checkInput(final FilterInput input) {
+                    // Create a FilterInfo proxy instance, which hands over values from given FilterInfo instance
+                    Object filterInfo = Proxy.newProxyInstance(null, new Class[]{_FilterInfo}, new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) {
+                            assert args.length == 0;
+
+                            switch (method.getName()) {
+                                case "serialClass":
+                                    return input.getUnmarshalledClass();
+                                case "arrayLength":
+                                    return input.getArrayLength();
+                                case "depth":
+                                    return input.getDepth();
+                                case "references":
+                                    return input.getReferences();
+                                case "streamBytes":
+                                    return input.getStreamBytes();
+                            }
+                            throw new IllegalStateException("Unknown method " + method.getName());
+                        }
+                    });
+
+                    try {
+                        // Call JVM-wise serial filter to make a filtering decision
+                        Enum status = (Enum) _checkInput.invoke(serialFilter, filterInfo);
+                        // Convert result to a FilterResponse enum
+                        switch (status.name()) {
+                            case "ALLOWED":
+                                return FilterResponse.ACCEPT;
+                            case "REJECTED":
+                                return FilterResponse.REJECT;
+                            case "UNDECIDED":
+                                return FilterResponse.UNDECIDED;
+                        }
+                        throw new IllegalStateException("Unexpected filtering decision: " + status);
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Failed to build adapter for the static JVM-wide deserialization filter.", e);
+            return null;
+        }
+    }
 }

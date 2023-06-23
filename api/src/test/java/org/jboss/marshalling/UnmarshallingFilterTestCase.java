@@ -1,8 +1,10 @@
 package org.jboss.marshalling;
 
+import org.jboss.marshalling.cloner.DateFieldType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -12,32 +14,12 @@ import java.util.Hashtable;
  */
 public class UnmarshallingFilterTestCase {
 
-    private static final String SERIAL_FILTER_PROP = "jdk.serialFilter";
     private static final String SERIAL_FILTER_PATTERN = "java.util.ArrayList;!java.util.HashMap;maxarray=10;maxdepth=10;maxrefs=10;maxbytes=10";
 
     @Test
-    public void testDefaultFilterSystemProperty() {
-        try {
-            System.setProperty(SERIAL_FILTER_PROP, SERIAL_FILTER_PATTERN);
-            UnmarshallingFilter defaultFilter = UnmarshallingFilter.Factory.createJEPS290DefaultFilter(false);
-            assertions(defaultFilter);
-        } finally {
-            System.clearProperty(SERIAL_FILTER_PROP);
-        }
-    }
+    public void testFilter() {
+        UnmarshallingFilter filter = UnmarshallingFilter.Factory.createFilter(SERIAL_FILTER_PATTERN);
 
-    /**
-     * TODO: This only compiles on JDK 9+.
-     * TODO: Process-wide filter can only be set once.
-     */
-    //@Test
-    /*public void testDefaultFilterAPI() {
-        ObjectInputFilter.Config.setSerialFilter(ObjectInputFilter.Config.createFilter(SERIAL_FILTER_PATTERN));
-        UnmarshallingFilter defaultFilter = UnmarshallingFilter.Factory.createJEPS290DefaultFilter(false);
-        assertions(defaultFilter);
-    }*/
-
-    private void assertions(UnmarshallingFilter filter) {
         // class matching
         Assert.assertEquals(filter.checkInput(new TestFilterInput(ArrayList.class, 10, 10, 10, 10)),
                 UnmarshallingFilter.FilterResponse.ACCEPT);
@@ -59,6 +41,52 @@ public class UnmarshallingFilterTestCase {
         // accepting filter before rejecting filters
         Assert.assertEquals(filter.checkInput(new TestFilterInput(ArrayList.class, 11, 11, 11, 11)),
                 UnmarshallingFilter.FilterResponse.ACCEPT);
+    }
+
+    @Test
+    public void testWildcard() {
+        UnmarshallingFilter filter = UnmarshallingFilter.Factory.createFilter("java.util.*;!org.jboss.marshalling.*");
+
+        // accepts java.util.*
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(ArrayList.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.ACCEPT);
+        // undecided on java.lang.Integer, not mentioned in the filter
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(Integer.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.UNDECIDED);
+        // rejects org.jboss.marshalling.*
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(TestClass.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.REJECT);
+        // undecided on org.jboss.marshalling.cloner.DateFieldType, which is in nested package not mentioned in the filter
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(DateFieldType.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.UNDECIDED);
+    }
+
+    @Test
+    public void testNestingWildcard() {
+        UnmarshallingFilter filter = UnmarshallingFilter.Factory.createFilter("!org.jboss.marshalling.**");
+
+        // undecided on java.lang.Integer, not mentioned in the filter
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(Integer.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.UNDECIDED);
+        // rejects everything under org.jboss.marshalling.**
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(TestClass.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.REJECT);
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(DateFieldType.class, -1, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.REJECT);
+    }
+
+    @Test
+    public void testInvalidFilters() {
+        assertInvalid("org.jboss.marshalling.***");
+        assertInvalid("modulename/org.jboss.marshalling.***");
+        assertInvalid("maxarray=1=1");
+    }
+
+    private void assertInvalid(String spec) {
+        try {
+            UnmarshallingFilter.Factory.createFilter(spec);
+            Assert.fail("Filter creation was expected to fail: " + spec);
+        } catch (IllegalArgumentException expected) {}
     }
 
     static class TestFilterInput implements UnmarshallingFilter.FilterInput {
@@ -101,5 +129,8 @@ public class UnmarshallingFilterTestCase {
         public long getStreamBytes() {
             return streamBytes;
         }
+    }
+
+    static class TestClass implements Serializable {
     }
 }

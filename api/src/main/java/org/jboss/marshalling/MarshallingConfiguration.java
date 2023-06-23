@@ -337,7 +337,7 @@ public final class MarshallingConfiguration implements Cloneable {
         }
 
         if (!Boolean.parseBoolean(property)) {
-            return JDKSpecific.getStaticJvmWideSerialFilter();
+            return JDKSpecific.getJEPS290ProcessWideFilter();
         }
         return null;
     }

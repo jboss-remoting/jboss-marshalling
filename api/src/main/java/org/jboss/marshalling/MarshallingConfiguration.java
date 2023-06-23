@@ -338,7 +338,7 @@ public final class MarshallingConfiguration implements Cloneable {
         }
 
         if (!Boolean.parseBoolean(property)) {
-            return getStaticJvmWideSerialFilter();
+            return getJEPS290ProcessWideFilter();
         }
         return null;
     }
@@ -346,7 +346,7 @@ public final class MarshallingConfiguration implements Cloneable {
     /**
      * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
      */
-    private static UnmarshallingFilter getStaticJvmWideSerialFilter() {
+    static UnmarshallingFilter getJEPS290ProcessWideFilter() {
         ObjectInputFilter serialFilter = ObjectInputFilter.Config.getSerialFilter();
         if (serialFilter != null) {
             return new UnmarshallingFilterAdapter(serialFilter);

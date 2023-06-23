@@ -18,11 +18,16 @@
 
 package org.jboss.marshalling;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A Marshaller configuration.
  * @apiviz.landmark
  */
 public final class MarshallingConfiguration implements Cloneable {
+
+    private static final String IGNORE_STATIC_JVM_SERIAL_FILTER_PROPERTY = "org.jboss.marshalling.ignore-static-jvm-serial-filter";
 
     private ClassExternalizerFactory classExternalizerFactory;
     private StreamHeader streamHeader;
@@ -45,6 +50,7 @@ public final class MarshallingConfiguration implements Cloneable {
      * Construct a new instance.
      */
     public MarshallingConfiguration() {
+        unmarshallingFilter = createDefaultUnmarshallingFilter();
     }
 
     /**
@@ -150,7 +156,7 @@ public final class MarshallingConfiguration implements Cloneable {
      * Set the object pre resolver, or {@code null} to use none.
      * Invoked before user replacement and global object resolver
      *
-     * @param objectResolver the object resolver
+     * @param objectPreResolver the object resolver
      */
     public void setObjectPreResolver(final ObjectResolver objectPreResolver) {
         this.objectPreResolver = objectPreResolver;
@@ -320,6 +326,20 @@ public final class MarshallingConfiguration implements Cloneable {
      */
     public void setUnmarshallingFilter(UnmarshallingFilter unmarshallingFilter) {
         this.unmarshallingFilter = unmarshallingFilter;
+    }
+
+    private UnmarshallingFilter createDefaultUnmarshallingFilter() {
+        String property;
+        if (System.getSecurityManager() == null) {
+            property = System.getProperty(IGNORE_STATIC_JVM_SERIAL_FILTER_PROPERTY);
+        } else {
+            property = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(IGNORE_STATIC_JVM_SERIAL_FILTER_PROPERTY));
+        }
+
+        if (!Boolean.parseBoolean(property)) {
+            return JDKSpecific.getStaticJvmWideSerialFilter();
+        }
+        return null;
     }
 
     /**

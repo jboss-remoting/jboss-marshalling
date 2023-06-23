@@ -129,26 +129,65 @@ final class JDKSpecific {
                     return filterInfo.streamBytes();
                 }
             });
-            return toObjectInputFilterStatus(response);
-        }
 
-        /**
-         * Converts an UnmarshallingFilter.FilterResponse instance into an ObjectInputFilter.Status instance.
-         */
-        private ObjectInputFilter.Status toObjectInputFilterStatus(UnmarshallingFilter.FilterResponse response) {
-            ObjectInputFilter.Status status = null;
             switch (response) {
                 case ACCEPT:
-                    status = ObjectInputFilter.Status.ALLOWED;
-                    break;
+                    return Status.ALLOWED;
                 case REJECT:
-                    status = ObjectInputFilter.Status.REJECTED;
-                    break;
+                    return Status.REJECTED;
                 case UNDECIDED:
-                    status = ObjectInputFilter.Status.UNDECIDED;
-                    break;
+                    return Status.UNDECIDED;
             }
-            return status;
+            throw new IllegalStateException("Unexpected filtering decision: " + response);
+        }
+    }
+
+    private static class UnmarshallingFilterAdapter implements UnmarshallingFilter {
+
+        private final ObjectInputFilter delegate;
+
+        public UnmarshallingFilterAdapter(ObjectInputFilter delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public FilterResponse checkInput(final FilterInput input) {
+            ObjectInputFilter.Status status = delegate.checkInput(new ObjectInputFilter.FilterInfo() {
+                @Override
+                public Class<?> serialClass() {
+                    return input.getUnmarshalledClass();
+                }
+
+                @Override
+                public long arrayLength() {
+                    return input.getArrayLength();
+                }
+
+                @Override
+                public long depth() {
+                    return input.getDepth();
+                }
+
+                @Override
+                public long references() {
+                    return input.getReferences();
+                }
+
+                @Override
+                public long streamBytes() {
+                    return input.getStreamBytes();
+                }
+            });
+
+            switch (status) {
+                case ALLOWED:
+                    return FilterResponse.ACCEPT;
+                case REJECTED:
+                    return FilterResponse.REJECT;
+                case UNDECIDED:
+                    return FilterResponse.UNDECIDED;
+            }
+            throw new IllegalStateException("Unexpected filtering decision: " + status);
         }
     }
 
@@ -164,5 +203,16 @@ final class JDKSpecific {
     static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
         LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
         ois.setObjectInputFilter(new JDKSpecific.ObjectInputFilterAdapter(filter));
+    }
+
+    /**
+     * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
+     */
+    static UnmarshallingFilter getStaticJvmWideSerialFilter() {
+        ObjectInputFilter serialFilter = ObjectInputFilter.Config.getSerialFilter();
+        if (serialFilter != null) {
+            return new UnmarshallingFilterAdapter(serialFilter);
+        }
+        return null;
     }
 }

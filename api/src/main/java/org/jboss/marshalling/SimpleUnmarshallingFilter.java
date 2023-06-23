@@ -177,7 +177,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                         throw invalidFilterSpec(spec);
                     }
                     String pkg = spec.substring(0, spec.length() - 2);
-                    filter = input -> classNameFor(input).startsWith(pkg) ? matchReturn : null;
+                    filter = input -> classNameFor(input).startsWith(pkg) ? matchReturn : FilterResponse.UNDECIDED;
                 } else {
                     // there's an extra star in some spot other than between a final '.' and '*'
                     throw invalidFilterSpec(spec);
@@ -187,10 +187,10 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                     throw invalidFilterSpec(spec);
                 }
                 String pkg = spec.substring(0, spec.length() - 1);
-                filter = input -> classNameFor(input).startsWith(pkg) && classNameFor(input).lastIndexOf('.') == pkg.length() - 1 ? matchReturn : null;
+                filter = input -> classNameFor(input).startsWith(pkg) && classNameFor(input).lastIndexOf('.') == pkg.length() - 1 ? matchReturn : FilterResponse.UNDECIDED;
             } else {
                 String startsWith = spec.substring(0, spec.length() - 1); // note that an empty 'startsWith' is ok; e.g. from a "*" spec to allow all
-                filter = input -> classNameFor(input).startsWith(startsWith) ? matchReturn : null;
+                filter = input -> classNameFor(input).startsWith(startsWith) ? matchReturn : FilterResponse.UNDECIDED;
             }
         } else {
             // For exact matches store them in a set and just do a single set.contains check

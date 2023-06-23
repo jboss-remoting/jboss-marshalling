@@ -21,6 +21,7 @@ package org.jboss.marshalling;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
+import java.util.logging.Logger;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -28,6 +29,7 @@ import java.io.ObjectInputStream;
  */
 public abstract class AbstractUnmarshaller extends AbstractObjectInput implements Unmarshaller {
 
+    private static final Logger LOG = Logger.getLogger(AbstractUnmarshaller.class.getName());
     /** The configured class externalizer factory. */
     protected final ClassExternalizerFactory classExternalizerFactory;
     /** The configured stream header. */
@@ -132,6 +134,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
      * @param filter UnmarshallingFilter instance to delegate filtering decisions to.
      */
     protected static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+        LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
         ois.setObjectInputFilter(new ObjectInputFilterAdapter(filter));
     }
 

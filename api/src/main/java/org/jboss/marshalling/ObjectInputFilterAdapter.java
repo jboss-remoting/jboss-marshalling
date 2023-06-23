@@ -59,26 +59,16 @@ final class ObjectInputFilterAdapter implements ObjectInputFilter {
                 return filterInfo.streamBytes();
             }
         });
-        return toObjectInputFilterStatus(response);
-    }
 
-    /**
-     * Converts an UnmarshallingFilter.FilterResponse instance into an ObjectInputFilter.Status instance.
-     */
-    private Status toObjectInputFilterStatus(UnmarshallingFilter.FilterResponse response) {
-        Status status = null;
         switch (response) {
             case ACCEPT:
-                status = Status.ALLOWED;
-                break;
+                return Status.ALLOWED;
             case REJECT:
-                status = Status.REJECTED;
-                break;
+                return Status.REJECTED;
             case UNDECIDED:
-                status = Status.UNDECIDED;
-                break;
+                return Status.UNDECIDED;
         }
-        return status;
+        throw new IllegalStateException("Unexpected filtering decision: " + response);
     }
 
 }

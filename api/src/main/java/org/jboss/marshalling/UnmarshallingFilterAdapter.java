@@ -20,6 +20,9 @@ package org.jboss.marshalling;
 
 import java.io.ObjectInputFilter;
 
+/**
+ * An adapter that allows to use an ObjectInputFilter in place of an UnmarshallingFilter.
+ */
 final class UnmarshallingFilterAdapter implements UnmarshallingFilter {
 
     private final ObjectInputFilter delegate;

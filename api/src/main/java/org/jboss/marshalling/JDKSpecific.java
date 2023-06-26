@@ -162,7 +162,7 @@ final class JDKSpecific {
 
                     assert "checkInput".equals(method.getName());
                     assert args.length == 1 && args[0] != null;
-                    assert "sun.misc.ObjectInputFilter$FilterInfo".equals(args[0].getClass().getName());
+                    assert _FilterInfo.isAssignableFrom(args[0].getClass());
                     Object filterInfo = args[0];
 
                     // Getters of the FilterInfo class

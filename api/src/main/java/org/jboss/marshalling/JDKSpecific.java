@@ -142,6 +142,9 @@ final class JDKSpecific {
         }
     }
 
+    /**
+     * An adapter that allows to use an ObjectInputFilter in place of an UnmarshallingFilter.
+     */
     private static class UnmarshallingFilterAdapter implements UnmarshallingFilter {
 
         private final ObjectInputFilter delegate;

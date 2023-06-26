@@ -28,7 +28,7 @@ public class UnmarshallingFilterTestCase {
         Assert.assertEquals(filter.checkInput(new TestFilterInput(Hashtable.class, 10, 10, 10, 10)),
                 UnmarshallingFilter.FilterResponse.UNDECIDED);
 
-        // limit checks
+        // undecided class, one of the limit checks rejecting
         Assert.assertEquals(filter.checkInput(new TestFilterInput(Hashtable.class, 11, 10, 10, 10)),
                 UnmarshallingFilter.FilterResponse.REJECT);
         Assert.assertEquals(filter.checkInput(new TestFilterInput(Hashtable.class, 10, 11, 10, 10)),

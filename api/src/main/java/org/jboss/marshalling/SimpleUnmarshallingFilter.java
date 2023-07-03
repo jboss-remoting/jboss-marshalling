@@ -122,8 +122,16 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         if (eqPos == spec.length() - 1) {
             throw invalidFilterSpec(spec);
         }
-        Function<FilterInput, FilterResponse> filter;
-        final long value = Long.parseLong(spec.substring(eqPos + 1));
+        final Function<FilterInput, FilterResponse> filter;
+        final long value;
+        try {
+            value = Long.parseLong(spec.substring(eqPos + 1));
+        } catch (NumberFormatException e) {
+            throw invalidFilterSpec(spec, e);
+        }
+        if (value < 0) {
+            throw invalidFilterSpec(spec);
+        }
         switch (type) {
             case "maxdepth":
                 filter = input -> input.getDepth() > value ? FilterResponse.REJECT : FilterResponse.UNDECIDED;
@@ -139,9 +147,6 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                 break;
             default:
                 throw invalidFilterSpec(spec);
-        }
-        if (value < 0) {
-            throw invalidFilterSpec(spec);
         }
         return filter;
     }
@@ -222,11 +227,18 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     private static String classNameFor(FilterInput input) {
+        if (input.getUnmarshalledClass() == null) {
+            return "";
+        }
         return input.getUnmarshalledClass().getName();
     }
 
     private static IllegalArgumentException invalidFilterSpec(String spec) {
-        return new IllegalArgumentException(String.format("Invalid unmarshalling filter specification '%s'", spec));
+        return invalidFilterSpec(spec, null);
+    }
+
+    private static IllegalArgumentException invalidFilterSpec(String spec, Throwable cause) {
+        return new IllegalArgumentException(String.format("Invalid unmarshalling filter specification '%s'", spec), cause);
     }
 
     private static class ExactMatchFilter implements Function<FilterInput, FilterResponse> {

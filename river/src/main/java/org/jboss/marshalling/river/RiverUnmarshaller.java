@@ -22,7 +22,13 @@ import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.marshalling.river.Protocol.*;
 
-import java.io.*;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputValidation;
+import java.io.StreamCorruptedException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;

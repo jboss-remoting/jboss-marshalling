@@ -94,6 +94,17 @@ public class UnmarshallingFilterTestCase {
     }
 
     @Test
+    public void testNullClass() {
+        UnmarshallingFilter filter = UnmarshallingFilter.Factory.createFilter("java.util.ArrayList;java.util.*;java.util.**");
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(null, 0, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.UNDECIDED);
+
+        filter = UnmarshallingFilter.Factory.createFilter("*");
+        Assert.assertEquals(filter.checkInput(new TestFilterInput(null, 0, 0, 0, 0)),
+                UnmarshallingFilter.FilterResponse.ACCEPT);
+    }
+
+    @Test
     public void testInvalidFilters() {
         assertInvalid("org.jboss.marshalling.***");
         assertInvalid("modulename/org.jboss.marshalling.***");

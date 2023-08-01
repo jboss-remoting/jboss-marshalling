@@ -21,6 +21,9 @@ package org.jboss.marshalling;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -107,13 +110,26 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
                                 final long references, final long streamBytes) throws InvalidClassException {
         if (unmarshallingFilter != UnmarshallingFilter.ACCEPTING) {
             UnmarshallingFilter.FilterInput input = new FilterInputImpl(unmarshallClass, arrayLength, depth, references, streamBytes);
-            UnmarshallingFilter.FilterResponse response;
+            UnmarshallingFilter.FilterResponse response = null;
+            RuntimeException ex = null;
             try {
                 response = unmarshallingFilter.checkInput(input);
             } catch (RuntimeException re) {
+                ex = re;
                 InvalidClassException ice = new InvalidClassException(String.format("Filtering failed for %s", input));
                 ice.initCause(re);
                 throw ice;
+            } finally {
+                // Replicate logging message format from native deserialization filtering mechanism, except that the
+                // logger name is "org.jboss.marshalling" instead of "java.io.serialization".
+                if (Logging.filterLogger != null) {
+                    Level level = response == null || response == UnmarshallingFilter.FilterResponse.REJECT
+                            ? Level.FINER : Level.FINEST;
+                    Logging.filterLogger.log(level, String.format(
+                            "UnmarshallingFilter %s: %s, array length: %d, nRefs: %d, depth: %d, bytes: %d, ex: %s",
+                            response, input.getUnmarshalledClass(), input.getArrayLength(), input.getReferences(), input.getDepth(), input.getStreamBytes(),
+                            Objects.toString(ex, "n/a")));
+                }
             }
 
             if (response == UnmarshallingFilter.FilterResponse.REJECT) {
@@ -180,6 +196,16 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
             builder.append("references=<").append(references).append("> ");
             builder.append("streamBytes=<").append(streamBytes).append("> ");
             return builder.toString();
+        }
+    }
+
+    private static class Logging {
+        static final Logger filterLogger;
+
+        static {
+            Logger filterLog = Logger.getLogger("org.jboss.marshalling");
+            filterLogger = (filterLog.isLoggable(Level.FINER)
+                    || filterLog.isLoggable(Level.FINEST)) ? filterLog : null;
         }
     }
 }

@@ -109,7 +109,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
     protected final void filterCheck(final Class<?> unmarshallClass, final long arrayLength, final long depth,
                                 final long references, final long streamBytes) throws InvalidClassException {
         if (unmarshallingFilter != UnmarshallingFilter.ACCEPTING) {
-            UnmarshallingFilter.FilterInput input = new FilterInputImpl(unmarshallClass, arrayLength, depth, references, streamBytes);
+            JDKSpecific.FilterInput input = new FilterInputImpl(unmarshallClass, arrayLength, depth, references, streamBytes);
             UnmarshallingFilter.FilterResponse response = null;
             RuntimeException ex = null;
             try {
@@ -142,7 +142,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         JDKSpecific.setObjectInputStreamFilter(ois, filter);
     }
 
-    private static class FilterInputImpl implements UnmarshallingFilter.FilterInput {
+    private static class FilterInputImpl implements JDKSpecific.FilterInput {
 
         private final Class<?> unmarshallClass;
         private final long arrayLength;

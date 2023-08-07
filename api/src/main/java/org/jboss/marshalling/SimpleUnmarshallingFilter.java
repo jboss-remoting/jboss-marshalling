@@ -65,7 +65,7 @@ import java.util.function.Function;
  * @author Brian Stansberry
  */
 final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
-    private final List<Function<FilterInput, FilterResponse>> unmarshallingFilters;
+    private final List<Function<JDKSpecific.FilterInput, FilterResponse>> unmarshallingFilters;
 
     /**
      * Create a filter using the given {@code filterSpec}.
@@ -89,7 +89,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                 // perhaps this is an attempt to pass a JEPS 290 style limit or module name pattern; not supported
                 throw invalidFilterSpec(spec);
             }
-            Function<FilterInput, FilterResponse> filter;
+            Function<JDKSpecific.FilterInput, FilterResponse> filter;
 
             int eqPos = spec.indexOf('=');
             if (eqPos > -1) {
@@ -117,12 +117,12 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
 
     }
 
-    private Function<FilterInput, FilterResponse> parseLimitSpec(String spec, int eqPos) {
+    private Function<JDKSpecific.FilterInput, FilterResponse> parseLimitSpec(String spec, int eqPos) {
         String type = spec.substring(0, eqPos);
         if (eqPos == spec.length() - 1) {
             throw invalidFilterSpec(spec);
         }
-        final Function<FilterInput, FilterResponse> filter;
+        final Function<JDKSpecific.FilterInput, FilterResponse> filter;
         final long value;
         try {
             value = Long.parseLong(spec.substring(eqPos + 1));
@@ -151,10 +151,10 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         return filter;
     }
 
-    private Function<FilterInput, FilterResponse> parseClassSpec(String spec,
-                                                                 ExactMatchFilter exactMatchBlacklist,
-                                                                 ExactMatchFilter exactMatchWhitelist) {
-        Function<FilterInput, FilterResponse> filter = null;
+    private Function<JDKSpecific.FilterInput, FilterResponse> parseClassSpec(String spec,
+                                                                             ExactMatchFilter exactMatchBlacklist,
+                                                                             ExactMatchFilter exactMatchWhitelist) {
+        Function<JDKSpecific.FilterInput, FilterResponse> filter = null;
         boolean blacklistElement = spec.startsWith("!");
 
         // For a blacklist element, return FALSE for a match; i.e. don't resolve
@@ -215,9 +215,9 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     @Override
-    public FilterResponse checkInput(FilterInput input) {
+    public FilterResponse checkInput(JDKSpecific.FilterInput input) {
 
-        for (Function<FilterInput, FilterResponse> func : unmarshallingFilters) {
+        for (Function<JDKSpecific.FilterInput, FilterResponse> func : unmarshallingFilters) {
             FilterResponse response = func.apply(input);
             if (response != FilterResponse.UNDECIDED) {
                 return response;
@@ -226,7 +226,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         return FilterResponse.UNDECIDED;
     }
 
-    private static String classNameFor(FilterInput input) {
+    private static String classNameFor(JDKSpecific.FilterInput input) {
         if (input.getUnmarshalledClass() == null) {
             return "";
         }
@@ -241,7 +241,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         return new IllegalArgumentException(String.format("Invalid unmarshalling filter specification '%s'", spec), cause);
     }
 
-    private static class ExactMatchFilter implements Function<FilterInput, FilterResponse> {
+    private static class ExactMatchFilter implements Function<JDKSpecific.FilterInput, FilterResponse> {
         private final Set<String> matches = new HashSet<>();
         private final FilterResponse matchResult;
 
@@ -258,7 +258,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         }
 
         @Override
-        public FilterResponse apply(FilterInput input) {
+        public FilterResponse apply(JDKSpecific.FilterInput input) {
             return matches.contains(classNameFor(input)) ? matchResult : FilterResponse.UNDECIDED;
         }
     }

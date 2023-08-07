@@ -43,6 +43,8 @@ final class JDKSpecific {
 
     private static final Logger LOG = Logger.getLogger(JDKSpecific.class.getName());
 
+
+
     private JDKSpecific() {}
 
     static OptionalDataException createOptionalDataException(final int length) {
@@ -147,12 +149,11 @@ final class JDKSpecific {
      */
     static void setObjectInputStreamFilter(final ObjectInputStream ois, final UnmarshallingFilter delegate) {
         try {
-            // These classes are only available in JDK 8, should be available via the boostrap class loader.
-            Class<?> _ObjectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
-            Class<?> _FilterInfo = Class.forName("sun.misc.ObjectInputFilter$FilterInfo");
-            @SuppressWarnings("unchecked")
-            Class<Enum> _Status = (Class<Enum>) Class.forName("sun.misc.ObjectInputFilter$Status");
-            Class<?> _Config = Class.forName("sun.misc.ObjectInputFilter$Config");
+
+            if (_oifReflectionException != null) {
+                // Wrap it to get a stack trace and handle in the catch block
+                throw new IllegalStateException(_oifReflectionException);
+            }
 
             // Create an ObjectInputFilter instance proxy
             Object objectInputFilterProxy = Proxy.newProxyInstance(null, new Class[]{_ObjectInputFilter}, new InvocationHandler() {
@@ -164,13 +165,6 @@ final class JDKSpecific {
                     assert args.length == 1 && args[0] != null;
                     assert _FilterInfo.isAssignableFrom(args[0].getClass());
                     Object filterInfo = args[0];
-
-                    // Getters of the FilterInfo class
-                    Method _serialClass = _FilterInfo.getMethod("serialClass");
-                    Method _arrayLength = _FilterInfo.getMethod("arrayLength");
-                    Method _depth = _FilterInfo.getMethod("depth");
-                    Method _references = _FilterInfo.getMethod("references");
-                    Method _streamBytes = _FilterInfo.getMethod("streamBytes");
 
                     // Obtain the values from the FilterInfo instance
                     final Class<?> serialClass = (Class<?>) _serialClass.invoke(filterInfo);
@@ -208,27 +202,32 @@ final class JDKSpecific {
                     });
 
                     // Convert result UnmarshallingFilter.FilterResponse to ObjectInputFilter.Status and return it
-                    Map<String, Enum> statusMap = Arrays.stream((_Status.getEnumConstants()))
-                            .collect(Collectors.toMap(Enum::name, c -> c));
-                    Function<String, Enum> absentExceptionSupplier = name -> {
-                        throw new IllegalStateException(String.format("Failed to map FilterResponse %s to ObjectInputFilter.Status", name));
-                    };
+                    Object status;
                     switch (response) {
                         case ACCEPT:
-                            return statusMap.computeIfAbsent("ALLOWED", absentExceptionSupplier);
+                            status = _allowedResult;
+                            break;
                         case REJECT:
-                            return statusMap.computeIfAbsent("REJECTED", absentExceptionSupplier);
+                            status = _rejectedResult;
+                            break;
                         case UNDECIDED:
-                            return statusMap.computeIfAbsent("UNDECIDED", absentExceptionSupplier);
+                            status = _undecidedResult;
+                            break;
                         default:
                             throw new IllegalStateException("Unexpected unmarshalling filter result: " + response);
                     }
+
+                    // status could be an exception if the initial static initializer mapping failed
+                    // if so, throw it
+                    if (status instanceof Exception) {
+                        throw (Exception) status;
+                    }
+                    return status;
                 }
             });
 
             // Call ObjectInputFilter.Config.setObjectInputFilter(ois, objectInputFilterProxy)
             if (delegate != null) {
-                Method _setObjectInputFilter = _Config.getMethod("setObjectInputFilter", ObjectInputStream.class, _ObjectInputFilter);
                 _setObjectInputFilter.invoke(null, ois, objectInputFilterProxy);
             }
         } catch (Exception e) {
@@ -237,16 +236,15 @@ final class JDKSpecific {
     }
 
     /**
-     * Returns an adapter instance for the static JVM-wide deserialization filter (set via `-DserialFilter=...`) or null.
+     * Returns an adapter instance for the static JVM-wide deserialization filter (set via `-Djdk.serialFilter=...`) or null.
      */
     static UnmarshallingFilter getJEPS290ProcessWideFilter() {
         try {
-            Class<?> _ObjectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
-            Class<?> _Config = Class.forName("sun.misc.ObjectInputFilter$Config");
-            Class<?> _FilterInfo = Class.forName("sun.misc.ObjectInputFilter$FilterInfo");
 
-            Method _getSerialFilter = _Config.getMethod("getSerialFilter");
-            Method _checkInput = _ObjectInputFilter.getMethod("checkInput", _FilterInfo);
+            if (_fiReflectionException != null) {
+                // Wrap it to get a stack trace and handle in the catch block
+                throw new IllegalStateException(_fiReflectionException);
+            }
 
             // Call sun.misc.ObjectInputFilter.Config.getSerialFilter() to obtain a JVM-wide serial filter
             Object serialFilter = _getSerialFilter.invoke(null);
@@ -302,5 +300,119 @@ final class JDKSpecific {
             LOG.log(Level.WARNING, "Failed to build adapter for the static JVM-wide deserialization filter.", e);
             return null;
         }
+    }
+
+    // Statically cached reflection objects used by the JEPS 290 integration
+
+    // These classes are only available in JDK 8, should be available via the boostrap class loader.
+    private static final Class<?> _ObjectInputFilter;
+    private static final Class<?> _FilterInfo;
+
+    // Getters of the ObjectInputFilter.FilterInfo class
+    private static final Method _serialClass;
+    private static final Method _arrayLength;
+    private static final Method _depth;
+    private static final Method _references;
+    private static final Method _streamBytes;
+    private static final Method _setObjectInputFilter;
+
+    // Values of the ObjectInputFilter.Status enum
+    private static final Object _allowedResult;
+    private static final Object _rejectedResult;
+    private static final Object _undecidedResult;
+
+    // Exception caught when initializing the above fields
+    private static final Exception _oifReflectionException;
+
+    // Getter of the ObjectInputFilter.Config class
+    private static final Method _getSerialFilter;
+
+    // Method of the ObjectInputFilter class
+    private static final Method _checkInput;
+
+    // Exception caught when initializing the above fields
+    private static final Exception _fiReflectionException;
+
+    static {
+        Exception oifReflectionException = null;
+        Exception fiReflectionException = null;
+        Class objectInputFilter = null;
+        Class filterInfo = null;
+        Method serialClass = null;
+        Method arrayLength = null;
+        Method depth = null;
+        Method references = null;
+        Method streamBytes = null;
+        Method setObjectInputFilter = null;
+        Method getSerialFilter = null;
+        Method checkInput = null;
+        Object allowedResult = null;
+        Object rejectedResult = null;
+        Object undecidedResult = null;
+        try {
+            // First load classes used across in multiple methods
+            objectInputFilter = Class.forName("sun.misc.ObjectInputFilter");
+            Class config = Class.forName("sun.misc.ObjectInputFilter$Config");
+
+            // Next find reflection objects used by setObjectInputStreamFilter
+            try {
+                filterInfo = Class.forName("sun.misc.ObjectInputFilter$FilterInfo");
+                //noinspection unchecked
+                Class<Enum> status = (Class<Enum>) Class.forName("sun.misc.ObjectInputFilter$Status");
+                //noinspection unchecked
+                serialClass = filterInfo.getMethod("serialClass");
+                //noinspection unchecked
+                arrayLength = filterInfo.getMethod("arrayLength");
+                //noinspection unchecked
+                depth = filterInfo.getMethod("depth");
+                //noinspection unchecked
+                references = filterInfo.getMethod("references");
+                //noinspection unchecked
+                streamBytes = filterInfo.getMethod("streamBytes");
+                //noinspection unchecked
+                setObjectInputFilter = config.getMethod("setObjectInputFilter", ObjectInputStream.class, objectInputFilter);
+
+                // Convert result UnmarshallingFilter.FilterResponse to ObjectInputFilter.Status and return it
+                Map<String, Enum> statusMap = Arrays.stream((status.getEnumConstants()))
+                        .collect(Collectors.toMap(Enum::name, c -> c));
+                Function<String, Enum> absentExceptionSupplier = name -> {
+                    throw new IllegalStateException(String.format("Failed to map FilterResponse %s to ObjectInputFilter.Status", name));
+                };
+                allowedResult = statusMap.computeIfAbsent("ALLOWED", absentExceptionSupplier);
+                rejectedResult = statusMap.computeIfAbsent("REJECTED", absentExceptionSupplier);
+                undecidedResult = statusMap.computeIfAbsent("UNDECIDED", absentExceptionSupplier);
+            } catch (Exception e) {
+                oifReflectionException = e;
+            }
+
+            // Next find reflection objects used by getJEPS290ProcessWideFilter
+            try {
+                //noinspection unchecked
+                getSerialFilter = config.getMethod("getSerialFilter");
+                //noinspection unchecked
+                checkInput = objectInputFilter.getMethod("checkInput", filterInfo);
+            } catch (Exception e) {
+                fiReflectionException = e;
+            }
+        } catch (Exception e) {
+            oifReflectionException = e;
+            fiReflectionException = e;
+        }
+
+        _ObjectInputFilter = objectInputFilter;
+        _FilterInfo = filterInfo;
+        _serialClass = serialClass;
+        _arrayLength = arrayLength;
+        _depth = depth;
+        _references = references;
+        _streamBytes = streamBytes;
+        _setObjectInputFilter = setObjectInputFilter;
+        _getSerialFilter = getSerialFilter;
+        _checkInput = checkInput;
+        _oifReflectionException = oifReflectionException;
+        _allowedResult = allowedResult;
+        _rejectedResult = rejectedResult;
+        _undecidedResult = undecidedResult;
+        _fiReflectionException = fiReflectionException;
     }
 }

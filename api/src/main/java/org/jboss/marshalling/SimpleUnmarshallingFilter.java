@@ -152,8 +152,8 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     private Function<FilterInput, FilterResponse> parseClassSpec(String spec,
-                                                                 ExactMatchFilter exactMatchBlacklist,
-                                                                 ExactMatchFilter exactMatchWhitelist) {
+                                                                             ExactMatchFilter exactMatchBlacklist,
+                                                                             ExactMatchFilter exactMatchWhitelist) {
         Function<FilterInput, FilterResponse> filter = null;
         boolean blacklistElement = spec.startsWith("!");
 

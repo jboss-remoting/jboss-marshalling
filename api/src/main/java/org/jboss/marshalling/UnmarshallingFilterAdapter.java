@@ -33,32 +33,7 @@ final class UnmarshallingFilterAdapter implements UnmarshallingFilter {
 
     @Override
     public FilterResponse checkInput(final FilterInput input) {
-        ObjectInputFilter.Status status = delegate.checkInput(new ObjectInputFilter.FilterInfo() {
-            @Override
-            public Class<?> serialClass() {
-                return input.getUnmarshalledClass();
-            }
-
-            @Override
-            public long arrayLength() {
-                return input.getArrayLength();
-            }
-
-            @Override
-            public long depth() {
-                return input.getDepth();
-            }
-
-            @Override
-            public long references() {
-                return input.getReferences();
-            }
-
-            @Override
-            public long streamBytes() {
-                return input.getStreamBytes();
-            }
-        });
+        ObjectInputFilter.Status status = delegate.checkInput(input);
 
         switch (status) {
             case ALLOWED:

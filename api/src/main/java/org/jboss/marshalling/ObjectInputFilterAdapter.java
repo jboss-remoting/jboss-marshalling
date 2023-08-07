@@ -33,7 +33,7 @@ final class ObjectInputFilterAdapter implements ObjectInputFilter {
 
     @Override
     public Status checkInput(final FilterInfo filterInfo) {
-        UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new UnmarshallingFilter.FilterInput() {
+        UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new FilterInput() {
             @Override
             public Class<?> getUnmarshalledClass() {
                 return filterInfo.serialClass();
@@ -56,6 +56,34 @@ final class ObjectInputFilterAdapter implements ObjectInputFilter {
 
             @Override
             public long getStreamBytes() {
+                return filterInfo.streamBytes();
+            }
+
+            // Override the default FilterInfo impl from FilterInput to avoid
+            // the unnecessary indirection via the methods above
+
+            @Override
+            public Class<?> serialClass() {
+                return filterInfo.serialClass();
+            }
+
+            @Override
+            public long arrayLength() {
+                return filterInfo.arrayLength();
+            }
+
+            @Override
+            public long depth() {
+                return filterInfo.depth();
+            }
+
+            @Override
+            public long references() {
+                return filterInfo.references();
+            }
+
+            @Override
+            public long streamBytes() {
                 return filterInfo.streamBytes();
             }
         });

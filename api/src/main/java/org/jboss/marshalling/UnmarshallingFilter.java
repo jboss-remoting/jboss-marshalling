@@ -29,19 +29,6 @@ public interface UnmarshallingFilter {
         UNDECIDED
     }
 
-    interface FilterInput {
-
-        Class<?> getUnmarshalledClass();
-
-        long getArrayLength();
-
-        long getDepth();
-
-        long getReferences();
-
-        long getStreamBytes();
-    }
-
     final class Factory {
 
         private Factory() {

@@ -121,16 +121,7 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
                 ice.initCause(re);
                 throw ice;
             } finally {
-                // Replicate logging message format from native deserialization filtering mechanism, except that the
-                // logger name is "org.jboss.marshalling" instead of "java.io.serialization".
-                if (Logging.filterLogger != null) {
-                    Level level = response == null || response == UnmarshallingFilter.FilterResponse.REJECT
-                            ? Level.FINER : Level.FINEST;
-                    Logging.filterLogger.log(level, String.format(
-                            "UnmarshallingFilter %s: %s, array length: %d, nRefs: %d, depth: %d, bytes: %d, ex: %s",
-                            response, input.getUnmarshalledClass(), input.getArrayLength(), input.getReferences(), input.getDepth(), input.getStreamBytes(),
-                            Objects.toString(ex, "n/a")));
-                }
+                Logging.logFilterResponse(input, response, ex);
             }
 
             if (response == UnmarshallingFilter.FilterResponse.REJECT) {
@@ -211,12 +202,34 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
     }
 
     private static class Logging {
-        static final Logger filterLogger;
+        static final Logger marshallingLogger = Logger.getLogger("org.jboss.marshalling");
 
-        static {
-            Logger filterLog = Logger.getLogger("org.jboss.marshalling");
-            filterLogger = (filterLog.isLoggable(Level.FINER)
-                    || filterLog.isLoggable(Level.FINEST)) ? filterLog : null;
+        private static void logFilterResponse(final FilterInput input,
+                                              final UnmarshallingFilter.FilterResponse response,
+                                              final RuntimeException ex) {
+            // Replicate logging message format from native deserialization filtering mechanism, except that the
+            // logger name is "org.jboss.marshalling" instead of "java.io.serialization".
+            if (response == null || response == UnmarshallingFilter.FilterResponse.REJECT) {
+                logFilterResponse(input, response, ex, Level.FINER);
+            } else {
+                logFilterResponse(input, response, ex, Level.FINEST);
+            }
+        }
+
+        private static void logFilterResponse(final FilterInput input,
+                                              final UnmarshallingFilter.FilterResponse response,
+                                              final RuntimeException ex,
+                                              final Level level) {
+            if (marshallingLogger.isLoggable(level)) {
+                String message = String.format("UnmarshallingFilter %s: %s, array length: %d, nRefs: %d, depth: %d, bytes: %d, ex: %s",
+                        response, input.getUnmarshalledClass(), input.getArrayLength(), input.getReferences(),
+                        input.getDepth(), input.getStreamBytes(), Objects.toString(ex, "n/a"));
+                if (Level.FINEST.equals(level)) {
+                    marshallingLogger.log(level, message, ex);
+                } else {
+                    marshallingLogger.log(level, message);
+                }
+            }
         }
     }
 }

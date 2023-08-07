@@ -23,6 +23,7 @@ import static java.security.AccessController.doPrivileged;
 import static sun.reflect.ReflectionFactory.getReflectionFactory;
 
 import java.io.ObjectInputFilter;
+import java.io.ObjectInputFilter.FilterInfo;
 import java.io.ObjectInputStream;
 import java.io.OptionalDataException;
 import java.security.PrivilegedAction;
@@ -103,7 +104,7 @@ final class JDKSpecific {
 
         @Override
         public Status checkInput(final FilterInfo filterInfo) {
-            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new UnmarshallingFilter.FilterInput() {
+            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new FilterInput() {
                 @Override
                 public Class<?> getUnmarshalledClass() {
                     return filterInfo.serialClass();
@@ -126,6 +127,34 @@ final class JDKSpecific {
 
                 @Override
                 public long getStreamBytes() {
+                    return filterInfo.streamBytes();
+                }
+
+                // Override the default FilterInfo impl from FilterInput to avoid
+                // the unnecessary indirection via the methods above
+
+                @Override
+                public Class<?> serialClass() {
+                    return filterInfo.serialClass();
+                }
+
+                @Override
+                public long arrayLength() {
+                    return filterInfo.arrayLength();
+                }
+
+                @Override
+                public long depth() {
+                    return filterInfo.depth();
+                }
+
+                @Override
+                public long references() {
+                    return filterInfo.references();
+                }
+
+                @Override
+                public long streamBytes() {
                     return filterInfo.streamBytes();
                 }
             });
@@ -155,32 +184,7 @@ final class JDKSpecific {
 
         @Override
         public FilterResponse checkInput(final FilterInput input) {
-            ObjectInputFilter.Status status = delegate.checkInput(new ObjectInputFilter.FilterInfo() {
-                @Override
-                public Class<?> serialClass() {
-                    return input.getUnmarshalledClass();
-                }
-
-                @Override
-                public long arrayLength() {
-                    return input.getArrayLength();
-                }
-
-                @Override
-                public long depth() {
-                    return input.getDepth();
-                }
-
-                @Override
-                public long references() {
-                    return input.getReferences();
-                }
-
-                @Override
-                public long streamBytes() {
-                    return input.getStreamBytes();
-                }
-            });
+            ObjectInputFilter.Status status = delegate.checkInput(input);
 
             switch (status) {
                 case ALLOWED:
@@ -206,6 +210,39 @@ final class JDKSpecific {
     static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
         LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
         ois.setObjectInputFilter(new JDKSpecific.ObjectInputFilterAdapter(filter));
+    }
+
+    public interface FilterInput extends ObjectInputFilter.FilterInfo {
+
+        Class<?> getUnmarshalledClass();
+
+        long getArrayLength();
+
+        long getDepth();
+
+        long getReferences();
+
+        long getStreamBytes();
+
+        default Class<?> serialClass() {
+            return getUnmarshalledClass();
+        }
+
+        default long arrayLength() {
+            return getArrayLength();
+        }
+
+        default long depth() {
+            return getDepth();
+        }
+
+        default long references() {
+            return getReferences();
+        }
+
+        default long streamBytes() {
+            return getStreamBytes();
+        }
     }
 
     /**

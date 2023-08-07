@@ -174,7 +174,7 @@ final class JDKSpecific {
                     final long streamBytes = (long) _streamBytes.invoke(filterInfo);
 
                     // Call the delegate UnmarshallingFilter to make a filtering decision
-                    UnmarshallingFilter.FilterResponse response = delegate.checkInput(new UnmarshallingFilter.FilterInput() {
+                    UnmarshallingFilter.FilterResponse response = delegate.checkInput(new FilterInput() {
                         @Override
                         public Class<?> getUnmarshalledClass() {
                             return serialClass;
@@ -233,6 +233,19 @@ final class JDKSpecific {
         } catch (Exception e) {
             LOG.log(Level.WARNING, e, () -> "Unmarshaller failed to set ObjectInputFilter to underlying ObjectInputStream.");
         }
+    }
+
+    public interface FilterInput {
+
+        Class<?> getUnmarshalledClass();
+
+        long getArrayLength();
+
+        long getDepth();
+
+        long getReferences();
+
+        long getStreamBytes();
     }
 
     /**

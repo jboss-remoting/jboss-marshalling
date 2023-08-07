@@ -118,7 +118,7 @@ public class UnmarshallingFilterTestCase {
         } catch (IllegalArgumentException expected) {}
     }
 
-    static class TestFilterInput implements UnmarshallingFilter.FilterInput {
+    static class TestFilterInput implements JDKSpecific.FilterInput {
 
         private final Class<?> unmarshalledClass;
         private final long arrayLength;

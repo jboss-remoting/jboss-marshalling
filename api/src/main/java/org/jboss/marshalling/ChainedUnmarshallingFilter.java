@@ -27,7 +27,7 @@ public final class ChainedUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     @Override
-    public FilterResponse checkInput(FilterInput input) {
+    public FilterResponse checkInput(JDKSpecific.FilterInput input) {
         for (UnmarshallingFilter filter : chain) {
             FilterResponse response = filter.checkInput(input);
             if (response != FilterResponse.UNDECIDED) {

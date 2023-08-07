@@ -21,25 +21,12 @@ package org.jboss.marshalling;
 @FunctionalInterface
 public interface UnmarshallingFilter {
 
-    FilterResponse checkInput(FilterInput input);
+    FilterResponse checkInput(JDKSpecific.FilterInput input);
 
     enum FilterResponse {
         ACCEPT,
         REJECT,
         UNDECIDED
-    }
-
-    interface FilterInput {
-
-        Class<?> getUnmarshalledClass();
-
-        long getArrayLength();
-
-        long getDepth();
-
-        long getReferences();
-
-        long getStreamBytes();
     }
 
     final class Factory {

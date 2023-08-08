@@ -56,10 +56,10 @@ import java.util.function.Function;
  * </p>
  * <p>
  * If any element in the filter spec indicates a class name should be rejected, it will be rejected. If any element
- * in the filter spec does not begin with the {@code '!'} char, then the filter will act like a whitelist, and
+ * in the filter spec does not begin with the {@code '!'} char, then the filter will act like an allowlist, and
  * at least one non-rejecting filter spec element must match the class name for the filter to return {@code true}.
- * Rejecting elements can be used in an overall filter spec for a whitelist, for example to exclude a particular
- * class from a package that is otherwise whitelisted.
+ * Rejecting elements can be used in an overall filter spec for an allowlist, for example to exclude a particular
+ * class from a package that is otherwise allowed.
  * </p>
  *
  * @author Brian Stansberry
@@ -80,8 +80,8 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
 
         List<String> parsedFilterSpecs = new ArrayList<>(Arrays.asList(filterSpec.split(";")));
         unmarshallingFilters = new ArrayList<>(parsedFilterSpecs.size());
-        ExactMatchFilter exactMatchWhitelist = null;
-        ExactMatchFilter exactMatchBlacklist = null;
+        ExactMatchFilter exactMatchAllowlist = null;
+        ExactMatchFilter exactMatchDenylist = null;
 
         for (String spec : parsedFilterSpecs) {
 
@@ -96,13 +96,13 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                 filter = parseLimitSpec(spec, eqPos);
             } else {
 
-                filter = parseClassSpec(spec, exactMatchBlacklist, exactMatchBlacklist);
-                if ((exactMatchWhitelist == null || exactMatchBlacklist == null) && filter instanceof ExactMatchFilter) {
+                filter = parseClassSpec(spec, exactMatchDenylist, exactMatchDenylist);
+                if ((exactMatchAllowlist == null || exactMatchDenylist == null) && filter instanceof ExactMatchFilter) {
                     ExactMatchFilter exactMatch = (ExactMatchFilter) filter;
-                    if (exactMatch.isForWhitelist()) {
-                        exactMatchWhitelist = exactMatch;
+                    if (exactMatch.isForAllowlist()) {
+                        exactMatchAllowlist = exactMatch;
                     } else {
-                        exactMatchBlacklist = exactMatch;
+                        exactMatchDenylist = exactMatch;
                     }
                 }
             }
@@ -152,17 +152,17 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     private Function<JDKSpecific.FilterInput, FilterResponse> parseClassSpec(String spec,
-                                                                             ExactMatchFilter exactMatchBlacklist,
-                                                                             ExactMatchFilter exactMatchWhitelist) {
+                                                                             ExactMatchFilter exactMatchDenylist,
+                                                                             ExactMatchFilter exactMatchAllowlist) {
         Function<JDKSpecific.FilterInput, FilterResponse> filter = null;
-        boolean blacklistElement = spec.startsWith("!");
+        boolean denylistElement = spec.startsWith("!");
 
-        // For a blacklist element, return FALSE for a match; i.e. don't resolve
-        // For a whitelist, return TRUE for a match; i.e. definitely do resolve
+        // For a denylist element, return FALSE for a match; i.e. don't resolve
+        // For an allowlist, return TRUE for a match; i.e. definitely do resolve
         // For any non-match, return null which means that check has no opinion
-        final FilterResponse matchReturn = blacklistElement ? FilterResponse.REJECT : FilterResponse.ACCEPT;
+        final FilterResponse matchReturn = denylistElement ? FilterResponse.REJECT : FilterResponse.ACCEPT;
 
-        if (blacklistElement) {
+        if (denylistElement) {
             if (spec.length() == 1) {
                 throw invalidFilterSpec(spec);
             }
@@ -199,16 +199,16 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
             }
         } else {
             // For exact matches store them in a set and just do a single set.contains check
-            if (blacklistElement) {
-                if (exactMatchBlacklist == null) {
-                    filter = exactMatchBlacklist = new ExactMatchFilter(false);
+            if (denylistElement) {
+                if (exactMatchDenylist == null) {
+                    filter = exactMatchDenylist = new ExactMatchFilter(false);
                 }
-                exactMatchBlacklist.addMatchingClass(spec);
+                exactMatchDenylist.addMatchingClass(spec);
             } else {
-                if (exactMatchWhitelist == null) {
-                    filter = exactMatchWhitelist = new ExactMatchFilter(true);
+                if (exactMatchAllowlist == null) {
+                    filter = exactMatchAllowlist = new ExactMatchFilter(true);
                 }
-                exactMatchWhitelist.addMatchingClass(spec);
+                exactMatchAllowlist.addMatchingClass(spec);
             }
         }
         return filter;
@@ -245,15 +245,15 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         private final Set<String> matches = new HashSet<>();
         private final FilterResponse matchResult;
 
-        private ExactMatchFilter(boolean forWhitelist) {
-            this.matchResult = forWhitelist ? FilterResponse.ACCEPT : FilterResponse.REJECT;
+        private ExactMatchFilter(boolean forAllowlist) {
+            this.matchResult = forAllowlist ? FilterResponse.ACCEPT : FilterResponse.REJECT;
         }
 
         private void addMatchingClass(String name) {
             matches.add(name);
         }
 
-        private boolean isForWhitelist() {
+        private boolean isForAllowlist() {
             return matchResult == FilterResponse.ACCEPT;
         }
 

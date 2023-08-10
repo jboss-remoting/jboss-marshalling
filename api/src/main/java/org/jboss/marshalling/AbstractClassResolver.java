@@ -111,7 +111,7 @@ public abstract class AbstractClassResolver implements ClassResolver {
         if (enforceSerialVersionUid && serialVersionUID != 0L) {
             final long uid = registry.lookup(clazz).getEffectiveSerialVersionUID();
             if (uid != serialVersionUID) {
-                throw new StreamCorruptedException("serialVersionUID does not match!");
+                throw new StreamCorruptedException("serialVersionUID of " + clazz + " does not match!");
             }
         }
         return clazz;

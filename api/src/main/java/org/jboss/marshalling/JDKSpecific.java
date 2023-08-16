@@ -20,106 +20,67 @@ package org.jboss.marshalling;
 
 import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
+import static sun.reflect.ReflectionFactory.getReflectionFactory;
 
 import java.io.OptionalDataException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.security.PrivilegedAction;
+import java.util.Iterator;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import sun.reflect.ReflectionFactory;
 
 /**
  */
 final class JDKSpecific {
-
     private JDKSpecific() {}
 
+    private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
+        public ReflectionFactory run() { return ReflectionFactory.getReflectionFactory(); }
+    });
+
     static OptionalDataException createOptionalDataException(final int length) {
-        final OptionalDataException optionalDataException = createOptionalDataException();
+        final OptionalDataException optionalDataException = createOptionalDataException(false);
         optionalDataException.length = length;
         return optionalDataException;
     }
 
     static OptionalDataException createOptionalDataException(final boolean eof) {
-        final OptionalDataException optionalDataException = createOptionalDataException();
-        final StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        final StackTraceElement[] copyStackTrace = new StackTraceElement[stackTrace.length - 1];
-        System.arraycopy(stackTrace, 1, copyStackTrace, 0, copyStackTrace.length);
-        optionalDataException.setStackTrace(copyStackTrace);
-        optionalDataException.eof = eof;
-        return optionalDataException;
+        return reflectionFactory.newOptionalDataExceptionForSerialization(eof);
     }
 
-    static OptionalDataException createOptionalDataException() {
-        return getSecurityManager() == null ? OptionalDataExceptionCreateAction.INSTANCE.run() : doPrivileged(OptionalDataExceptionCreateAction.INSTANCE);
-    }
+    private static final StackWalker stackWalker = getSecurityManager() == null
+        ? StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+        : doPrivileged(new PrivilegedAction<StackWalker>() {
+            public StackWalker run() {
+                return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            }
+        });
+
+    private static final Function<Stream<StackWalker.StackFrame>, Class<?>> callerFinder = new Function<Stream<StackWalker.StackFrame>, Class<?>>() {
+        public Class<?> apply(final Stream<StackWalker.StackFrame> stream) {
+            final Iterator<StackWalker.StackFrame> iterator = stream.iterator();
+            StackWalker.StackFrame frame;
+            do {
+                if (! iterator.hasNext()) {
+                    throw new IllegalStateException();
+                }
+                frame = iterator.next();
+            } while (frame.getDeclaringClass() != JDKSpecific.class);
+            if (! iterator.hasNext()) {
+                throw new IllegalStateException();
+            }
+            // caller of JDKSpecific.getMyCaller
+            iterator.next();
+            if (! iterator.hasNext()) {
+                throw new IllegalStateException();
+            }
+            // caller of the caller of JDKSpecific.getMyCaller
+            return iterator.next().getDeclaringClass();
+        }
+    };
 
     static Class<?> getMyCaller() {
-        return Holder.STACK_TRACE_READER.getClassContext()[3];
-    }
-
-    static final class OptionalDataExceptionCreateAction implements PrivilegedAction<OptionalDataException> {
-
-        static final OptionalDataExceptionCreateAction INSTANCE = new OptionalDataExceptionCreateAction();
-
-        private final Constructor<OptionalDataException> constructor;
-
-        OptionalDataExceptionCreateAction() {
-            if (getSecurityManager() == null) {
-                try {
-                    constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
-                    constructor.setAccessible(true);
-                } catch (NoSuchMethodException e) {
-                    throw new NoSuchMethodError(e.getMessage());
-                }
-            } else {
-                constructor = doPrivileged(new PrivilegedAction<Constructor<OptionalDataException>>() {
-                    public Constructor<OptionalDataException> run() {
-                        try {
-                            final Constructor<OptionalDataException> constructor = OptionalDataException.class.getDeclaredConstructor(boolean.class);
-                            constructor.setAccessible(true);
-                            return constructor;
-                        } catch (NoSuchMethodException e) {
-                            throw new NoSuchMethodError(e.getMessage());
-                        }
-                    }
-                });
-            }
-        }
-
-        public OptionalDataException run() {
-            try {
-                return constructor.newInstance(Boolean.FALSE);
-            } catch (InstantiationException e) {
-                throw new InstantiationError(e.getMessage());
-            } catch (IllegalAccessException e) {
-                throw new IllegalAccessError(e.getMessage());
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException("Error invoking constructor", e);
-            }
-        }
-    }
-
-    static final class Holder {
-
-        static final Holder.StackTraceReader STACK_TRACE_READER;
-
-        static {
-            STACK_TRACE_READER = getSecurityManager() == null ? new Holder.StackTraceReader() : doPrivileged(new PrivilegedAction<Holder.StackTraceReader>() {
-                public Holder.StackTraceReader run() {
-                    return new Holder.StackTraceReader();
-                }
-            });
-        }
-
-        private Holder() {
-        }
-
-        static final class StackTraceReader extends SecurityManager {
-            StackTraceReader() {
-            }
-
-            protected Class[] getClassContext() {
-                return super.getClassContext();
-            }
-        }
+        return stackWalker.walk(callerFinder);
     }
 }

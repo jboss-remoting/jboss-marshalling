@@ -46,36 +46,6 @@
         </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>java8-test-profile</id>
-            <activation>
-                <property>
-                    <name>java8.home</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>java8-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <configuration>
-                                    <jvm>${java8.home}/bin/java</jvm>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <build>
         <resources>
             <resource>
@@ -102,26 +72,10 @@
                             <goal>compile</goal>
                         </goals>
                         <configuration>
-                            <release>8</release>
+                            <release>11</release>
                             <buildDirectory>${project.build.directory}</buildDirectory>
                             <compileSourceRoots>${project.compileSourceRoots}</compileSourceRoots>
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                            <additionalClasspathElements>
-                                <additionalClasspathElement>${project.build.directory}/jdk-misc.jar</additionalClasspathElement>
-                            </additionalClasspathElements>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>compile-java9</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <release>9</release>
-                            <buildDirectory>${project.build.directory}</buildDirectory>
-                            <compileSourceRoots>${project.basedir}/src/main/java9</compileSourceRoots>
-                            <outputDirectory>${project.build.directory}/classes/META-INF/versions/9</outputDirectory>
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${project.build.outputDirectory}</additionalClasspathElement>
                             </additionalClasspathElements>
@@ -191,26 +145,6 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${project.build.directory}/classes</additionalClasspathElement>
                             </additionalClasspathElements>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-java8-tests</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <property>java8.home</property>
-                                    <message>The "java8.home" property must be set on deploy to run tests under Java 8</message>
-                                </requireProperty>
-                            </rules>
                         </configuration>
                     </execution>
                 </executions>

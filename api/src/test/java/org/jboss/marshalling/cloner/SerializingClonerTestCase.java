@@ -27,11 +27,15 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import java.util.Date;
 import org.jboss.marshalling.Pair;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -235,6 +239,40 @@ public final class SerializingClonerTestCase {
         CloneTestWithSelectiveSerialization clone = (CloneTestWithSelectiveSerialization) cloner.clone(new CloneTestWithSelectiveSerialization("foo"));
         assertNull(clone.tmp);
         assertEquals(clone.test, "foo");
+    }
+
+    @Test
+    public void testRecordCloning() throws Throwable {
+        if (Runtime.version().compareTo(Runtime.Version.parse("16")) < 0) {
+            throw new SkipException("Skipped when JDK < 16");
+        }
+        // define a class for it
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        /*  package org.jboss.marshalling.cloner;
+
+            public record MyRecord(String stringVal,
+                                   char charVal,
+                                   long longVal,
+                                   int intVal,
+                                   short shortVal,
+                                   byte byteVal,
+                                   float floatVal,
+                                   double doubleVal,
+                                   boolean booleanVal
+                                   ) {
+            } */
+        @SuppressWarnings("SpellCheckingInspection")
+        byte[] recordBytes = Base64.getDecoder().decode("yv66vgAAADwAaAoAAgADBwAEDAAFAAYBABBqYXZhL2xhbmcvUmVjb3JkAQAGPGluaXQ+AQADKClWCQAIAAkHAAoMAAsADAEAJW9yZy9qYm9zcy9tYXJzaGFsbGluZy9jbG9uZXIvTXlSZWNvcmQBAAlzdHJpbmdWYWwBABJMamF2YS9sYW5nL1N0cmluZzsJAAgADgwADwAQAQAHY2hhclZhbAEAAUMJAAgAEgwAEwAUAQAHbG9uZ1ZhbAEAAUoJAAgAFgwAFwAYAQAGaW50VmFsAQABSQkACAAaDAAbABwBAAhzaG9ydFZhbAEAAVMJAAgAHgwAHwAgAQAHYnl0ZVZhbAEAAUIJAAgAIgwAIwAkAQAIZmxvYXRWYWwBAAFGCQAIACYMACcAKAEACWRvdWJsZVZhbAEAAUQJAAgAKgwAKwAsAQAKYm9vbGVhblZhbAEAAVoSAAAALgwALwAwAQAIdG9TdHJpbmcBADsoTG9yZy9qYm9zcy9tYXJzaGFsbGluZy9jbG9uZXIvTXlSZWNvcmQ7KUxqYXZhL2xhbmcvU3RyaW5nOxIAAAAyDAAzADQBAAhoYXNoQ29kZQEAKihMb3JnL2pib3NzL21hcnNoYWxsaW5nL2Nsb25lci9NeVJlY29yZDspSRIAAAA2DAA3ADgBAAZlcXVhbHMBADwoTG9yZy9qYm9zcy9tYXJzaGFsbGluZy9jbG9uZXIvTXlSZWNvcmQ7TGphdmEvbGFuZy9PYmplY3Q7KVoBAB0oTGphdmEvbGFuZy9TdHJpbmc7Q0pJU0JGRFopVgEABENvZGUBAA9MaW5lTnVtYmVyVGFibGUBABJMb2NhbFZhcmlhYmxlVGFibGUBAAR0aGlzAQAnTG9yZy9qYm9zcy9tYXJzaGFsbGluZy9jbG9uZXIvTXlSZWNvcmQ7AQAQTWV0aG9kUGFyYW1ldGVycwEAFCgpTGphdmEvbGFuZy9TdHJpbmc7AQADKClJAQAVKExqYXZhL2xhbmcvT2JqZWN0OylaAQABbwEAEkxqYXZhL2xhbmcvT2JqZWN0OwEAAygpQwEAAygpSgEAAygpUwEAAygpQgEAAygpRgEAAygpRAEAAygpWgEAClNvdXJjZUZpbGUBAA1NeVJlY29yZC5qYXZhAQAGUmVjb3JkAQAQQm9vdHN0cmFwTWV0aG9kcw8GAFEK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");
+        Class<?> myRecordClass = lookup.defineClass(recordBytes);
+        assert myRecordClass.getName().equals("org.jboss.marshalling.cloner.MyRecord");
+        Constructor<?> ctor = myRecordClass.getConstructor(String.class, char.class, long.class, int.class, short.class, byte.class, float.class, double.class, boolean.class);
+        Object instance = ctor.newInstance("String", 'X', 1234L, 6543, (short) 123, (byte) 12, 1.4f, 2.6, true);
+        final ObjectClonerFactory clonerFactory = ObjectCloners.getSerializingObjectClonerFactory();
+        final ClonerConfiguration configuration = new ClonerConfiguration();
+        final ObjectCloner cloner = clonerFactory.createCloner(configuration);
+        Object clone = cloner.clone(instance);
+        assertNotNull(clone);
+        assertEquals(clone, instance);
     }
 
     public static class CloneTesterWithSerializeOnlyVariable implements Serializable {

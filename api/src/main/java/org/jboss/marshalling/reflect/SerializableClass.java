@@ -69,19 +69,24 @@ public final class SerializableClass {
      * An empty array of fields.
      */
     public static final SerializableField[] NOFIELDS = new SerializableField[0];
+    private static final IdentityHashMap<Class<?>, Constructor<?>> EMPTY_IHM = new IdentityHashMap<>(0);
 
     SerializableClass(Class<?> subject) {
         this.subject = subject;
-        final IdentityHashMap<Class<?>, Constructor<?>> constructorMap = new IdentityHashMap<Class<?>, Constructor<?>>();
-        for (Class<?> t = subject.getSuperclass(); t != null; t = t.getSuperclass()) {
-            final SerializableClass lookedUp = REGISTRY.lookup(t);
-            final Constructor<?> constructor = lookedUp.serMethods.getNoArgConstructor();
-            if (constructor != null) {
-                constructorMap.put(t, JDKSpecific.newConstructorForSerialization(subject, constructor));
-            }
-        }
-        nonInitConstructors = constructorMap;
         isRecord = JDKSpecific.isRecord(subject);
+        if (isRecord) {
+            nonInitConstructors = EMPTY_IHM;
+        } else {
+            final IdentityHashMap<Class<?>, Constructor<?>> constructorMap = new IdentityHashMap<Class<?>, Constructor<?>>();
+            for (Class<?> t = subject.getSuperclass(); t != null; t = t.getSuperclass()) {
+                final SerializableClass lookedUp = REGISTRY.lookup(t);
+                final Constructor<?> constructor = lookedUp.serMethods.getNoArgConstructor();
+                if (constructor != null) {
+                    constructorMap.put(t, JDKSpecific.newConstructorForSerialization(subject, constructor));
+                }
+            }
+            nonInitConstructors = constructorMap;
+        }
         // private methods
         serMethods = new JDKSpecific.SerMethods(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
@@ -193,6 +198,17 @@ public final class SerializableClass {
             return serializableField;
         }
         return new SerializableField(fieldType, name, unshared, null, null);
+    }
+
+    /**
+     * Find a field for this object class by name.
+     *
+     * @param name the name of the field
+     * @return the field or {@code null} if there is one with that name
+     * @throws ClassNotFoundException if a class was not found while looking up the subject class
+     */
+    public SerializableField getSerializableFieldByName(String name) throws ClassNotFoundException {
+        return fieldsByName.get(name);
     }
 
     /**

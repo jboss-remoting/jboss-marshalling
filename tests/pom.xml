@@ -58,8 +58,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0-jboss-1</version>
                 <configuration>
-                    <testSource>11</testSource>
-                    <testTarget>11</testTarget>
+                    <testRelease>11</testRelease>
                 </configuration>
                 <executions>
                     <execution>
@@ -78,8 +77,7 @@
                             <goal>testCompile</goal>
                         </goals>
                         <configuration>
-                            <testSource>16</testSource>
-                            <testTarget>16</testTarget>
+                            <testRelease>16</testRelease>
                             <testIncludes>
                                 <include>**/org/jboss/test/marshalling/RecordTests.java</include>
                                 <include>**/org/jboss/test/marshalling/RecordTestFactory.java</include>

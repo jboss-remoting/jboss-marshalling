@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>34</version>
+        <version>39</version>
     </parent>
 
     <licenses>
@@ -62,6 +62,9 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.7.0-jboss-1</version>
+                    <configuration>
+                        <release>11</release>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-shade-plugin</artifactId>

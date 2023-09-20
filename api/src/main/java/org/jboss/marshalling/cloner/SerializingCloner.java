@@ -233,7 +233,66 @@ class SerializingCloner implements ObjectCloner {
         final SerializableClass cloneInfo = sameClass ? info : registry.lookup(clonedClass);
         // Now check the serializable types
         final Object clone;
-        if (orig instanceof Externalizable) {
+        if (cloneInfo.isRecord()) {
+            // follow record ctor protocol
+            SerializableField[] fields = cloneInfo.getFields();
+            Object[] args = new Object[fields.length];
+            if (info.isRecord()) {
+                for (SerializableField field : info.getFields()) {
+                    SerializableField cloneField = cloneInfo.getSerializableFieldByName(field.getName());
+                    if (cloneField != null) {
+                        args[cloneField.getRecordComponentIndex()] = field.getRecordComponentValue(orig);
+                    }
+                }
+            } else {
+                // not a record, just make a best effort
+                for (SerializableField field : info.getFields()) {
+                    SerializableField cloneField = cloneInfo.getSerializableFieldByName(field.getName());
+                    if (cloneField != null) {
+                        switch (field.getKind()) {
+                            case BOOLEAN: {
+                                args[cloneField.getRecordComponentIndex()] = Boolean.valueOf(field.getBoolean(orig));
+                                break;
+                            }
+                            case BYTE: {
+                                args[cloneField.getRecordComponentIndex()] = Byte.valueOf(field.getByte(orig));
+                                break;
+                            }
+                            case CHAR: {
+                                args[cloneField.getRecordComponentIndex()] = Character.valueOf(field.getChar(orig));
+                                break;
+                            }
+                            case DOUBLE: {
+                                args[cloneField.getRecordComponentIndex()] = Double.valueOf(field.getDouble(orig));
+                                break;
+                            }
+                            case FLOAT: {
+                                args[cloneField.getRecordComponentIndex()] = Float.valueOf(field.getFloat(orig));
+                                break;
+                            }
+                            case INT: {
+                                args[cloneField.getRecordComponentIndex()] = Integer.valueOf(field.getInt(orig));
+                                break;
+                            }
+                            case LONG: {
+                                args[cloneField.getRecordComponentIndex()] = Long.valueOf(field.getLong(orig));
+                                break;
+                            }
+                            case SHORT: {
+                                args[cloneField.getRecordComponentIndex()] = Short.valueOf(field.getShort(orig));
+                                break;
+                            }
+                            case OBJECT: {
+                                args[cloneField.getRecordComponentIndex()] = field.getObject(orig);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            clone = cloneInfo.invokeRecordCanonicalConstructor(args);
+            clones.put(orig, clone);
+        } else if (orig instanceof Externalizable) {
             final Externalizable externalizable = (Externalizable) orig;
             clone = cloneInfo.callNoArgConstructor();
             clones.put(orig, clone);

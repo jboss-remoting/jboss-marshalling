@@ -243,7 +243,8 @@ public final class SerializingClonerTestCase {
 
     @Test
     public void testRecordCloning() throws Throwable {
-        if (Runtime.version().compareTo(Runtime.Version.parse("16")) < 0) {
+        String specVersion = System.getProperty("java.specification.version");
+        if (specVersion.startsWith("1.") || Integer.getInteger("java.specification.version") < 16) {
             throw new SkipException("Skipped when JDK < 16");
         }
         // define a class for it

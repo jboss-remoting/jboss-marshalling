@@ -56,7 +56,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1-jboss-2</version>
                 <configuration>
                     <testRelease>11</testRelease>
                 </configuration>

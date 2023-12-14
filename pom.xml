@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>40</version>
+        <version>42</version>
     </parent>
 
     <licenses>

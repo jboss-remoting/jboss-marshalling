@@ -123,6 +123,7 @@
             </plugin>
             <!-- JAR -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
@@ -131,11 +132,13 @@
                         </manifest>
                         <manifestEntries>
                             <Multi-Release>true</Multi-Release>
+                            <Automatic-Module-Name>org.jboss.marshalling</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>

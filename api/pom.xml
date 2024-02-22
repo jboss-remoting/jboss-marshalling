@@ -33,10 +33,6 @@
         <version>2.1.4.Final-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <jdk.min.version>16</jdk.min.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.jboss.modules</groupId>

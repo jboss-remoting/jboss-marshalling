@@ -44,6 +44,7 @@
 
     <properties>
         <jdk.min.version>17</jdk.min.version>
+        <version.org.jacoco>0.8.11</version.org.jacoco>
     </properties>
 
     <modules>
@@ -76,6 +77,25 @@
                             <phase>compile</phase>
                             <goals>
                                 <goal>bytecode</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${version.org.jacoco}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>generate-code-coverage-report</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
                             </goals>
                         </execution>
                     </executions>

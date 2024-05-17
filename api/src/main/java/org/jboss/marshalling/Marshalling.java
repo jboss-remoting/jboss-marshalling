@@ -33,6 +33,8 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.ServiceLoader;
 
+import sun.reflect.ReflectionFactory;
+
 /**
  * Static utility methods for simplifying use of marshallers.
  * @apiviz.landmark
@@ -355,6 +357,8 @@ public final class Marshalling {
         return NULL_CLASS_TABLE;
     }
 
+    private static final ReflectionFactory reflectionFactory = doPrivileged((PrivilegedAction<ReflectionFactory>) ReflectionFactory::getReflectionFactory);
+
     /**
      * Construct a new {@link java.io.OptionalDataException}.  This method is necessary because there are no
      * public constructors in the API.
@@ -363,7 +367,7 @@ public final class Marshalling {
      * @return a new OptionalDataException
      */
     public static OptionalDataException createOptionalDataException(boolean eof) {
-        return JDKSpecific.createOptionalDataException(eof);
+        return reflectionFactory.newOptionalDataExceptionForSerialization(eof);
     }
 
     /**
@@ -374,6 +378,8 @@ public final class Marshalling {
      * @return a new OptionalDataException
      */
     public static OptionalDataException createOptionalDataException(int length) {
-        return JDKSpecific.createOptionalDataException(length);
+        final OptionalDataException optionalDataException = createOptionalDataException(false);
+        optionalDataException.length = length;
+        return optionalDataException;
     }
 }

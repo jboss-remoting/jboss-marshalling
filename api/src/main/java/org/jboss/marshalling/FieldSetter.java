@@ -23,6 +23,7 @@ import static java.security.AccessController.doPrivileged;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.PrivilegedAction;
 
 import org.jboss.marshalling._private.GetUnsafeAction;
 import sun.misc.Unsafe;
@@ -205,6 +206,8 @@ public final class FieldSetter {
         return new IllegalArgumentException("Value is not of the correct type");
     }
 
+    private static final StackWalker SW = doPrivileged((PrivilegedAction<StackWalker>) () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE));
+
     /**
      * Get an instance for the current class.
      *
@@ -215,7 +218,7 @@ public final class FieldSetter {
      * @throws IllegalArgumentException if there is no field of the given name on the given class
      */
     public static FieldSetter get(final Class<?> clazz, final String name) throws SecurityException, IllegalArgumentException {
-        final Class<?> caller = JDKSpecific.getMyCaller();
+        final Class<?> caller = SW.getCallerClass();
         if (caller != clazz) {
             throw new SecurityException("Cannot get field from someone else's class");
         }

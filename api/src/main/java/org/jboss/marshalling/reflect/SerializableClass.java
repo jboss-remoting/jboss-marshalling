@@ -54,7 +54,7 @@ public final class SerializableClass {
     private static final SerializableClassRegistry REGISTRY = SerializableClassRegistry.getInstanceUnchecked();
     private final IdentityHashMap<Class<?>, Constructor<?>> nonInitConstructors;
     private final Class<?> subject;
-    private final JDKSpecific.SerMethods serMethods;
+    private final SerMethods serMethods;
     private final SerializableField[] fields;
     private final Map<String, SerializableField> fieldsByName;
     private final long effectiveSerialVersionUID;
@@ -82,13 +82,13 @@ public final class SerializableClass {
                 final SerializableClass lookedUp = REGISTRY.lookup(t);
                 final Constructor<?> constructor = lookedUp.serMethods.getNoArgConstructor();
                 if (constructor != null) {
-                    constructorMap.put(t, JDKSpecific.newConstructorForSerialization(subject, constructor));
+                    constructorMap.put(t, SerMethods.newConstructorForSerialization(subject, constructor));
                 }
             }
             nonInitConstructors = constructorMap;
         }
         // private methods
-        serMethods = new JDKSpecific.SerMethods(subject);
+        serMethods = new SerMethods(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
         if (subject.getSimpleName().indexOf('/') != -1) {
@@ -454,7 +454,7 @@ public final class SerializableClass {
         return (Constructor<T>) nonInitConstructors.get(clazz);
     }
 
-    JDKSpecific.SerMethods getSerMethods() {
+    SerMethods getSerMethods() {
         return serMethods;
     }
 

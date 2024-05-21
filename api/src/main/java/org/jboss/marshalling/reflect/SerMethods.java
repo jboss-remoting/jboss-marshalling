@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
@@ -29,11 +30,11 @@ final class SerMethods {
     private final Constructor<?> objectInputConstructor;
 
     SerMethods(Class<?> clazz) {
-        readObject = reflectionFactory.readObjectForSerialization(clazz);
-        readObjectNoData = reflectionFactory.readObjectNoDataForSerialization(clazz);
-        writeObject = reflectionFactory.writeObjectForSerialization(clazz);
-        readResolve = reflectionFactory.readResolveForSerialization(clazz);
-        writeReplace = reflectionFactory.writeReplaceForSerialization(clazz);
+        readObject = changeType(reflectionFactory.readObjectForSerialization(clazz), MethodType.methodType(void.class, Object.class, ObjectInputStream.class));
+        readObjectNoData = changeType(reflectionFactory.readObjectNoDataForSerialization(clazz), MethodType.methodType(void.class, Object.class));
+        writeObject = changeType(reflectionFactory.writeObjectForSerialization(clazz), MethodType.methodType(void.class, Object.class, ObjectOutputStream.class));
+        readResolve = changeType(reflectionFactory.readResolveForSerialization(clazz), MethodType.methodType(Object.class, Object.class));
+        writeReplace = changeType(reflectionFactory.writeReplaceForSerialization(clazz), MethodType.methodType(Object.class, Object.class));
         Constructor<?> ctor;
         Constructor<?> noArgConstructor = null;
         try {
@@ -51,6 +52,10 @@ final class SerMethods {
         this.objectInputConstructor = objectInputConstructor;
     }
 
+    private static MethodHandle changeType(MethodHandle original, MethodType newType) {
+        return original == null ? null : original.asType(newType);
+    }
+
     static Constructor<?> newConstructorForSerialization(Class<?> classToInstantiate, Constructor<?> constructorToCall) {
         return reflectionFactory.newConstructorForSerialization(classToInstantiate, constructorToCall);
     }
@@ -61,7 +66,7 @@ final class SerMethods {
 
     void callWriteObject(Object object, ObjectOutputStream outputStream) throws IOException {
         try {
-            writeObject.invoke(object, outputStream);
+            writeObject.invokeExact(object, outputStream);
         } catch (IOException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
@@ -75,7 +80,7 @@ final class SerMethods {
 
     void callReadObject(Object object, ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         try {
-            readObject.invoke(object, inputStream);
+            readObject.invokeExact(object, inputStream);
         } catch (IOException | ClassNotFoundException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
@@ -89,7 +94,7 @@ final class SerMethods {
 
     void callReadObjectNoData(Object object) throws ObjectStreamException {
         try {
-            readObjectNoData.invoke(object);
+            readObjectNoData.invokeExact(object);
         } catch (ObjectStreamException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
@@ -103,7 +108,7 @@ final class SerMethods {
 
     Object callWriteReplace(Object object) throws ObjectStreamException {
         try {
-            return writeReplace.invoke(object);
+            return writeReplace.invokeExact(object);
         } catch (ObjectStreamException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
@@ -117,7 +122,7 @@ final class SerMethods {
 
     Object callReadResolve(Object object) throws ObjectStreamException {
         try {
-            return readResolve.invoke(object);
+            return readResolve.invokeExact(object);
         } catch (ObjectStreamException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {

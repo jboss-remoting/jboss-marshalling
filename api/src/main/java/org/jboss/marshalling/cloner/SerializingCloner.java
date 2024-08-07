@@ -241,7 +241,7 @@ class SerializingCloner implements ObjectCloner {
                 for (SerializableField field : info.getFields()) {
                     SerializableField cloneField = cloneInfo.getSerializableFieldByName(field.getName());
                     if (cloneField != null) {
-                        args[cloneField.getRecordComponentIndex()] = field.getRecordComponentValue(orig);
+                        args[cloneField.getRecordComponentIndex()] = clone(field.getRecordComponentValue(orig));
                     }
                 }
             } else {

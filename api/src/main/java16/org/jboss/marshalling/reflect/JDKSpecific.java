@@ -104,7 +104,8 @@ final class JDKSpecific {
             for (SerializableField field : fields) {
                 paramTypes[field.getRecordComponentIndex()] = field.getType();
             }
-            MethodHandle constructorHandle = LOOKUP.findConstructor(recordType, MethodType.methodType(void.class, paramTypes))
+
+            MethodHandle constructorHandle = MethodHandles.privateLookupIn(recordType, LOOKUP).findConstructor(recordType, MethodType.methodType(void.class, paramTypes))
                     .asType(MethodType.methodType(Object.class, paramTypes));
             return constructorHandle.invokeWithArguments(args);
         } catch (Throwable e) {

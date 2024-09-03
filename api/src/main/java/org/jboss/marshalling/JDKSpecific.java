@@ -92,113 +92,6 @@ final class JDKSpecific {
     }
 
     /**
-     * An adapter that allows to use an UnmarshallingFilter in place of an ObjectInputFilter.
-     */
-    private static class ObjectInputFilterAdapter implements ObjectInputFilter {
-
-        private final UnmarshallingFilter unmarshallingFilter;
-
-        public ObjectInputFilterAdapter(UnmarshallingFilter unmarshallingFilter) {
-            this.unmarshallingFilter = unmarshallingFilter;
-        }
-
-        @Override
-        public Status checkInput(final FilterInfo filterInfo) {
-            UnmarshallingFilter.FilterResponse response = unmarshallingFilter.checkInput(new FilterInput() {
-                @Override
-                public Class<?> getUnmarshalledClass() {
-                    return filterInfo.serialClass();
-                }
-
-                @Override
-                public long getArrayLength() {
-                    return filterInfo.arrayLength();
-                }
-
-                @Override
-                public long getDepth() {
-                    return filterInfo.depth();
-                }
-
-                @Override
-                public long getReferences() {
-                    return filterInfo.references();
-                }
-
-                @Override
-                public long getStreamBytes() {
-                    return filterInfo.streamBytes();
-                }
-
-                // Override the default FilterInfo impl from FilterInput to avoid
-                // the unnecessary indirection via the methods above
-
-                @Override
-                public Class<?> serialClass() {
-                    return filterInfo.serialClass();
-                }
-
-                @Override
-                public long arrayLength() {
-                    return filterInfo.arrayLength();
-                }
-
-                @Override
-                public long depth() {
-                    return filterInfo.depth();
-                }
-
-                @Override
-                public long references() {
-                    return filterInfo.references();
-                }
-
-                @Override
-                public long streamBytes() {
-                    return filterInfo.streamBytes();
-                }
-            });
-
-            switch (response) {
-                case ACCEPT:
-                    return Status.ALLOWED;
-                case REJECT:
-                    return Status.REJECTED;
-                case UNDECIDED:
-                    return Status.UNDECIDED;
-            }
-            throw new IllegalStateException("Unexpected filtering decision: " + response);
-        }
-    }
-
-    /**
-     * An adapter that allows to use an ObjectInputFilter in place of an UnmarshallingFilter.
-     */
-    private static class UnmarshallingFilterAdapter implements UnmarshallingFilter {
-
-        private final ObjectInputFilter delegate;
-
-        public UnmarshallingFilterAdapter(ObjectInputFilter delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public FilterResponse checkInput(final FilterInput input) {
-            ObjectInputFilter.Status status = delegate.checkInput(input);
-
-            switch (status) {
-                case ALLOWED:
-                    return FilterResponse.ACCEPT;
-                case REJECTED:
-                    return FilterResponse.REJECT;
-                case UNDECIDED:
-                    return FilterResponse.UNDECIDED;
-            }
-            throw new IllegalStateException("Unexpected filtering decision: " + status);
-        }
-    }
-
-    /**
      * Creates an ObjectInputFilter adapter to given UnmarshallingFilter, and sets the filter to given
      * ObjectInputStream.
      * <p>
@@ -207,51 +100,18 @@ final class JDKSpecific {
      * @param ois ObjectInputStream instance to set the filter to.
      * @param filter UnmarshallingFilter instance to delegate filtering decisions to.
      */
-    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingFilter filter) {
+    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingObjectInputFilter filter) {
         LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
-        ois.setObjectInputFilter(new JDKSpecific.ObjectInputFilterAdapter(filter));
-    }
-
-    public interface FilterInput extends ObjectInputFilter.FilterInfo {
-
-        Class<?> getUnmarshalledClass();
-
-        long getArrayLength();
-
-        long getDepth();
-
-        long getReferences();
-
-        long getStreamBytes();
-
-        default Class<?> serialClass() {
-            return getUnmarshalledClass();
-        }
-
-        default long arrayLength() {
-            return getArrayLength();
-        }
-
-        default long depth() {
-            return getDepth();
-        }
-
-        default long references() {
-            return getReferences();
-        }
-
-        default long streamBytes() {
-            return getStreamBytes();
-        }
+        ois.setObjectInputFilter(new ObjectInputFilterAdapter(filter));
     }
 
     /**
      * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
      */
-    static UnmarshallingFilter getJEPS290ProcessWideFilter() {
+    static UnmarshallingObjectInputFilter getJEPS290ProcessWideFilter() {
         ObjectInputFilter serialFilter = ObjectInputFilter.Config.getSerialFilter();
         if (serialFilter != null) {
-            return new UnmarshallingFilterAdapter(serialFilter);
+            return new UnmarshallingObjectInputFilterAdapter(serialFilter);
         }
         return null;
     }

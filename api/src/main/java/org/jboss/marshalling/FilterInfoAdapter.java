@@ -21,32 +21,42 @@ package org.jboss.marshalling;
 import java.io.ObjectInputFilter;
 
 /**
- * An adapter that allows to use an UnmarshallingObjectInputFilter in place of an ObjectInputFilter.
+ * An adapter that allows to use an UnmarshallingObjectInputFilter.FilterInfo in place of an ObjectInputFilter.FilterInfo.
  *
  * @author Brian Stansberry
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class ObjectInputFilterAdapter implements ObjectInputFilter {
+final class FilterInfoAdapter implements ObjectInputFilter.FilterInfo {
 
-    private final UnmarshallingObjectInputFilter adaptee;
+    private final UnmarshallingObjectInputFilter.FilterInfo adaptee;
 
-    ObjectInputFilterAdapter(UnmarshallingObjectInputFilter adaptee) {
+    FilterInfoAdapter(final UnmarshallingObjectInputFilter.FilterInfo adaptee) {
         this.adaptee = adaptee;
     }
 
     @Override
-    public Status checkInput(final FilterInfo filterInfo) {
-        UnmarshallingObjectInputFilter.Status status = adaptee.checkInput(new UnmarshallingFilterInfoAdapter(filterInfo));
+    public Class<?> serialClass() {
+        return adaptee.getUnmarshalledClass();
+    }
 
-        switch (status) {
-            case ALLOWED:
-                return ObjectInputFilter.Status.ALLOWED;
-            case REJECTED:
-                return ObjectInputFilter.Status.REJECTED;
-            case UNDECIDED:
-                return ObjectInputFilter.Status.UNDECIDED;
-        }
-        throw new IllegalStateException("Unexpected filtering decision: " + status);
+    @Override
+    public long arrayLength() {
+        return adaptee.getArrayLength();
+    }
+
+    @Override
+    public long depth() {
+        return adaptee.getDepth();
+    }
+
+    @Override
+    public long references() {
+        return adaptee.getReferences();
+    }
+
+    @Override
+    public long streamBytes() {
+        return adaptee.getStreamBytes();
     }
 
 }

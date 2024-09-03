@@ -74,7 +74,7 @@ import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.StreamHeader;
 import org.jboss.marshalling.Unmarshaller;
 
-import org.jboss.marshalling.UnmarshallingFilter;
+import org.jboss.marshalling.UnmarshallingObjectInputFilter;
 import org.jboss.marshalling.river.RiverMarshaller;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.jboss.marshalling.river.RiverUnmarshaller;
@@ -3707,7 +3707,7 @@ public final class SimpleMarshallerTests extends TestBase {
         }
         @Override
         public void configure(MarshallingConfiguration configuration) throws Throwable {
-            configuration.setUnmarshallingFilter(UnmarshallingFilter.Factory.createFilter(filterSpec));
+            configuration.setUnmarshallingFilter(UnmarshallingObjectInputFilter.Factory.createFilter(filterSpec));
         }
 
         @Override

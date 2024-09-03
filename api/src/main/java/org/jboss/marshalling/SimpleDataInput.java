@@ -42,6 +42,11 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
     protected int limit;
 
     /**
+     * Total number of bytes read and skipped from the beginning.
+     */
+    protected long totalBytesRead;
+
+    /**
      * Construct a new instance which wraps nothing.
      *
      * @param bufferSize the internal buffer size to use
@@ -80,10 +85,12 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         final int position = this.position;
         final byte[] buffer = this.buffer;
         if (position == limit) {
-            if ((this.limit = byteInput.read(buffer)) == -1) {
+            final int bytesRead = byteInput.read((buffer));
+            if ((this.limit = bytesRead) == -1) {
                 this.position = 0;
                 return -1;
             } else {
+                totalBytesRead += bytesRead;
                 this.position = 1;
                 return buffer[0] & 0xff;
             }
@@ -108,14 +115,23 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         final int remaining = limit - position;
         // pass through if the buffer is empty
         if (remaining == 0) {
-            return byteInput.read(b, off, len);
+            final int bytesRead = byteInput.read(b, off, len);
+            if (bytesRead != -1) {
+                totalBytesRead += bytesRead;
+            }
+            return bytesRead;
         }
         final byte[] buffer = this.buffer;
         if (len > remaining) {
             System.arraycopy(buffer, position, b, off, remaining);
             this.limit = this.position = 0;
             final int res = byteInput.read(b, off + remaining, len - remaining);
-            return res == -1 ? remaining : res + remaining;
+            if (res == -1) {
+                return remaining;
+            } else {
+                totalBytesRead += res;
+                return res + remaining;
+            }
         } else {
             System.arraycopy(buffer, position, b, off, len);
             this.position += len;
@@ -138,7 +154,9 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
             return n;
         } else {
             position = this.limit = 0;
-            return byteInput.skip(n - remaining) + remaining;
+            long result = byteInput.skip(n - remaining) + remaining;
+            totalBytesRead += result;
+            return result;
         }
     }
 
@@ -175,6 +193,8 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
                 remaining = byteInput.read(b, off, len);
                 if (remaining == -1) {
                     throw eofOnRead();
+                } else {
+                    totalBytesRead += remaining;
                 }
                 off += remaining;
                 len -= remaining;
@@ -202,7 +222,9 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
             return n;
         } else {
             position = this.limit = 0;
-            return (int) (byteInput.skip(n - remaining) + remaining);
+            int result = (int) (byteInput.skip(n - remaining) + remaining);
+            totalBytesRead += result;
+            return result;
         }
     }
 
@@ -216,8 +238,11 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         final byte[] buffer = this.buffer;
         if ((position = this.position++) == limit) {
             this.position = 1;
-            if ((this.limit = byteInput.read(buffer)) == -1) {
+            final int bytesRead = byteInput.read(buffer);
+            if ((this.limit = bytesRead) == -1) {
                 throw eofOnRead();
+            } else {
+                totalBytesRead += bytesRead;
             }
             return buffer[0] != 0;
         }
@@ -235,8 +260,11 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         final byte[] buffer = this.buffer;
         if ((position = this.position++) == limit) {
             this.position = 1;
-            if ((this.limit = byteInput.read(buffer)) == -1) {
+            final int bytesRead = byteInput.read(buffer);
+            if ((this.limit = bytesRead) == -1) {
                 throw eofOnRead();
+            } else {
+                totalBytesRead += bytesRead;
             }
             return buffer[0];
         }
@@ -290,8 +318,11 @@ public class SimpleDataInput extends ByteInputStream implements DataInput {
         final byte[] buffer = this.buffer;
         if ((position = this.position++) == limit) {
             this.position = 1;
-            if ((this.limit = byteInput.read(buffer)) == -1) {
+            final int bytesRead = byteInput.read(buffer);
+            if ((this.limit = bytesRead) == -1) {
                 throw eofOnRead();
+            } else {
+                totalBytesRead += bytesRead;
             }
             return buffer[0] & 0xff;
         }

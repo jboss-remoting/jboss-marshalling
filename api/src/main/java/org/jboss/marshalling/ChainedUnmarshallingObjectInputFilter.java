@@ -18,22 +18,29 @@
 
 package org.jboss.marshalling;
 
-public final class ChainedUnmarshallingFilter implements UnmarshallingFilter {
+/**
+ * {@link UnmarshallingObjectInputFilter} implementation that is chaining multiple {@link UnmarshallingObjectInputFilter}s.
+ *
+ * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
+ */
+final class ChainedUnmarshallingObjectInputFilter implements UnmarshallingObjectInputFilter {
 
-    private final UnmarshallingFilter[] chain;
+    private final UnmarshallingObjectInputFilter[] chain;
 
-    public ChainedUnmarshallingFilter(UnmarshallingFilter... chain) {
+    ChainedUnmarshallingObjectInputFilter(final UnmarshallingObjectInputFilter... chain) {
         this.chain = chain;
     }
 
     @Override
-    public FilterResponse checkInput(JDKSpecific.FilterInput input) {
-        for (UnmarshallingFilter filter : chain) {
-            FilterResponse response = filter.checkInput(input);
-            if (response != FilterResponse.UNDECIDED) {
-                return response;
+    public Status checkInput(final FilterInfo filterInfo) {
+        for (UnmarshallingObjectInputFilter filter : chain) {
+            Status status = filter.checkInput(filterInfo);
+            if (status != Status.UNDECIDED) {
+                return status;
             }
         }
-        return FilterResponse.UNDECIDED;
+        return Status.UNDECIDED;
     }
+
 }

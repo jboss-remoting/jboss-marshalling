@@ -37,7 +37,7 @@ public final class MarshallingConfiguration implements Cloneable {
     private ObjectTable objectTable;
     private ExceptionListener exceptionListener;
     private SerializabilityChecker serializabilityChecker;
-    private UnmarshallingFilter unmarshallingFilter;
+    private UnmarshallingObjectInputFilter unmarshallingFilter;
 
     private int instanceCount = 256;
     private int classCount = 64;
@@ -296,7 +296,7 @@ public final class MarshallingConfiguration implements Cloneable {
      *
      * @return the unmarshalling filter
      */
-    public UnmarshallingFilter getUnmarshallingFilter() {
+    public UnmarshallingObjectInputFilter getUnmarshallingFilter() {
         return unmarshallingFilter;
     }
 
@@ -305,11 +305,11 @@ public final class MarshallingConfiguration implements Cloneable {
      *
      * @param unmarshallingFilter the new unmarshalling filter
      */
-    public void setUnmarshallingFilter(UnmarshallingFilter unmarshallingFilter) {
+    public void setUnmarshallingFilter(UnmarshallingObjectInputFilter unmarshallingFilter) {
         this.unmarshallingFilter = unmarshallingFilter;
     }
 
-    private UnmarshallingFilter createDefaultUnmarshallingFilter() {
+    private UnmarshallingObjectInputFilter createDefaultUnmarshallingFilter() {
         String property;
         if (System.getSecurityManager() == null) {
             property = System.getProperty(IGNORE_STATIC_JVM_SERIAL_FILTER_PROPERTY);

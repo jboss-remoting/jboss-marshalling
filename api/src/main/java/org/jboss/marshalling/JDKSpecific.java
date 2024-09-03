@@ -147,7 +147,7 @@ final class JDKSpecific {
      * @param ois ObjectInputStream instance to set the filter to.
      * @param delegate UnmarshallingFilter instance to delegate filtering decisions to.
      */
-    static void setObjectInputStreamFilter(final ObjectInputStream ois, final UnmarshallingFilter delegate) {
+    static void setObjectInputStreamFilter(final ObjectInputStream ois, final UnmarshallingObjectInputFilter delegate) {
         try {
 
             if (_oifReflectionException != null) {
@@ -174,7 +174,7 @@ final class JDKSpecific {
                     final long streamBytes = (long) _streamBytes.invoke(filterInfo);
 
                     // Call the delegate UnmarshallingFilter to make a filtering decision
-                    UnmarshallingFilter.FilterResponse response = delegate.checkInput(new FilterInput() {
+                    UnmarshallingObjectInputFilter.Status response = delegate.checkInput(new UnmarshallingObjectInputFilter.FilterInfo() {
                         @Override
                         public Class<?> getUnmarshalledClass() {
                             return serialClass;
@@ -204,10 +204,10 @@ final class JDKSpecific {
                     // Convert result UnmarshallingFilter.FilterResponse to ObjectInputFilter.Status and return it
                     Object status;
                     switch (response) {
-                        case ACCEPT:
+                        case ALLOWED:
                             status = _allowedResult;
                             break;
-                        case REJECT:
+                        case REJECTED:
                             status = _rejectedResult;
                             break;
                         case UNDECIDED:
@@ -235,23 +235,10 @@ final class JDKSpecific {
         }
     }
 
-    public interface FilterInput {
-
-        Class<?> getUnmarshalledClass();
-
-        long getArrayLength();
-
-        long getDepth();
-
-        long getReferences();
-
-        long getStreamBytes();
-    }
-
     /**
      * Returns an adapter instance for the static JVM-wide deserialization filter (set via `-Djdk.serialFilter=...`) or null.
      */
-    static UnmarshallingFilter getJEPS290ProcessWideFilter() {
+    static UnmarshallingObjectInputFilter getJEPS290ProcessWideFilter() {
         try {
 
             if (_fiReflectionException != null) {
@@ -266,9 +253,9 @@ final class JDKSpecific {
                 return null;
             }
             // Return an UnmarshallingFilter instance that delegate decisions to retrieved JVM-wise serial filter
-            return new UnmarshallingFilter() {
+            return new UnmarshallingObjectInputFilter() {
                 @Override
-                public FilterResponse checkInput(final FilterInput input) {
+                public UnmarshallingObjectInputFilter.Status checkInput(final UnmarshallingObjectInputFilter.FilterInfo input) {
                     // Create a FilterInfo proxy instance, which hands over values from given FilterInfo instance
                     Object filterInfo = Proxy.newProxyInstance(null, new Class[]{_FilterInfo}, new InvocationHandler() {
                         @Override
@@ -297,11 +284,11 @@ final class JDKSpecific {
                         // Convert result to a FilterResponse enum
                         switch (status.name()) {
                             case "ALLOWED":
-                                return FilterResponse.ACCEPT;
+                                return UnmarshallingObjectInputFilter.Status.ALLOWED;
                             case "REJECTED":
-                                return FilterResponse.REJECT;
+                                return UnmarshallingObjectInputFilter.Status.REJECTED;
                             case "UNDECIDED":
-                                return FilterResponse.UNDECIDED;
+                                return UnmarshallingObjectInputFilter.Status.UNDECIDED;
                         }
                         throw new IllegalStateException("Unexpected filtering decision: " + status);
                     } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

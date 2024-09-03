@@ -20,7 +20,7 @@ package org.jboss.test.marshalling;
 
 import java.io.IOException;
 import org.jboss.marshalling.AbstractClassResolver;
-import org.jboss.marshalling.JDKSpecificFilterTests;
+import org.jboss.marshalling.FilterTests;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.Unmarshaller;
 import org.testng.annotations.Factory;
@@ -143,7 +143,7 @@ public final class SimpleMarshallerTestFactory {
     @Factory
     public Object[] getTests() {
         return new Object[] {
-                new JDKSpecificFilterTests()
+                new FilterTests()
         };
     }
 }

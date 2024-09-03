@@ -31,14 +31,14 @@ public class FilterTests {
     @Test
     public void jdkSpecific_setObjectInputStreamFilter() throws Exception {
         try (ObjectInputStream ois = new ObjectInputStream(new ByteBufferInput(createPayload()))) {
-            AbstractUnmarshaller.setObjectInputStreamFilter(ois, UnmarshallingFilter.ACCEPTING);
+            AbstractUnmarshaller.setObjectInputStreamFilter(ois, UnmarshallingObjectInputFilter.ACCEPTING);
             ois.readObject();
         } catch (InvalidClassException e) {
             Assert.fail("Deserialization was expected to succeed.");
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new ByteBufferInput(createPayload()))) {
-            AbstractUnmarshaller.setObjectInputStreamFilter(ois, UnmarshallingFilter.REJECTING);
+            AbstractUnmarshaller.setObjectInputStreamFilter(ois, UnmarshallingObjectInputFilter.REJECTING);
             ois.readObject();
             Assert.fail("Deserialization was expected to fail.");
         } catch (InvalidClassException expected) {

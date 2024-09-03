@@ -25,9 +25,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * {@link UnmarshallingFilter} implementation that is configured by a JEPS 290 style {@code filterSpec}
- * string provided to the constructor. The function returns {@link org.jboss.marshalling.UnmarshallingFilter.FilterResponse#REJECT}
- * if the given input is not acceptable.
+ * {@link UnmarshallingObjectInputFilter} implementation that is configured by a JEPS 290 style {@code filterSpec}
+ * string provided to the constructor. The function returns {@link Status#REJECTED}
+ * if the given filterInfo is not acceptable.
  *
  * <p>
  * The {@code filterSpec} string is composed of one or more filter spec elements separated by the {@code ';'} char.
@@ -63,9 +63,10 @@ import java.util.function.Function;
  * </p>
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
-    private final List<Function<FilterInput, FilterResponse>> unmarshallingFilters;
+final class UnmarshallingObjectInputFilterImpl implements UnmarshallingObjectInputFilter {
+    private final List<Function<FilterInfo, Status>> unmarshallingFilters;
 
     /**
      * Create a filter using the given {@code filterSpec}.
@@ -73,7 +74,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
      *
      * @throws IllegalArgumentException if the form of {@code filterSpec} violates any of the rules for this class
      */
-    SimpleUnmarshallingFilter(final String filterSpec) {
+    UnmarshallingObjectInputFilterImpl(final String filterSpec) {
         if (filterSpec == null) {
             throw new IllegalArgumentException("Parameter 'filterSpec' may not be null");
         }
@@ -89,7 +90,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                 // perhaps this is an attempt to pass a JEPS 290 style limit or module name pattern; not supported
                 throw invalidFilterSpec(spec);
             }
-            Function<FilterInput, FilterResponse> filter;
+            Function<FilterInfo, Status> filter;
 
             int eqPos = spec.indexOf('=');
             if (eqPos > -1) {
@@ -117,12 +118,12 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
 
     }
 
-    private Function<FilterInput, FilterResponse> parseLimitSpec(String spec, int eqPos) {
+    private Function<FilterInfo, Status> parseLimitSpec(String spec, int eqPos) {
         String type = spec.substring(0, eqPos);
         if (eqPos == spec.length() - 1) {
             throw invalidFilterSpec(spec);
         }
-        final Function<FilterInput, FilterResponse> filter;
+        final Function<FilterInfo, Status> filter;
         final long value;
         try {
             value = Long.parseLong(spec.substring(eqPos + 1));
@@ -134,16 +135,16 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         }
         switch (type) {
             case "maxdepth":
-                filter = input -> input.getDepth() > value ? FilterResponse.REJECT : FilterResponse.UNDECIDED;
+                filter = filterInfo -> filterInfo.getDepth() > value ? Status.REJECTED : Status.UNDECIDED;
                 break;
             case "maxarray":
-                filter = input -> input.getArrayLength() > value ? FilterResponse.REJECT : FilterResponse.UNDECIDED;
+                filter = filterInfo -> filterInfo.getArrayLength() > value ? Status.REJECTED : Status.UNDECIDED;
                 break;
             case "maxrefs":
-                filter = input -> input.getReferences() > value ? FilterResponse.REJECT : FilterResponse.UNDECIDED;
+                filter = filterInfo -> filterInfo.getReferences() > value ? Status.REJECTED : Status.UNDECIDED;
                 break;
             case "maxbytes":
-                filter = input -> input.getStreamBytes() > value ? FilterResponse.REJECT : FilterResponse.UNDECIDED;
+                filter = filterInfo -> filterInfo.getStreamBytes() > value ? Status.REJECTED : Status.UNDECIDED;
                 break;
             default:
                 throw invalidFilterSpec(spec);
@@ -151,16 +152,16 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         return filter;
     }
 
-    private Function<FilterInput, FilterResponse> parseClassSpec(String spec,
-                                                                             ExactMatchFilter exactMatchDenylist,
-                                                                             ExactMatchFilter exactMatchAllowlist) {
-        Function<FilterInput, FilterResponse> filter = null;
+    private Function<FilterInfo, Status> parseClassSpec(String spec,
+                                                        ExactMatchFilter exactMatchDenylist,
+                                                        ExactMatchFilter exactMatchAllowlist) {
+        Function<FilterInfo, Status> filter = null;
         boolean denylistElement = spec.startsWith("!");
 
         // For a denylist element, return FALSE for a match; i.e. don't resolve
         // For an allowlist, return TRUE for a match; i.e. definitely do resolve
         // For any non-match, return null which means that check has no opinion
-        final FilterResponse matchReturn = denylistElement ? FilterResponse.REJECT : FilterResponse.ACCEPT;
+        final Status matchReturn = denylistElement ? Status.REJECTED : Status.ALLOWED;
 
         if (denylistElement) {
             if (spec.length() == 1) {
@@ -182,7 +183,7 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                         throw invalidFilterSpec(spec);
                     }
                     String pkg = spec.substring(0, spec.length() - 2);
-                    filter = input -> classNameFor(input).startsWith(pkg) ? matchReturn : FilterResponse.UNDECIDED;
+                    filter = filterInfo -> classNameFor(filterInfo).startsWith(pkg) ? matchReturn : Status.UNDECIDED;
                 } else {
                     // there's an extra star in some spot other than between a final '.' and '*'
                     throw invalidFilterSpec(spec);
@@ -192,10 +193,10 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
                     throw invalidFilterSpec(spec);
                 }
                 String pkg = spec.substring(0, spec.length() - 1);
-                filter = input -> classNameFor(input).startsWith(pkg) && classNameFor(input).lastIndexOf('.') == pkg.length() - 1 ? matchReturn : FilterResponse.UNDECIDED;
+                filter = filterInfo -> classNameFor(filterInfo).startsWith(pkg) && classNameFor(filterInfo).lastIndexOf('.') == pkg.length() - 1 ? matchReturn : Status.UNDECIDED;
             } else {
                 String startsWith = spec.substring(0, spec.length() - 1); // note that an empty 'startsWith' is ok; e.g. from a "*" spec to allow all
-                filter = input -> classNameFor(input).startsWith(startsWith) ? matchReturn : FilterResponse.UNDECIDED;
+                filter = filterInfo -> classNameFor(filterInfo).startsWith(startsWith) ? matchReturn : Status.UNDECIDED;
             }
         } else {
             // For exact matches store them in a set and just do a single set.contains check
@@ -215,22 +216,22 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
     }
 
     @Override
-    public FilterResponse checkInput(FilterInput input) {
+    public Status checkInput(FilterInfo filterInfo) {
 
-        for (Function<FilterInput, FilterResponse> func : unmarshallingFilters) {
-            FilterResponse response = func.apply(input);
-            if (response != FilterResponse.UNDECIDED) {
-                return response;
+        for (Function<FilterInfo, Status> func : unmarshallingFilters) {
+            Status status = func.apply(filterInfo);
+            if (status != Status.UNDECIDED) {
+                return status;
             }
         }
-        return FilterResponse.UNDECIDED;
+        return Status.UNDECIDED;
     }
 
-    private static String classNameFor(FilterInput input) {
-        if (input.getUnmarshalledClass() == null) {
+    private static String classNameFor(FilterInfo filterInfo) {
+        if (filterInfo.getUnmarshalledClass() == null) {
             return "";
         }
-        return input.getUnmarshalledClass().getName();
+        return filterInfo.getUnmarshalledClass().getName();
     }
 
     private static IllegalArgumentException invalidFilterSpec(String spec) {
@@ -241,12 +242,12 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         return new IllegalArgumentException(String.format("Invalid unmarshalling filter specification '%s'", spec), cause);
     }
 
-    private static class ExactMatchFilter implements Function<FilterInput, FilterResponse> {
+    private static class ExactMatchFilter implements Function<FilterInfo, Status> {
         private final Set<String> matches = new HashSet<>();
-        private final FilterResponse matchResult;
+        private final Status matchResult;
 
         private ExactMatchFilter(boolean forAllowlist) {
-            this.matchResult = forAllowlist ? FilterResponse.ACCEPT : FilterResponse.REJECT;
+            this.matchResult = forAllowlist ? Status.ALLOWED : Status.REJECTED;
         }
 
         private void addMatchingClass(String name) {
@@ -254,12 +255,12 @@ final class SimpleUnmarshallingFilter implements UnmarshallingFilter {
         }
 
         private boolean isForAllowlist() {
-            return matchResult == FilterResponse.ACCEPT;
+            return matchResult == Status.ALLOWED;
         }
 
         @Override
-        public FilterResponse apply(FilterInput input) {
-            return matches.contains(classNameFor(input)) ? matchResult : FilterResponse.UNDECIDED;
+        public Status apply(FilterInfo filterInfo) {
+            return matches.contains(classNameFor(filterInfo)) ? matchResult : Status.UNDECIDED;
         }
     }
 }

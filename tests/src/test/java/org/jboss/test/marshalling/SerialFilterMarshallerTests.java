@@ -22,7 +22,7 @@ import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.ObjectInputStreamUnmarshaller;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.UnmarshallingFilter;
+import org.jboss.marshalling.UnmarshallingObjectInputFilter;
 import org.jboss.marshalling.river.RiverMarshallerFactory;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
@@ -148,7 +148,7 @@ public class SerialFilterMarshallerTests extends TestBase {
 
         @Override
         public void configure(MarshallingConfiguration configuration) throws Throwable {
-            configuration.setUnmarshallingFilter(UnmarshallingFilter.Factory.createFilter(filterSpec));
+            configuration.setUnmarshallingFilter(UnmarshallingObjectInputFilter.Factory.createFilter(filterSpec));
         }
 
         @Override

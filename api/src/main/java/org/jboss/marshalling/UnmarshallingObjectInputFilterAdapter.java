@@ -21,27 +21,30 @@ package org.jboss.marshalling;
 import java.io.ObjectInputFilter;
 
 /**
- * An adapter that allows to use an ObjectInputFilter in place of an UnmarshallingFilter.
+ * An adapter that allows to use an ObjectInputFilter in place of an UnmarshallingObjectInputFilter.
+ *
+ * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class UnmarshallingFilterAdapter implements UnmarshallingFilter {
+final class UnmarshallingObjectInputFilterAdapter implements UnmarshallingObjectInputFilter {
 
-    private final ObjectInputFilter delegate;
+    private final ObjectInputFilter adaptee;
 
-    UnmarshallingFilterAdapter(ObjectInputFilter delegate) {
-        this.delegate = delegate;
+    UnmarshallingObjectInputFilterAdapter(ObjectInputFilter adaptee) {
+        this.adaptee = adaptee;
     }
 
     @Override
-    public FilterResponse checkInput(final FilterInput input) {
-        ObjectInputFilter.Status status = delegate.checkInput(input);
+    public Status checkInput(final FilterInfo input) {
+        ObjectInputFilter.Status status = adaptee.checkInput(new FilterInfoAdapter(input));
 
         switch (status) {
             case ALLOWED:
-                return FilterResponse.ACCEPT;
+                return Status.ALLOWED;
             case REJECTED:
-                return FilterResponse.REJECT;
+                return Status.REJECTED;
             case UNDECIDED:
-                return FilterResponse.UNDECIDED;
+                return Status.UNDECIDED;
         }
         throw new IllegalStateException("Unexpected filtering decision: " + status);
     }

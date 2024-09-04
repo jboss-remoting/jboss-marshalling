@@ -20,7 +20,136 @@ package org.jboss.marshalling.river;
 
 import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
-import static org.jboss.marshalling.river.Protocol.*;
+import static org.jboss.marshalling.river.Protocol.ID_ABSTRACT_COLLECTION;
+import static org.jboss.marshalling.river.Protocol.ID_ABSTRACT_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_ABSTRACT_QUEUE;
+import static org.jboss.marshalling.river.Protocol.ID_ABSTRACT_SEQUENTIAL_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_ABSTRACT_SET;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_EMPTY_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_LARGE_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_MEDIUM_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_ARRAY_SMALL_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_OBJECT_FALSE;
+import static org.jboss.marshalling.river.Protocol.ID_BOOLEAN_OBJECT_TRUE;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_BYTE_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ARRAY_DEQUE;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ARRAY_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_CC_CONCURRENT_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_COPY_ON_WRITE_ARRAY_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_CC_COPY_ON_WRITE_ARRAY_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ENUM_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ENUM_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_ENUM_SET_PROXY;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASHTABLE;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_HASH_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_IDENTITY_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_HASH_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_HASH_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_LINKED_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_CC_NCOPIES;
+import static org.jboss.marshalling.river.Protocol.ID_CC_STACK;
+import static org.jboss.marshalling.river.Protocol.ID_CC_TREE_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_CC_TREE_SET;
+import static org.jboss.marshalling.river.Protocol.ID_CC_VECTOR;
+import static org.jboss.marshalling.river.Protocol.ID_CHARACTER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CHARACTER_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_CHAR_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CLASS_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_CLEAR_CLASS_CACHE;
+import static org.jboss.marshalling.river.Protocol.ID_CLEAR_INSTANCE_CACHE;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_EMPTY_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_LARGE_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_MEDIUM_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_COLLECTION_SMALL_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_DOUBLE_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_LIST_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_MAP_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_EMPTY_SET_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_ENUM_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_ENUM_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_EXTERNALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_EXTERNALIZER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_FLOAT_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_INTEGER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_INTEGER_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_INT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_LONG_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_NEW_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_NEW_OBJECT_UNSHARED;
+import static org.jboss.marshalling.river.Protocol.ID_NULL;
+import static org.jboss.marshalling.river.Protocol.ID_OBJECT_ARRAY_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_OBJECT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PAIR;
+import static org.jboss.marshalling.river.Protocol.ID_PLAIN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_ENUM_TYPE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_EXTERNALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_EXTERNALIZER_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_PLAIN_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_PROXY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PREDEFINED_SERIALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_BOOLEAN;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_BYTE;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_CHAR;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_DOUBLE;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_FLOAT;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_INT;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_LONG;
+import static org.jboss.marshalling.river.Protocol.ID_PRIM_SHORT;
+import static org.jboss.marshalling.river.Protocol.ID_PROXY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_FAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_NEAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_CLASS_NEARISH;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_FAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_NEAR;
+import static org.jboss.marshalling.river.Protocol.ID_REPEAT_OBJECT_NEARISH;
+import static org.jboss.marshalling.river.Protocol.ID_REVERSE_ORDER2_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_REVERSE_ORDER_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SERIALIZABLE_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_ARRAY_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_SHORT_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_LIST_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_MAP_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_SINGLETON_SET_OBJECT;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_EMPTY;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_LARGE;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_MEDIUM;
+import static org.jboss.marshalling.river.Protocol.ID_STRING_SMALL;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_COLLECTION;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_LIST;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_MAP_ENTRY_SET;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_SET;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_SORTED_MAP;
+import static org.jboss.marshalling.river.Protocol.ID_UNMODIFIABLE_SORTED_SET;
+import static org.jboss.marshalling.river.Protocol.ID_VOID;
+import static org.jboss.marshalling.river.Protocol.ID_VOID_CLASS;
+import static org.jboss.marshalling.river.Protocol.ID_WRITE_OBJECT_CLASS;
+import static org.jboss.marshalling.river.Protocol.MAX_VERSION;
+import static org.jboss.marshalling.river.Protocol.MIN_VERSION;
+import static org.jboss.marshalling.river.Protocol.enumSetProxyClass;
+import static org.jboss.marshalling.river.Protocol.nCopiesClass;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -93,6 +222,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     private final SerializableClassRegistry registry;
     private int version;
     private int depth;
+    private long totalRefs;
     private BlockUnmarshaller blockUnmarshaller;
     private RiverObjectInputStream objectInputStream;
     private SortedSet<Validator> validators;
@@ -161,7 +291,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private final PrivilegedExceptionAction<RiverObjectInputStream> createObjectInputStreamAction = new PrivilegedExceptionAction<RiverObjectInputStream>() {
         public RiverObjectInputStream run() throws IOException {
-            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+            // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+            // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+            // possible to implement filtering purely on the JBoss Marshalling side.
+            setObjectInputStreamFilter(riverObjectInputStream, unmarshallingFilter);
+            return riverObjectInputStream;
         }
     };
 
@@ -172,7 +308,13 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
 
     private RiverObjectInputStream createObjectInputStream() throws IOException {
         if (getSecurityManager() == null) {
-            return new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            RiverObjectInputStream riverObjectInputStream = new RiverObjectInputStream(RiverUnmarshaller.this, getBlockUnmarshaller());
+            // The UnmarshallingFilter needs to be converted to a Java ObjectInputFilter and set in the
+            // ObjectInputStream. The problem is that JBoss Marshalling is an extension of native Java serialization
+            // and parts of (de)serialization logic are delegated to the ObjectInputStream. Because of that it's not
+            // possible to implement filtering purely on the JBoss Marshalling side.
+            setObjectInputStreamFilter(riverObjectInputStream, unmarshallingFilter);
+            return riverObjectInputStream;
         } else {
             try {
                 return doPrivileged(createObjectInputStreamAction);
@@ -249,6 +391,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     @SuppressWarnings({ "unchecked" })
     Object doReadObject(int leadByte, final boolean unshared, final boolean discardMissing) throws IOException, ClassNotFoundException {
         depth ++;
+        totalRefs ++;
         try {
             for (;;) switch (leadByte) {
                 case ID_NULL: {
@@ -332,7 +475,9 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     }
                     final ArrayList<Object> instanceCache = this.instanceCache;
                     final int idx = instanceCache.size();
-                    final Object obj = Array.newInstance(doReadClassDescriptor(readUnsignedByte(), true).getType(), 0);
+                    Class<?> componentType = doReadClassDescriptor(readUnsignedByte(), true).getType();
+                    filterCheck(componentType, 0, depth, totalRefs, totalBytesRead);
+                    final Object obj = Array.newInstance(componentType, 0);
                     instanceCache.add(obj);
                     final Object resolvedObject = objectResolver.readResolve(obj);
                     if (unshared) {
@@ -376,30 +521,39 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     return objectTable.readObject(this);
                 }
                 case ID_BOOLEAN_OBJECT_TRUE: {
+                    filterCheck(Boolean.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Boolean.TRUE));
                 }
                 case ID_BOOLEAN_OBJECT_FALSE: {
+                    filterCheck(Boolean.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Boolean.FALSE));
                 }
                 case ID_BYTE_OBJECT: {
+                    filterCheck(Byte.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Byte.valueOf(readByte())));
                 }
                 case ID_SHORT_OBJECT: {
+                    filterCheck(Short.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Short.valueOf(readShort())));
                 }
                 case ID_INTEGER_OBJECT: {
+                    filterCheck(Integer.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Integer.valueOf(readInt())));
                 }
                 case ID_LONG_OBJECT: {
+                    filterCheck(Long.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Long.valueOf(readLong())));
                 }
                 case ID_FLOAT_OBJECT: {
+                    filterCheck(Float.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Float.valueOf(readFloat())));
                 }
                 case ID_DOUBLE_OBJECT: {
+                    filterCheck(Double.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Double.valueOf(readDouble())));
                 }
                 case ID_CHARACTER_OBJECT: {
+                    filterCheck(Character.class, -1, depth, totalRefs, totalBytesRead);
                     return replace(objectResolver.readResolve(Character.valueOf(readChar())));
                 }
                 case ID_PRIM_BYTE: {
@@ -749,18 +903,26 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                     final int id = readUnsignedByte();
                     switch (id) {
                         case ID_CC_ARRAY_LIST: {
+                            filterCheck(ArrayList.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayList(len), discardMissing));
                         }
                         case ID_CC_HASH_SET: {
+                            filterCheck(HashSet.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: length should be the nearest higher factor of 2, see HashMap#tableSizeFor()
                             return replace(readCollectionData(unshared, -1, len, new HashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_SET: {
+                            filterCheck(LinkedHashSet.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: length should be the nearest higher factor of 2, see HashMap#tableSizeFor()
                             return replace(readCollectionData(unshared, -1, len, new LinkedHashSet(len), discardMissing));
                         }
                         case ID_CC_LINKED_LIST: {
+                            filterCheck(LinkedList.class, -1, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new LinkedList(), discardMissing));
                         }
                         case ID_CC_TREE_SET: {
+                            filterCheck(TreeSet.class, -1, depth, totalRefs, totalBytesRead);
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
@@ -772,28 +934,43 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             return replace(readCollectionData(unshared, -1, len, EnumSet.noneOf(elementType), discardMissing));
                         }
                         case ID_CC_VECTOR: {
+                            filterCheck(Vector.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Vector(len), discardMissing));
                         }
                         case ID_CC_STACK: {
+                            filterCheck(Stack.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new Stack(), discardMissing));
                         }
                         case ID_CC_ARRAY_DEQUE: {
+                            filterCheck(ArrayDeque.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readCollectionData(unshared, -1, len, new ArrayDeque(len), discardMissing));
                         }
 
                         case ID_CC_HASH_MAP: {
+                            filterCheck(HashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new HashMap(len), discardMissing));
                         }
                         case ID_CC_HASHTABLE: {
+                            filterCheck(Hashtable.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new Hashtable(len), discardMissing));
                         }
                         case ID_CC_IDENTITY_HASH_MAP: {
+                            filterCheck(IdentityHashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, len, depth, totalRefs, totalBytesRead);
                             return replace(readMapData(unshared, -1, len, new IdentityHashMap(len), discardMissing));
                         }
                         case ID_CC_LINKED_HASH_MAP: {
+                            filterCheck(LinkedHashMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Map.Entry.class, len, depth, totalRefs, totalBytesRead); // TODO: consider load-factor
                             return replace(readMapData(unshared, -1, len, new LinkedHashMap(len), discardMissing));
                         }
                         case ID_CC_TREE_MAP: {
+                            filterCheck(TreeMap.class, -1, depth, totalRefs, totalBytesRead);
                             int idx = instanceCache.size();
                             instanceCache.add(UNRESOLVED);
                             Comparator comp = (Comparator)doReadNestedObject(false, "java.util.TreeSet comparator");
@@ -804,6 +981,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                             instanceCache.add(UNRESOLVED);
                             final ClassDescriptor nestedDescriptor = doReadClassDescriptor(readUnsignedByte(), true);
                             final Class<? extends Enum> elementType = nestedDescriptor.getType().asSubclass(Enum.class);
+                            filterCheck(EnumMap.class, -1, depth, totalRefs, totalBytesRead);
+                            filterCheck(Object.class, elementType.getEnumConstants().length, depth, totalRefs, totalBytesRead);
                             return replace(readMapData(unshared, idx, len, new EnumMap(elementType), discardMissing));
                         }
                         case ID_CC_NCOPIES: {
@@ -1381,6 +1560,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         final ClassDescriptor descriptor = doReadClassDescriptor(streamClassType, ! discardMissing);
         try {
             final int classType = descriptor.getTypeID();
+            filterCheck(descriptor.getType(), -1, depth, totalRefs, totalBytesRead);
             final List<Object> instanceCache = this.instanceCache;
             switch (classType) {
                 case ID_PROXY_CLASS: {
@@ -1573,6 +1753,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadDoubleArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(double.class, cnt, depth, totalRefs, totalBytesRead);
         final double[] array = new double[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readDouble();
@@ -1583,6 +1764,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadFloatArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(float.class, cnt, depth, totalRefs, totalBytesRead);
         final float[] array = new float[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readFloat();
@@ -1593,6 +1775,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadCharArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(char.class, cnt, depth, totalRefs, totalBytesRead);
         final char[] array = new char[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readChar();
@@ -1603,6 +1786,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadLongArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(long.class, cnt, depth, totalRefs, totalBytesRead);
         final long[] array = new long[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readLong();
@@ -1613,6 +1797,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadIntArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(int.class, cnt, depth, totalRefs, totalBytesRead);
         final int[] array = new int[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readInt();
@@ -1623,6 +1808,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadShortArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(short.class, cnt, depth, totalRefs, totalBytesRead);
         final short[] array = new short[cnt];
         for (int i = 0; i < cnt; i ++) {
             array[i] = readShort();
@@ -1633,6 +1819,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadByteArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(byte.class, cnt, depth, totalRefs, totalBytesRead);
         final byte[] array = new byte[cnt];
         readFully(array, 0, array.length);
         final Object resolvedObject = objectResolver.readResolve(array);
@@ -1641,6 +1828,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadBooleanArray(final int cnt, final boolean unshared) throws IOException {
+        filterCheck(boolean.class, cnt, depth, totalRefs, totalBytesRead);
         final boolean[] array = new boolean[cnt];
         int v;
         int bc = cnt & ~7;
@@ -1680,6 +1868,7 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
     }
 
     private Object doReadObjectArray(final int cnt, final Class<?> type, final boolean unshared, final boolean discardMissing) throws ClassNotFoundException, IOException {
+        filterCheck(type, cnt, depth, totalRefs, totalBytesRead);
         final Object[] array = (Object[]) replace(Array.newInstance(type, cnt));
         final int idx = instanceCache.size();
         instanceCache.add(array);

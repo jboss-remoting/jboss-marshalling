@@ -22,10 +22,14 @@ import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;
 import static sun.reflect.ReflectionFactory.getReflectionFactory;
 
+import java.io.ObjectInputFilter;
+import java.io.ObjectInputFilter.FilterInfo;
+import java.io.ObjectInputStream;
 import java.io.OptionalDataException;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import sun.reflect.ReflectionFactory;
@@ -33,6 +37,9 @@ import sun.reflect.ReflectionFactory;
 /**
  */
 final class JDKSpecific {
+
+    private static final Logger LOG = Logger.getLogger(JDKSpecific.class.getName());
+
     private JDKSpecific() {}
 
     private static final ReflectionFactory reflectionFactory = getSecurityManager() == null ? getReflectionFactory() : doPrivileged(new PrivilegedAction<ReflectionFactory>() {
@@ -50,8 +57,8 @@ final class JDKSpecific {
     }
 
     private static final StackWalker stackWalker = getSecurityManager() == null
-        ? StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
-        : doPrivileged(new PrivilegedAction<StackWalker>() {
+	? StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+	: doPrivileged(new PrivilegedAction<StackWalker>() {
             public StackWalker run() {
                 return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
             }
@@ -82,5 +89,30 @@ final class JDKSpecific {
 
     static Class<?> getMyCaller() {
         return stackWalker.walk(callerFinder);
+    }
+
+    /**
+     * Creates an ObjectInputFilter adapter to given UnmarshallingFilter, and sets the filter to given
+     * ObjectInputStream.
+     * <p>
+     * This essentially delegates the filtering functionality to underlying ObjectInputStream.
+     *
+     * @param ois ObjectInputStream instance to set the filter to.
+     * @param filter UnmarshallingFilter instance to delegate filtering decisions to.
+     */
+    static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingObjectInputFilter filter) {
+        LOG.finer(String.format("Setting UnmarshallingFilter %s to ObjectInputStream %s", filter, ois));
+        ois.setObjectInputFilter(new ObjectInputFilterAdapter(filter));
+    }
+
+    /**
+     * Returns an adapter instance for the static JVM-wide deserialization filter (-DserialFilter=...) or null.
+     */
+    static UnmarshallingObjectInputFilter getJEPS290ProcessWideFilter() {
+        ObjectInputFilter serialFilter = ObjectInputFilter.Config.getSerialFilter();
+        if (serialFilter != null) {
+            return new UnmarshallingObjectInputFilterAdapter(serialFilter);
+        }
+        return null;
     }
 }

@@ -19,6 +19,11 @@
 package org.jboss.marshalling;
 
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An abstract implementation of the {@code Unmarshaller} interface.  Most of the
@@ -44,6 +49,8 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
     protected final ExceptionListener exceptionListener;
     /** The configured serializability checker. */
     protected final SerializabilityChecker serializabilityChecker;
+    /** The configured unmarshalling filter */
+    protected final UnmarshallingObjectInputFilter unmarshallingFilter;
     /** The configured version. */
     protected final int configuredVersion;
 
@@ -78,6 +85,8 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         this.exceptionListener = exceptionListener == null ? ExceptionListener.NO_OP : exceptionListener;
         final SerializabilityChecker serializabilityChecker = configuration.getSerializabilityChecker();
         this.serializabilityChecker = serializabilityChecker == null ? SerializabilityChecker.DEFAULT : serializabilityChecker;
+        final UnmarshallingObjectInputFilter unmarshallingFilter = configuration.getUnmarshallingFilter();
+        this.unmarshallingFilter = unmarshallingFilter == null ? UnmarshallingObjectInputFilter.ACCEPTING : unmarshallingFilter;
         final int configuredVersion = configuration.getVersion();
         this.configuredVersion = configuredVersion == -1 ? marshallerFactory.getDefaultVersion() : configuredVersion;
     }
@@ -95,5 +104,121 @@ public abstract class AbstractUnmarshaller extends AbstractObjectInput implement
         position = 0;
         byteInput = null;
         clearClassCache();
+    }
+
+    protected final void filterCheck(final Class<?> unmarshallClass, final long arrayLength, final long depth,
+                                final long references, final long streamBytes) throws InvalidClassException {
+        if (unmarshallingFilter != UnmarshallingObjectInputFilter.ACCEPTING) {
+            UnmarshallingObjectInputFilter.FilterInfo filterInfo = new FilterInputImpl(unmarshallClass, arrayLength, depth, references, streamBytes);
+            UnmarshallingObjectInputFilter.Status status = null;
+            RuntimeException ex = null;
+            try {
+                status = unmarshallingFilter.checkInput(filterInfo);
+            } catch (RuntimeException re) {
+                ex = re;
+                InvalidClassException ice = new InvalidClassException(String.format("Filtering failed for %s", filterInfo));
+                ice.initCause(re);
+                throw ice;
+            } finally {
+                Logging.logFilterResponse(filterInfo, status, ex);
+            }
+
+            if (status == UnmarshallingObjectInputFilter.Status.REJECTED) {
+                throw new InvalidClassException(String.format("Filtering rejected %s", status));
+            }
+        }
+    }
+
+    protected static void setObjectInputStreamFilter(ObjectInputStream ois, UnmarshallingObjectInputFilter filter) {
+        JDKSpecific.setObjectInputStreamFilter(ois, filter);
+    }
+
+    private static class FilterInputImpl implements UnmarshallingObjectInputFilter.FilterInfo {
+
+        private final Class<?> unmarshallClass;
+        private final long arrayLength;
+        private final long depth;
+        private final long references;
+        private final long streamBytes;
+
+        private FilterInputImpl(final Class<?> unmarshallClass, final long arrayLength, final long depth,
+                                final long references, final long streamBytes) {
+            this.unmarshallClass = unmarshallClass;
+            this.arrayLength = arrayLength;
+            this.depth = depth;
+            this.references = references;
+            this.streamBytes = streamBytes;
+        }
+
+        @Override
+        public Class<?> getUnmarshalledClass() {
+            return unmarshallClass;
+        }
+
+        @Override
+        public long getArrayLength() {
+            return arrayLength;
+        }
+
+        @Override
+        public long getDepth() {
+            return depth;
+        }
+
+        @Override
+        public long getReferences() {
+            return references;
+        }
+
+        @Override
+        public long getStreamBytes() {
+            return streamBytes;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder builder = new StringBuilder();
+            builder.append(super.toString()).append(": ");
+            if (unmarshallClass != null) {
+                builder.append("unmarshallClass=<").append(unmarshallClass.toString()).append("> ");
+            }
+            builder.append("arrayLength=<").append(arrayLength).append("> ");
+            builder.append("depth=<").append(depth).append("> ");
+            builder.append("references=<").append(references).append("> ");
+            builder.append("streamBytes=<").append(streamBytes).append("> ");
+            return builder.toString();
+        }
+    }
+
+    private static class Logging {
+        static final Logger marshallingLogger = Logger.getLogger("org.jboss.marshalling");
+
+        private static void logFilterResponse(final UnmarshallingObjectInputFilter.FilterInfo filterInfo,
+                                              final UnmarshallingObjectInputFilter.Status status,
+                                              final RuntimeException ex) {
+            // Replicate logging message format from native deserialization filtering mechanism, except that the
+            // logger name is "org.jboss.marshalling" instead of "java.io.serialization".
+            if (status == null || status == UnmarshallingObjectInputFilter.Status.REJECTED) {
+                logFilterResponse(filterInfo, status, ex, Level.FINER);
+            } else {
+                logFilterResponse(filterInfo, status, ex, Level.FINEST);
+            }
+        }
+
+        private static void logFilterResponse(final UnmarshallingObjectInputFilter.FilterInfo filterInfo,
+                                              final UnmarshallingObjectInputFilter.Status status,
+                                              final RuntimeException ex,
+                                              final Level level) {
+            if (marshallingLogger.isLoggable(level)) {
+                String message = String.format("UnmarshallingFilter %s: %s, array length: %d, nRefs: %d, depth: %d, bytes: %d, ex: %s",
+                        status, filterInfo.getUnmarshalledClass(), filterInfo.getArrayLength(), filterInfo.getReferences(),
+                        filterInfo.getDepth(), filterInfo.getStreamBytes(), Objects.toString(ex, "n/a"));
+                if (Level.FINEST.equals(level)) {
+                    marshallingLogger.log(level, message, ex);
+                } else {
+                    marshallingLogger.log(level, message);
+                }
+            }
+        }
     }
 }

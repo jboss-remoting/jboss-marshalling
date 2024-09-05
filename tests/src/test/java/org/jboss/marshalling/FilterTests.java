@@ -19,7 +19,6 @@
 package org.jboss.marshalling;
 
 import org.testng.Assert;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import java.io.InvalidClassException;
@@ -31,10 +30,6 @@ public class FilterTests {
 
     @Test
     public void jdkSpecific_setObjectInputStreamFilter() throws Exception {
-        String specVersion = System.getProperty("java.specification.version");
-        if (specVersion.startsWith("1.")) {
-            throw new SkipException("Skipped when JDK < 9");
-        }
         try (ObjectInputStream ois = new ObjectInputStream(new ByteBufferInput(createPayload()))) {
             AbstractUnmarshaller.setObjectInputStreamFilter(ois, UnmarshallingObjectInputFilter.ACCEPTING);
             ois.readObject();

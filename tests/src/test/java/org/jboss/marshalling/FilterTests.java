@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public class FilterTests {
@@ -51,7 +52,7 @@ public class FilterTests {
             oos.writeObject(new Integer[] {1, 2, 3});
         }
         //noinspection RedundantCast
-        ((ByteBuffer) buffer).flip(); // JDK 9+ to JDK 8 cross-compilation issue
+        ((Buffer) buffer).flip(); // JDK 9+ to JDK 8 cross-compilation issue
         return buffer;
     }
 

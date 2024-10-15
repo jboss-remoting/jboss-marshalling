@@ -15,8 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        jdk-distribution: [temurin, adopt-openj9]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        jdk-distribution: [temurin, semeru]
     steps:
     - name: Configure runner - Linux
       if: contains(matrix.os, 'ubuntu')
@@ -30,7 +30,7 @@ jobs:
         echo '::1         localhost localhost.localdomain localhost6 localhost6.localdomain6' >> %SystemRoot%\System32\drivers\etc\hosts
       shell: cmd
     - uses: actions/checkout@v4
-    - name: Set up JDK ${{ matrix.jdk-distribution }} 21
+    - name: Set up JDKs
       uses: actions/setup-java@v4
       with:
         distribution: ${{ matrix.jdk-distribution }}
@@ -38,8 +38,9 @@ jobs:
           11
           17
           21
+          23
     - name: Run Tests
-      run: mvn -ntp -U -B -fae clean install "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}"
+      run: mvn -ntp -U -B -fae clean install -Pjava21-test-classpath "-Djava11.home=${{env.JAVA_HOME_11_X64}}${{env.JAVA_HOME_11_ARM64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}${{env.JAVA_HOME_17_ARM64}}" "-Djava21.home=${{env.JAVA_HOME_21_X64}}${{env.JAVA_HOME_21_ARM64}}"
     - uses: actions/upload-artifact@v4
       if: failure()
       with:

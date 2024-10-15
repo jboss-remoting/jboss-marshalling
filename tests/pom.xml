@@ -87,6 +87,20 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>java11-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*$*</exclude>
+                                <exclude>**/RecordTestFactory.*</exclude>
+                            </excludes>
+                            <includes>
+                                <include>**/*TestFactory.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <includes>
                         <include>**/*TestFactory.java</include>

@@ -91,7 +91,7 @@ public final class SerializableClass {
         serMethods = new SerMethods(subject);
         final ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(subject);
         effectiveSerialVersionUID = objectStreamClass == null ? 0L : objectStreamClass.getSerialVersionUID(); // todo find a better solution
-        if (subject.getSimpleName().indexOf('/') != -1) {
+        if (subject.getName().indexOf('/') != -1) {
             // it's a hidden class
             fields = NOFIELDS;
             this.fieldsByName = Collections.emptyMap();

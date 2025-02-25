@@ -129,15 +129,14 @@ public final class TraceInformation extends Throwable {
      */
     public static void addObjectInformation(Throwable t, Object targetObject) {
         final TraceInformation ti = getOrAddTraceInformation(t);
-        final String targetClassName = getNiceClassName(targetObject.getClass());
-        int targetHashCode = 0;
+        String toString;
         try {
-            targetHashCode = targetObject.hashCode();
-        } catch (Throwable ignored) {
-            // guess we won't know the hash code!
+            toString = targetObject.toString();
+        } catch (Throwable error) {
+            toString = targetObject.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(targetObject)) + " [" + error + "]";
         }
         final Info oldInfo = ti.info;
-        ti.info = new ObjectInfo(oldInfo, targetClassName, targetHashCode);
+        ti.info = new ObjectInfo(oldInfo, toString);
     }
 
     /**
@@ -244,26 +243,20 @@ public final class TraceInformation extends Throwable {
 
         private static final long serialVersionUID = -8580895864558204394L;
 
-        private final String targetClassName;
-        private final int targetHashCode;
+        private final String toString;
 
-        ObjectInfo(final Info cause, final String targetClassName, final int targetHashCode) {
+        ObjectInfo(final Info cause, final String toString) {
             super(cause);
-            this.targetClassName = targetClassName;
-            this.targetHashCode = targetHashCode;
+            this.toString = toString;
         }
 
-        public String getTargetClassName() {
-            return targetClassName;
-        }
-
-        public int getTargetHashCode() {
-            return targetHashCode;
+        public String getToString() {
+            return toString;
         }
 
         protected void toString(final StringBuilder builder) {
             super.toString(builder);
-            builder.append("\n\tin object ").append(targetClassName).append('@').append(Integer.toHexString(targetHashCode));
+            builder.append("\n\tin object ").append(toString);
         }
     }
 

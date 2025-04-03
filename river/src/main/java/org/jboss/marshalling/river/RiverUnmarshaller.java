@@ -207,6 +207,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } catch (RuntimeException e) {
             TraceInformation.addIncompleteObjectInformation(e, enclosingClassName);
             throw e;
+        } catch (StackOverflowError e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -222,6 +224,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } catch (RuntimeException e) {
             TraceInformation.addIndexInformation(e, idx, size, TraceInformation.IndexType.ELEMENT);
             throw e;
+        } catch (StackOverflowError e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -237,6 +241,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
         } catch (RuntimeException e) {
             TraceInformation.addIndexInformation(e, idx, size, key ? TraceInformation.IndexType.MAP_KEY : TraceInformation.IndexType.MAP_VALUE);
             throw e;
+        } catch (StackOverflowError e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -1620,6 +1626,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             TraceInformation.addIncompleteObjectInformation(e, descriptor.getType());
             exceptionListener.handleUnmarshallingException(e, descriptor.getType());
             throw e;
+        } catch (StackOverflowError e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -1988,6 +1996,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
                 TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 TraceInformation.addObjectInformation(e, obj);
                 throw e;
+            } catch (StackOverflowError e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -2042,6 +2052,8 @@ public class RiverUnmarshaller extends AbstractUnmarshaller {
             } catch (RuntimeException e) {
                 TraceInformation.addFieldInformation(e, descriptor.getSerializableClass(), serializableField);
                 throw e;
+            } catch (StackOverflowError e) {
+                throw new RuntimeException(e);
             }
         }
     }

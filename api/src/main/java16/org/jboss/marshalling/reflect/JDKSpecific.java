@@ -65,7 +65,7 @@ final class JDKSpecific {
      */
     static Object getRecordComponentValue(Object recordObject, String name, Class<?> type) {
         try {
-            MethodHandle methodHandle = LOOKUP.findVirtual(
+            MethodHandle methodHandle = MethodHandles.privateLookupIn(recordObject.getClass(), LOOKUP).findVirtual(
                     recordObject.getClass(), name, MethodType.methodType(type));
             return (Object) methodHandle.invoke(recordObject);
         } catch (Throwable e) {

@@ -82,7 +82,7 @@ final class JDKSpecific {
      */
     static Object getRecordComponentValue(Object recordObject, String name, Class<?> type) {
         try {
-            MethodHandle methodHandle = LOOKUP.findVirtual(
+            MethodHandle methodHandle = MethodHandles.privateLookupIn(recordObject.getClass(), LOOKUP).findVirtual(
                     recordObject.getClass(), name, MethodType.methodType(type));
             return (Object) methodHandle.invoke(recordObject);
         } catch (Throwable e) {
@@ -104,7 +104,8 @@ final class JDKSpecific {
             for (SerializableField field : fields) {
                 paramTypes[field.getRecordComponentIndex()] = field.getType();
             }
-            MethodHandle constructorHandle = LOOKUP.findConstructor(recordType, MethodType.methodType(void.class, paramTypes))
+
+            MethodHandle constructorHandle = MethodHandles.privateLookupIn(recordType, LOOKUP).findConstructor(recordType, MethodType.methodType(void.class, paramTypes))
                     .asType(MethodType.methodType(Object.class, paramTypes));
             return constructorHandle.invokeWithArguments(args);
         } catch (Throwable e) {

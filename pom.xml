@@ -52,7 +52,6 @@
         <module>river</module>
         <module>serial</module>
         <module>tests</module>
-        <module>osgi</module>
     </modules>
 
     <build>

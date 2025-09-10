@@ -27,7 +27,6 @@ import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
 
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -76,9 +75,7 @@ public final class ModularClassResolver implements ClassResolver {
         if (module == null) {
             marshaller.writeObject(null);
         } else {
-            final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getName());
-            marshaller.writeObject(identifier.getSlot());
+            ModuleHelpers.writeModuleName(marshaller, module.getName());
         }
     }
 
@@ -88,9 +85,7 @@ public final class ModularClassResolver implements ClassResolver {
         if (module == null) {
             marshaller.writeObject(null);
         } else {
-            final ModuleIdentifier identifier = module.getIdentifier();
-            marshaller.writeObject(identifier.getName());
-            marshaller.writeObject(identifier.getSlot());
+            ModuleHelpers.writeModuleName(marshaller, module.getName());
         }
     }
 
@@ -111,15 +106,13 @@ public final class ModularClassResolver implements ClassResolver {
 
     /** {@inheritDoc} */
     public Class<?> resolveClass(final Unmarshaller unmarshaller, final String className, final long serialVersionUID) throws IOException, ClassNotFoundException {
-        final String name = (String) unmarshaller.readObject();
+        final String name = ModuleHelpers.readModuleName(unmarshaller);
         if (name == null) {
             return Class.forName(className, false, MODULE_CLASS_LOADER);
         }
-        final String slot = (String) unmarshaller.readObject();
-        final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
         try {
             final ClassLoader classLoader;
-            final Module module = moduleLoader.loadModule(identifier);
+            final Module module = moduleLoader.loadModule(name);
             if (getSecurityManager() == null) {
                 classLoader = module.getClassLoader();
             } else {
@@ -140,16 +133,14 @@ public final class ModularClassResolver implements ClassResolver {
 
     /** {@inheritDoc} */
     public Class<?> resolveProxyClass(final Unmarshaller unmarshaller, final String[] names) throws IOException, ClassNotFoundException {
-        final String name = (String) unmarshaller.readObject();
+        final String name = ModuleHelpers.readModuleName(unmarshaller);
         final ClassLoader classLoader;
         if (name == null) {
             classLoader = MODULE_CLASS_LOADER;
         } else {
-            final String slot = (String) unmarshaller.readObject();
-            final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
             final Module module;
             try {
-                module = moduleLoader.loadModule(identifier);
+                module = moduleLoader.loadModule(name);
             } catch (ModuleLoadException e) {
                 final InvalidClassException ce = new InvalidClassException("Module load failed");
                 ce.initCause(e);

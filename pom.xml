@@ -43,6 +43,7 @@
     </licenses>
 
     <properties>
+        <nexus.repository.release>jboss-common</nexus.repository.release>
         <jdk.min.version>17</jdk.min.version>
         <version.org.jacoco>0.8.14</version.org.jacoco>
     </properties>

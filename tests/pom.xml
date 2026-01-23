@@ -27,6 +27,11 @@
     <artifactId>tests</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <nexus.skipPublishing>true</nexus.skipPublishing>
+        <central.skipPublishing>true</central.skipPublishing>
+    </properties>
+
     <parent>
         <groupId>org.jboss.marshalling</groupId>
         <artifactId>jboss-marshalling-parent</artifactId>
@@ -107,12 +112,6 @@
                     </includes>
                     <argLine>-Xmx1024m</argLine>
                     <trimStackTrace>false</trimStackTrace>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
                 </configuration>
             </plugin>
             <plugin>

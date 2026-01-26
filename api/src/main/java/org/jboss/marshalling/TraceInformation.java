@@ -18,6 +18,7 @@
 
 package org.jboss.marshalling;
 
+import java.util.Arrays;
 import org.jboss.marshalling.reflect.SerializableClass;
 import org.jboss.marshalling.reflect.SerializableField;
 
@@ -59,17 +60,15 @@ public final class TraceInformation extends Throwable {
         if (t == null) {
             throw new NullPointerException("t is null");
         }
-        Throwable c;
-        while (! (t instanceof TraceInformation)) {
-            c = t.getCause();
-            if (c == null) try {
-                t.initCause(c = new TraceInformation());
-            } catch (RuntimeException e) {
-                // ignored
-            }
-            t = c;
+        var optionalTi = Arrays.stream(t.getSuppressed()).filter(TraceInformation.class::isInstance).map(TraceInformation.class::cast).findFirst();
+        TraceInformation ti;
+        if (optionalTi.isEmpty()) {
+            ti = new TraceInformation();
+            t.addSuppressed(ti);
+        } else {
+            ti = optionalTi.get();
         }
-        return (TraceInformation) t;
+        return ti;
     }
 
     private static String getNiceClassName(Class<?> clazz) {
